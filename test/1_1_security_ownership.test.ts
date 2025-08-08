@@ -156,4 +156,34 @@ describe('Security Model Ownership', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(user_displays)), results.data);
     });
 
+    it(`should reject a basic GET multiple operation when performed by the wrong user`, async function () {
+        let user = await collection_user.model.create({
+            auth_id: 'steve'
+        });
+
+        let user_2 = await collection_user.model.create({
+            auth_id: 'sharon'
+        });
+
+        let user_displays = [] as any[];
+        for(let q = 0; q < 5; q++){
+            user_displays.push(await collection_user_display.model.create({
+                user_id: user._id,
+                name: 'steve',
+                email: 'steve@example.com'
+            }))
+        }
+        
+        //@ts-ignore
+        assert.rejects(async () => {
+            let results = await got.get(`http://localhost:${port}/api/user_display?user_id=${user._id}`, {
+                headers: {
+                    authorization: 'sharon'
+                }
+            }).json();
+        }, {
+            message: 'HTTPError: Response code 403 (Forbidden)'
+        })
+    });
+
 });

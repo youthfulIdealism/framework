@@ -4,10 +4,6 @@ import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 export function compile(app, collection, api_prefix) {
     for (let access_layers of collection.access_layers) {
-        app.use((req, res, next) => {
-            console.log(`${req.method} ${req.originalUrl}`);
-            next();
-        });
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
         let get_one_path = [
             api_prefix,
