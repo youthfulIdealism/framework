@@ -7,13 +7,20 @@ export class F_SM_Ownership extends F_Security_Model {
         this.user_id_field = user_id_field;
     }
     async has_permission(req, res, find, operation) {
-        let user_id = req.auth.user_id;
+        let user_id = '' + req.auth.user_id;
         if (operation === 'get') {
+            console.log('here 1');
+            console.log(find);
+            console.log(this.user_id_field);
+            console.log(find[this.user_id_field]);
+            console.log(user_id);
+            console.log(find[this.user_id_field] === user_id);
             if (req.params.document_id) {
                 find[this.user_id_field] = user_id;
                 return true;
             }
-            if (req.query.user === user_id) {
+            if (find[this.user_id_field] === user_id) {
+                console.log('registering correctly');
                 return true;
             }
         }

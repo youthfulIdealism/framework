@@ -1,8 +1,8 @@
-import * as z from "zod/v4/core";
+import * as z from "zod/v4";
 import { Request, Response } from "express";
 import { F_Collection } from "../F_Collection.js";
 export type Operation = 'get' | 'update' | 'create' | 'delete';
-export declare abstract class F_Security_Model<Collection_ID extends string, ZodSchema extends z.$ZodType> {
+export declare abstract class F_Security_Model<Collection_ID extends string, ZodSchema extends z.ZodType> {
     collection: F_Collection<Collection_ID, ZodSchema>;
     needs_auth_user: boolean;
     static auth_fetcher: (req: Request) => Promise<Auth_Data | undefined>;

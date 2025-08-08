@@ -1,7 +1,13 @@
+import * as z from "zod/v4";
 import { isValidObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
+import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 export function compile(app, collection, api_prefix) {
     for (let access_layers of collection.access_layers) {
+        app.use((req, res, next) => {
+            console.log(`${req.method} ${req.originalUrl}`);
+            next();
+        });
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
         let get_one_path = [
             api_prefix,
@@ -39,7 +45,25 @@ export function compile(app, collection, api_prefix) {
             collection.collection_id
         ].join('/');
         app.get(get_multiple_path, async (req, res) => {
-            let find = {};
+            let validated_query_args;
+            try {
+                validated_query_args = collection.query_schema.parse(req.query);
+            }
+            catch (err) {
+                if (err instanceof z.ZodError) {
+                    console.log(err);
+                    res.status(403);
+                    res.json({ error: err.issues });
+                    return;
+                }
+                else {
+                    console.error(err);
+                    res.status(500);
+                    res.json({ error: `there was a novel error` });
+                    return;
+                }
+            }
+            let find = query_object_to_mongodb_query(validated_query_args);
             for (let layer of access_layers.layers) {
                 find[`${layer}_id`] = req.params[layer];
             }
@@ -51,7 +75,9 @@ export function compile(app, collection, api_prefix) {
             }
             let documents;
             try {
-                documents = await collection.model.find(find, undefined, { 'lean': true });
+                let query = collection.model.find(find, undefined, { 'lean': true });
+                let fetch = query_object_to_mongodb_limits(query, collection.query_schema);
+                documents = await fetch;
             }
             catch (err) {
                 if (err.name == 'CastError') {
@@ -60,7 +86,10 @@ export function compile(app, collection, api_prefix) {
                     return;
                 }
                 else {
-                    throw err;
+                    res.status(500);
+                    res.send({ error: 'there was a novel error' });
+                    console.error(err);
+                    return;
                 }
             }
             if (!documents) {

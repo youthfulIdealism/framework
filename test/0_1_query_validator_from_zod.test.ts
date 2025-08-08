@@ -22,12 +22,12 @@ describe('query validator from zod', function () {
             query_validator.parse({
                 limit: 5,
                 cursor: '6894cba684185cb03275d511',
-                sort_order: 'asc',
+                sort_order: 'ascending',
             }),
             {
                 limit: 5,
                 cursor: '6894cba684185cb03275d511',
-                sort_order: 'asc',
+                sort_order: 'ascending',
             }
         )
     });

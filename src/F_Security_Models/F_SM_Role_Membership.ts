@@ -1,4 +1,4 @@
-import * as z from "zod/v4/core";
+import * as z from "zod/v4";
 import { Request, Response } from "express";
 import { F_Collection } from "../F_Collection.js";
 import { Cache } from "../utils/cache.js";
@@ -12,7 +12,7 @@ let operation_permission_map = {
     'delete': 'delete'
 }
 
-export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extends z.$ZodType> extends F_Security_Model<Collection_ID, ZodSchema> {
+export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extends z.ZodType> extends F_Security_Model<Collection_ID, ZodSchema> {
     user_id_field: string;
     role_id_field: string;
     layer_collection_id: string;

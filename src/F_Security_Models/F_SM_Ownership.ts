@@ -1,9 +1,9 @@
-import * as z from "zod/v4/core";
+import * as z from "zod/v4";
 import { Request, Response } from "express";
 import { F_Collection } from "../F_Collection.js";
 import { Authenticated_Request, Empty_Query_Possibilities, F_Security_Model, Operation } from "./F_Security_Model.js";
 
-export class F_SM_Ownership<Collection_ID extends string, ZodSchema extends z.$ZodType> extends F_Security_Model<Collection_ID, ZodSchema> {
+export class F_SM_Ownership<Collection_ID extends string, ZodSchema extends z.ZodType> extends F_Security_Model<Collection_ID, ZodSchema> {
     user_id_field: string;
 
     constructor(collection: F_Collection<Collection_ID, ZodSchema>, user_id_field = 'user_id'){
@@ -13,7 +13,7 @@ export class F_SM_Ownership<Collection_ID extends string, ZodSchema extends z.$Z
     }
 
     async has_permission(req: Authenticated_Request, res: Response, find: {[key: string]: any}, operation: Operation): Promise<boolean> {
-        let user_id = req.auth.user_id;
+        let user_id = '' + req.auth.user_id;
         
         if (operation === 'get') {
             // if we're fetching a specific document by its ID, it's valid to get
@@ -27,7 +27,8 @@ export class F_SM_Ownership<Collection_ID extends string, ZodSchema extends z.$Z
 
             // if we're fetching a document and filtering by the user's ID already,
             // then this security model is satisfied
-            if (req.query.user === user_id) {
+            if (find[this.user_id_field] === user_id) {
+                console.log('registering correctly')
                 return true;
             }
         }

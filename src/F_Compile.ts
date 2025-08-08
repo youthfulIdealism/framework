@@ -1,12 +1,13 @@
-import * as z from "zod/v4/core";
+import * as z from "zod/v4";
 
 import { F_Collection } from "./F_Collection.js";
 
 import { Router, Request, Response } from "express";
 import { isValidObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
+import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 
-export function compile<Collection_ID extends string, ZodSchema extends z.$ZodType>(app: Router, collection: F_Collection<Collection_ID, ZodSchema>, api_prefix: string){
+export function compile<Collection_ID extends string, ZodSchema extends z.ZodType>(app: Router, collection: F_Collection<Collection_ID, ZodSchema>, api_prefix: string){
     for(let access_layers of collection.access_layers){
 
         /*app.use((req, res, next) => {
@@ -63,7 +64,24 @@ export function compile<Collection_ID extends string, ZodSchema extends z.$ZodTy
         ].join('/')
 
         app.get(get_multiple_path, async (req: Request, res: Response) => {
-            let find = { } as { [key: string]: any } 
+            let validated_query_args: { [key: string]: any } ;
+            try {
+                validated_query_args = collection.query_schema.parse(req.query);
+            } catch(err){
+                if(err instanceof z.ZodError){
+                    console.log(err);
+                    res.status(403);
+                    res.json({ error: err.issues });
+                    return;
+                } else {
+                    console.error(err);
+                    res.status(500);
+                    res.json({ error: `there was a novel error` });
+                    return;
+                }
+            }
+
+            let find = query_object_to_mongodb_query(validated_query_args) as { [key: string]: any };
             for(let layer of access_layers.layers){
                 find[`${layer}_id`] = req.params[layer];
             }
@@ -77,15 +95,20 @@ export function compile<Collection_ID extends string, ZodSchema extends z.$ZodTy
            
             let documents;
             try {
-                 //@ts-expect-error
-                documents = await collection.model.find(find, undefined, { 'lean': true });
+                //@ts-expect-error
+                let query = collection.model.find(find, undefined, { 'lean': true });
+                let fetch = query_object_to_mongodb_limits(query, collection.query_schema);
+                documents = await fetch;
             } catch(err){
                 if (err.name == 'CastError') {
                     res.status(400);
                     res.json({ error: 'one of the IDs you passed to the query was not a valid MongoDB object ID.' });
                     return;
                 } else {
-                    throw err;
+                    res.status(500);
+                    res.send({error: 'there was a novel error'});
+                    console.error(err);
+                    return;
                 }
             }
 
