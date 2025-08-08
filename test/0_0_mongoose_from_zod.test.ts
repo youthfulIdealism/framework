@@ -1,0 +1,195 @@
+import assert from "assert";
+import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
+
+import { schema_from_zod, z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
+import { Schema } from 'mongoose'
+
+describe('Mongoose from Zod', function () {
+
+    it('should convert an empty object', function () {
+        let zodSchema = z.object({ })
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({}, mongooseSchema)
+    });
+
+    let basic_types = [{
+            label: 'string',
+            mongoose_type: String,
+            zod_function: z.string,
+            default_val: 'todd',
+        }, {
+            label: 'number',
+            mongoose_type: Number,
+            zod_function: z.number,
+            default_val: 42,
+        }, {
+            label: 'boolean',
+            mongoose_type: Boolean,
+            zod_function: z.boolean,
+            default_val: true,
+        }, {
+            label: 'date',
+            mongoose_type: Date,
+            zod_function: z.date,
+            default_val: new Date().toISOString(),
+        }, {
+            label: 'objectid',
+            mongoose_type: Schema.Types.ObjectId,
+            zod_function: () => z_mongodb_id,
+            default_val: '65add375755c5e0415b69803',
+        }
+    ]
+
+    /*
+        Basic type conversions
+    */
+    for(let basic_type of basic_types) {
+        it(`should convert ${basic_type.label} to mongoose type`, function () {
+            let zodSchema = z.object({ test_value: basic_type.zod_function() })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: { type: basic_type.mongoose_type, required: true } }, mongooseSchema)
+        });
+
+        it(`should convert ${basic_type.label} to mongoose type with optional`, function () {
+            let zodSchema = z.object({ test_value: basic_type.zod_function().optional() })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: { type: basic_type.mongoose_type, required: false } }, mongooseSchema)
+        });
+
+        it(`should convert ${basic_type.label} to mongoose type with default values`, function () {
+            //@ts-ignore
+            let zodSchema = z.object({ test_value: basic_type.zod_function().default(basic_type.default_val) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: { type: basic_type.mongoose_type, required: true, default: basic_type.default_val } }, mongooseSchema)
+        });
+
+        it(`should convert ${basic_type.label} to mongoose type with nullable`, function () {
+            let zodSchema = z.object({ test_value: basic_type.zod_function().nullable() })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: { type: basic_type.mongoose_type, required: true } }, mongooseSchema)
+        });
+
+        it(`should convert ${basic_type.label} to mongoose type with optional AND default values`, function () {
+            //@ts-ignore
+            let zodSchema = z.object({ test_value: basic_type.zod_function().default(basic_type.default_val).optional() })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: { type: basic_type.mongoose_type, required: false, default: basic_type.default_val } }, mongooseSchema)
+        });
+    }
+
+    /*
+        nested type conversions
+    */
+    for(let basic_type of basic_types) {
+        it(`should convert a nested object containing a ${basic_type.label} property to mongoose type`, function () {
+            let zodSchema = z.object({ test_value: z.object({test_value: basic_type.zod_function() }) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: { type: {test_value: { type: basic_type.mongoose_type, required: true }}, required: true} }, mongooseSchema)
+        });
+
+        it(`should convert a nested object containing a ${basic_type.label} property to mongoose type with optional`, function () {
+            let zodSchema = z.object({ test_value: z.object({test_value: basic_type.zod_function().optional() }) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: { type: {test_value: { type: basic_type.mongoose_type, required: false }}, required: true } }, mongooseSchema)
+        });
+
+        it(`should convert a nested object containing a ${basic_type.label} property to mongoose type with default values`, function () {
+            //@ts-ignore
+            let zodSchema = z.object({ test_value: z.object({test_value: basic_type.zod_function().default(basic_type.default_val) }) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: { type: {test_value: {  type: basic_type.mongoose_type, required: true, default: basic_type.default_val }}, required: true } }, mongooseSchema)
+        });
+    }
+
+    /*
+        array type conversions
+    */
+    for(let basic_type of basic_types) {
+        it(`should convert ${basic_type.label} array to mongoose type`, function () {
+            let zodSchema = z.object({ test_value: z.array(basic_type.zod_function()) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: [{ type: basic_type.mongoose_type, required: true }], required: true} }, mongooseSchema)
+        });
+
+        it(`should convert ${basic_type.label} array to mongoose type with optional`, function () {
+            let zodSchema = z.object({ test_value: z.array(basic_type.zod_function()).optional() })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: [{ type: basic_type.mongoose_type, required: true }], required: false} }, mongooseSchema)
+        });
+
+        it(`should convert ${basic_type.label} array to mongoose type with default values`, function () {
+            let zodSchema = z.object({ test_value: z.array(basic_type.zod_function()).default([]) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: [{ type: basic_type.mongoose_type, required: true }], required: true, default: []} }, mongooseSchema)
+        });
+    }
+
+    /*
+        array inside an object conversions
+    */
+    for(let basic_type of basic_types) {
+        it(`should convert ${basic_type.label} array to mongoose type`, function () {
+            let zodSchema = z.object({ test_value: z.array(basic_type.zod_function()) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: [{ type: basic_type.mongoose_type, required: true }], required: true} }, mongooseSchema)
+        });
+
+        it(`should convert ${basic_type.label} array to mongoose type with optional`, function () {
+            let zodSchema = z.object({ test_value: z.array(basic_type.zod_function()).optional() })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: [{ type: basic_type.mongoose_type, required: true }], required: false} }, mongooseSchema)
+        });
+
+        it(`should convert ${basic_type.label} array to mongoose type with default values`, function () {
+            let zodSchema = z.object({ test_value: z.array(basic_type.zod_function()).default([]) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: [{ type: basic_type.mongoose_type, required: true }], required: true, default: []} }, mongooseSchema)
+        });
+    }
+
+    /*
+        map conversions
+    */
+    for(let basic_type of basic_types) {
+        it(`should convert map of ${basic_type.label} to mongoose type`, function () {
+            let zodSchema = z.object({ test_value: z.map(z.string(), basic_type.zod_function()) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: Schema.Types.Map, of: { type: basic_type.mongoose_type, required: true }, required: true} }, mongooseSchema)
+        });
+
+        it(`should convert map of ${basic_type.label} to mongoose type with optional`, function () {
+            let zodSchema = z.object({ test_value: z.map(z.string(), basic_type.zod_function()).optional() })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: Schema.Types.Map, of: { type: basic_type.mongoose_type, required: true }, required: false} }, mongooseSchema)
+        });
+
+        it(`should convert map of ${basic_type.label} to mongoose type with default values`, function () {
+            //@ts-ignore
+            let zodSchema = z.object({ test_value: z.map(z.string(), basic_type.zod_function()).default({}) })
+            let mongooseSchema = schema_from_zod(zodSchema)
+            assert.deepEqual({ test_value: {type: Schema.Types.Map, of: { type: basic_type.mongoose_type, required: true }, required: true, default: {}} }, mongooseSchema)
+        });
+    }
+
+    /*
+        enum conversions
+    */
+
+    it(`should convert enums to mongoose type`, function () {
+        let zodSchema = z.object({ test_value: z.enum(['chunky', 'funky', 'monkey']) })
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({ test_value: {type: String, required: true} }, mongooseSchema)
+    });
+
+    it(`should convert enums to mongoose type with optional`, function () {
+        let zodSchema = z.object({ test_value: z.enum(['chunky', 'funky', 'monkey']).optional() })
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({ test_value: {type: String, required: false} }, mongooseSchema)
+    });
+
+    it(`should convert enums to mongoose type with default values`, function () {
+        let zodSchema = z.object({ test_value: z.enum(['chunky', 'funky', 'monkey']).default('chunky') })
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({ test_value: {type: String, required: true, default: 'chunky'} }, mongooseSchema)
+    });
+});

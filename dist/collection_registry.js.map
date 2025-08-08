@@ -1,0 +1,1 @@
+{"version":3,"file":"collection_registry.js","sourceRoot":"","sources":["../src/collection_registry.ts"],"names":[],"mappings":"AAIA,MAAM,mBAAmB;IACrB,WAAW,CAAc;IAIzB;QACI,IAAI,CAAC,WAAW,GAAG,EAAiB,CAAC;IACzC,CAAC;IAED,QAAQ,CAA6D,UAAkD;QACnH,IAAI,WAAW,GAAG,IAAI,CAAC,WAA8F,CAAC;QAEtH,WAAW,CAAC,UAAU,CAAC,aAAa,CAAC,GAAG,UAAU,CAAC;QACnD,OAAO,IAA4G,CAAC;IACxH,CAAC;CAGJ"}

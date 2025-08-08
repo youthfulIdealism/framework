@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "module": "node16",
+      "noImplicitAny": true,
+      "removeComments": true,
+      "preserveConstEnums": true,
+      "outDir": "dist",
+      "sourceMap": true,
+      "declaration": true,
+      //"declarationMap": true//check this
+    },
+    "include": ["src/**/*", "test/0_mongoose_from_zod.test.js"],
+    "exclude": []
+  }
