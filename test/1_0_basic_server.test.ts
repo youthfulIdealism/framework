@@ -241,4 +241,7 @@ describe('Basic Server', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(test_projects)), results.data);
     });
 
+
+
+    // TODO: test that query arguments work
 });

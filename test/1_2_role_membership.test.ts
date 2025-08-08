@@ -463,6 +463,49 @@ describe('Security Model Role Membership', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(projects)), results.data);
     });
 
+    it(`should reject a basic GET multiple operation where the user has a role membership without permission`, async function () {
+        let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
 
-    
+        let projects = [edna_project];
+        for(let q = 0; q < 5; q++){
+            projects.push(await collection_project.model.create({
+                institution_id: edwin_institution._id,
+                client_id: edna_client,
+                name: `additional project ${q}`
+            }))
+        }
+
+        assert.rejects(async () => {
+            let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project`, {
+                headers: {
+                    authorization: 'steve'
+                }
+            }).json();
+        },
+        { message: 'HTTPError: Response code 403 (Forbidden)' })
+    });
+
+    it(`should reject a basic GET multiple operation where the user has no role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        let projects = [steve_project];
+        for(let q = 0; q < 5; q++){
+            projects.push(await collection_project.model.create({
+                institution_id: steve_institution._id,
+                client_id: steve_client,
+                name: `additional project ${q}`
+            }))
+        }
+
+        assert.rejects(async () => {
+            let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project`, {
+                headers: {
+                    authorization: 'edwin'
+                }
+            }).json();
+        },
+        { message: 'HTTPError: Response code 403 (Forbidden)' })
+    });
+
+
 });
