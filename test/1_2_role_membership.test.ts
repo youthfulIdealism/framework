@@ -418,4 +418,51 @@ describe('Security Model Role Membership', function () {
         },
         { message: 'HTTPError: Response code 403 (Forbidden)' })
     });
+
+    it(`should authorize a basic GET multiple operation where the user has a T1 role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        let projects = [steve_project];
+        for(let q = 0; q < 5; q++){
+            projects.push(await collection_project.model.create({
+                institution_id: steve_institution._id,
+                client_id: steve_client,
+                name: `additional project ${q}`
+            }))
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(projects)), results.data);
+    });
+
+    it(`should authorize a basic GET multiple operation where the user has a T2 role membership`, async function () {
+        let { edwin_institution, nathan_client, nathan_project } = await generate_test_setup();
+
+        let projects = [nathan_project];
+        for(let q = 0; q < 5; q++){
+            projects.push(await collection_project.model.create({
+                institution_id: edwin_institution._id,
+                client_id: nathan_client,
+                name: `additional project ${q}`
+            }))
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(projects)), results.data);
+    });
+
+
+    
 });
