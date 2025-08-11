@@ -367,6 +367,10 @@ describe('Security Model Role Membership', function () {
     }
 
 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    GET one        ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     it(`should authorize a basic GET operation on a document where the user has a T1 role membership`, async function () {
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
 
@@ -418,6 +422,11 @@ describe('Security Model Role Membership', function () {
         },
         { message: 'HTTPError: Response code 403 (Forbidden)' })
     });
+
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    GET multiple        ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     it(`should authorize a basic GET multiple operation where the user has a T1 role membership`, async function () {
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
@@ -501,6 +510,82 @@ describe('Security Model Role Membership', function () {
             let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project`, {
                 headers: {
                     authorization: 'edwin'
+                }
+            }).json();
+        },
+        { message: 'HTTPError: Response code 403 (Forbidden)' })
+    });
+
+
+
+
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    PUT        ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    it(`should authorize a basic PUT operation on a document where the user has a T1 role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'Flammable Project'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.notDeepEqual(JSON.parse(JSON.stringify(steve_project)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(steve_project._id))), results.data);
+    });
+
+    it(`should authorize a basic PUT operation on a document where the user has a T2 role membership`, async function () {
+        let { edwin_institution, nathan_client, nathan_project } = await generate_test_setup();
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project/${nathan_project._id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'Flammable Project'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.notDeepEqual(JSON.parse(JSON.stringify(nathan_project)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(nathan_project._id))), results.data);
+    });
+
+    it(`should reject a basic PUT operation on a document where the user has a role membership without permission`, async function () {
+        let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
+
+        assert.rejects(async () => {
+            let results = await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project/${edna_project._id}`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    name: 'Flammable Project'
+                }
+            }).json();
+        },
+        { message: 'HTTPError: Response code 403 (Forbidden)' })
+    });
+
+    it(`should reject a basic PUT operation on a document where the user has no role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        assert.rejects(async () => {
+            let results = await got.put(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
+                headers: {
+                    authorization: 'edwin'
+                },
+                json: {
+                    name: 'Flammable Project'
                 }
             }).json();
         },

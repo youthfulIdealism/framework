@@ -28,7 +28,6 @@ export class F_SM_Ownership<Collection_ID extends string, ZodSchema extends z.Zo
             // if we're fetching a document and filtering by the user's ID already,
             // then this security model is satisfied
             if (find[this.user_id_field] === user_id) {
-                console.log('registering correctly')
                 return true;
             }
         }

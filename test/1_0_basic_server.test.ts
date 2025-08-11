@@ -327,5 +327,39 @@ describe('Basic Server', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(test_project._id))), results.data);
     });
 
+    it(`should reject a PUT operation that changes layer membership`, async function () {
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let test_client_2 = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Anna's Latex Emporium`
+        })
+
+        let test_project = await project.model.create({
+            institution_id: test_institution._id,
+            client_id: test_client._id,
+            name: `Spandex Reincarnation`
+        })
+
+        assert.rejects(async () => {
+            let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project/${test_project._id}`, {
+                json: {
+                    name: `Leather Pants Transubstantiation`,
+                    client_id: test_client_2._id
+
+                },
+            }).json();
+        }, {
+            message: 'HTTPError: Response code 403 (Forbidden)'
+        });
+    });
+
 
 });

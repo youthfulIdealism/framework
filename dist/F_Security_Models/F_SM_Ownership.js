@@ -14,7 +14,6 @@ export class F_SM_Ownership extends F_Security_Model {
                 return true;
             }
             if (find[this.user_id_field] === user_id) {
-                console.log('registering correctly');
                 return true;
             }
         }

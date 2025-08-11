@@ -154,7 +154,6 @@ export function compile(app, collection, api_prefix) {
                 }
             }
             let results = await collection.model.findOneAndUpdate(find, validated_request_body, { returnDocument: 'after', lean: true });
-            console.log(results);
             if (!results) {
                 let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                 res.json(sendable);
