@@ -44,8 +44,17 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
                 return;
             }
 
-            //@ts-expect-error
-            let document = await collection.model.findOne(find, undefined, { 'lean': true });
+            let document;
+            try {
+                //@ts-expect-error
+                document = await collection.model.findOne(find, undefined, { 'lean': true });
+            } catch(err){
+                res.status(500);
+                res.json({ error: `there was a novel error` });
+                console.error(err);
+                return;
+            }
+            
             if (!document) {
                 let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'get');
                 res.json(sendable);
@@ -69,7 +78,6 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
                 validated_query_args = collection.query_schema.parse(req.query);
             } catch(err){
                 if(err instanceof z.ZodError){
-                    console.log(err);
                     res.status(403);
                     res.json({ error: err.issues });
                     return;
@@ -140,8 +148,8 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
                 find[`${layer}_id`] = req.params[layer];
             }
 
-            // I'd like to have a validator here. I think it might need to be a map or record validator?
-            let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
+            
+            let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
             if (!permissive_security_model) {
                 res.status(403);
                 res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
@@ -161,12 +169,13 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
                 req.body.updated_at = new Date();
             }
 
+            // TODO: it might be possible to build a validator that matches mongoDB's update
+            // syntax to allow for targeted updating of nested stuff
             let validated_request_body;
             try {
                 validated_request_body = await collection.put_schema.parse(req.body);
             } catch(err){
                  if(err instanceof z.ZodError){
-                    console.log(err);
                     res.status(403);
                     res.json({ error: err.issues });
                     return;
@@ -195,8 +204,18 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
                 return;
             }*/
             
-            //@ts-expect-error
-            let results = await collection.model.findOneAndUpdate(find, validated_request_body, { returnDocument: 'after', lean: true });
+            
+            let results;
+            try {
+                //@ts-expect-error
+                results = await collection.model.findOneAndUpdate(find, validated_request_body, { returnDocument: 'after', lean: true });
+            } catch(err){
+                res.status(500);
+                res.json({ error: `there was a novel error` });
+                console.error(err);
+                return;
+            }
+
             if (!results) {
                 let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                 res.json(sendable);
@@ -206,7 +225,98 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
             //await req.schema.fire_api_event('update', req, results);
         });
 
+        let post_path = [
+            api_prefix,
+            ...base_layers_path_components,
+            `${collection.collection_id}`
+        ].join('/')
 
+        app.post(post_path, async (req, res) => {
+            // I'd like to have a validator here. I think it might need to be a map or record validator?
+            let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'create');
+            if (!permissive_security_model) {
+                res.status(403);
+                res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                return;
+            }
+
+            if(collection.raw_schema.updated_by?.type === String) {
+                // if the security schema required the user to be logged in, then req.auth.user_id will not be null
+                if((req as Authenticated_Request).auth?.user_id){
+                    req.body.updated_by = (req as Authenticated_Request).auth?.user_id;
+                } else {
+                    req.body.updated_by = null;
+                }
+            }
+
+            if(collection.raw_schema.updated_at?.type === Date) {
+                req.body.updated_at = new Date();
+            }
+
+            if(collection.raw_schema.created_by?.type === String) {
+                // if the security schema required the user to be logged in, then req.auth.user_id will not be null
+                if((req as Authenticated_Request).auth?.user_id){
+                    req.body.created_by = (req as Authenticated_Request).auth?.user_id;
+                } else {
+                    req.body.created_by = null;
+                }
+            }
+
+            if(collection.raw_schema.created_at?.type === Date) {
+                req.body.created_at = new Date();
+            }
+
+            let validated_request_body;
+            try {
+                validated_request_body = await collection.post_schema.parse(req.body);
+            } catch(err){
+                 if(err instanceof z.ZodError){
+                    res.status(403);
+                    res.json({ error: err.issues });
+                    return;
+                } else {
+                    console.error(err);
+                    res.status(500);
+                    res.json({ error: `there was a novel error` });
+                    return;
+                }
+            }
+
+            // if you're accessing the document from /x/:x/y/:y, then you can't change x or y. Note that this does mean if you can access
+            // the document from /x/:x, then you'd be able to change y.
+            for(let layer of access_layers.layers){
+                if(validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]){
+                    res.status(403);
+                    res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
+                    return;
+                }
+            }
+
+            /*let { error: pre_save_error } = await req.schema.handle_pre_save(req, validated_request_body);
+            if (pre_save_error) {
+                res.status(400);
+                res.json({ error: pre_save_error.message });
+                return;
+            }*/
+
+            let results;
+            try {
+                results = await collection.model.create(validated_request_body);
+            } catch(err){
+                res.status(500);
+                res.json({ error: `there was a novel error` });
+                console.error(err);
+                return;
+            }
+
+            if (!results) {
+                let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
+                res.json(sendable);
+            } else {
+                res.json({ data: results });
+            }
+            //await req.schema.fire_api_event('create', req, results);
+        });
 
 
 

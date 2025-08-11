@@ -262,11 +262,6 @@ describe('Basic Server', function () {
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
-            institution_id: test_institution._id,
-            name: `Bob's spandex house`
-        })
-
         let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}`, {
             json: {
                 name: 'Leather Pants Co'
@@ -361,5 +356,87 @@ describe('Basic Server', function () {
         });
     });
 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    POST        ///////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    it(`should be able to perform a basic POST operation`, async function () {
+
+        let results = await got.post(`http://localhost:${port}/api/institution`, {
+            json: {
+                name: 'Leather Pants Co'
+            },
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await institution.model.findById(results.data._id))), results.data);
+    });
+
+    it(`should be able to perform a basic POST operation of something one layer deep`, async function () {
+        this.timeout(1000 * 20);
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let results = await got.post(`http://localhost:${port}/api/institution/${test_institution._id}/client`, {
+            json: {
+                name: `International house of leather pants`,
+                institution_id: test_institution._id,
+            },
+        }).json();
+        
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.model.findById(results.data._id))), results.data);
+    });
+
+    it(`should be able to perform a basic POST operation of a leaf`, async function () {
+        this.timeout(1000 * 20);
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let results = await got.post(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project`, {
+            json: {
+                name: `Leather Pants Transubstantiation`,
+                institution_id: test_institution._id,
+                client_id: test_client._id,
+            },
+        }).json();
+        
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(results.data._id))), results.data);
+    });
+
+    it(`should reject a POST operation at the wrong layer membership`, async function () {
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let test_client_2 = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Anna's Latex Emporium`
+        })
+
+        assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project`, {
+                json: {
+                    name: `Leather Pants Transubstantiation`,
+                    client_id: test_client_2._id,
+                    institution_id: test_institution._id,
+                },
+            }).json();
+        }, {
+            message: 'HTTPError: Response code 403 (Forbidden)'
+        });
+    });
 });
