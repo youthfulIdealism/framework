@@ -91,6 +91,10 @@ describe('Basic Server', function () {
         }
     })
 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    GET one        ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     it(`should be able to perform a basic GET operation`, async function () {
         let test_institution = await institution.model.create({
             name: 'Spandex Co'
@@ -141,6 +145,11 @@ describe('Basic Server', function () {
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(test_project)), results.data);
     });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    GET multiple        ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
     it(`should be able to perform a basic GET multiple operation`, async function () {
         let test_institutions = []
@@ -242,6 +251,81 @@ describe('Basic Server', function () {
     });
 
 
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    PUT        ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // TODO: test that query arguments work
+
+
+    it(`should be able to perform a basic PUT operation`, async function () {
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}`, {
+            json: {
+                name: 'Leather Pants Co'
+            },
+        }).json();
+
+        //@ts-ignore
+        assert.notDeepEqual(JSON.parse(JSON.stringify(test_institution)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await institution.model.findById(test_institution._id))), results.data);
+    });
+
+    it(`should be able to perform a basic PUT operation of something one layer deep`, async function () {
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}`, {
+            json: {
+                name: `International house of leather pants`
+            },
+        }).json();
+        //@ts-ignore
+        assert.notDeepEqual(JSON.parse(JSON.stringify(test_client)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.model.findById(test_client._id))), results.data);
+    });
+
+    it(`should be able to perform a basic PUT operation of a leaf`, async function () {
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let test_project = await project.model.create({
+            institution_id: test_institution._id,
+            client_id: test_client._id,
+            name: `Spandex Reincarnation`
+        })
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project/${test_project._id}`, {
+            json: {
+                name: `Leather Pants Transubstantiation`
+            },
+        }).json();
+        //@ts-ignore
+        assert.notDeepEqual(JSON.parse(JSON.stringify(test_project)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(test_project._id))), results.data);
+    });
+
+
 });

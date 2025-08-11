@@ -96,6 +96,73 @@ export function compile(app, collection, api_prefix) {
                 res.json({ data: documents });
             }
         });
+        let put_path = [
+            api_prefix,
+            ...base_layers_path_components,
+            `${collection.collection_id}/:document_id`
+        ].join('/');
+        app.put(put_path, async (req, res) => {
+            if (!isValidObjectId(req.params.document_id)) {
+                res.status(400);
+                res.json({ error: `${req.params.document_id} is not a valid document ID.` });
+                return;
+            }
+            let find = { '_id': req.params.document_id };
+            for (let layer of access_layers.layers) {
+                find[`${layer}_id`] = req.params[layer];
+            }
+            let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
+            if (!permissive_security_model) {
+                res.status(403);
+                res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                return;
+            }
+            if (collection.raw_schema.updated_by?.type === String) {
+                if (req.auth?.user_id) {
+                    req.body.updated_by = req.auth?.user_id;
+                }
+                else {
+                    req.body.updated_by = null;
+                }
+            }
+            if (collection.raw_schema.updated_at?.type === Date) {
+                req.body.updated_at = new Date();
+            }
+            let validated_request_body;
+            try {
+                validated_request_body = await collection.put_schema.parse(req.body);
+            }
+            catch (err) {
+                if (err instanceof z.ZodError) {
+                    console.log(err);
+                    res.status(403);
+                    res.json({ error: err.issues });
+                    return;
+                }
+                else {
+                    console.error(err);
+                    res.status(500);
+                    res.json({ error: `there was a novel error` });
+                    return;
+                }
+            }
+            for (let layer of access_layers.layers) {
+                if (validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]) {
+                    res.status(403);
+                    res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
+                    return;
+                }
+            }
+            let results = await collection.model.findOneAndUpdate(find, validated_request_body, { returnDocument: 'after', lean: true });
+            console.log(results);
+            if (!results) {
+                let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
+                res.json(sendable);
+            }
+            else {
+                res.json({ data: results });
+            }
+        });
     }
 }
 //# sourceMappingURL=F_Compile.js.map

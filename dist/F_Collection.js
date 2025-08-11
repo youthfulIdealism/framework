@@ -6,12 +6,14 @@ export class F_Collection {
     access_layers;
     raw_schema;
     query_schema;
+    put_schema;
     compiled;
     constructor(collection_name, schema) {
         this.collection_id = collection_name;
         this.raw_schema = schema_from_zod(schema);
         this.model = mongoose_from_zod(collection_name, schema);
         this.query_schema = query_validator_from_zod(schema);
+        this.put_schema = schema.partial();
         this.access_layers = [];
         this.compiled = false;
     }

@@ -14,8 +14,9 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodT
     collection_id: Collection_ID;
     model: Model<z.infer<ZodSchema>>;
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
-    raw_schema: ZodSchema;
+    raw_schema: any;
     query_schema: z.ZodAny;
+    put_schema: z.ZodAny;
     compiled: boolean;
 
     constructor(collection_name: Collection_ID, schema: ZodSchema){
@@ -25,6 +26,9 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodT
         // TODO: validate that the model doesn't use any fields that have special meaning in the query validator; for example: [param]_gt, [param]_in, sort,
         //@ts-ignore
         this.query_schema = query_validator_from_zod(schema);
+        // TODO: we can make this more closely match the mongoDB PUT operation and allow updates to eg array.3.element fields
+        //@ts-ignore
+        this.put_schema = schema.partial();
         this.access_layers = [];
         this.compiled = false;
     }

@@ -507,5 +507,5 @@ describe('Security Model Role Membership', function () {
         { message: 'HTTPError: Response code 403 (Forbidden)' })
     });
 
-
+    
 });
