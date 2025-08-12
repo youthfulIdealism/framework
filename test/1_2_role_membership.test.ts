@@ -596,4 +596,75 @@ describe('Security Model Role Membership', function () {
      /////////////////////////////////////////////////////////////    POST        ///////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    it(`should authorize a basic POST operation on a document where the user has a T1 role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        let results = await got.post(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'Flammable Project',
+                institution_id: steve_institution._id,
+                client_id: steve_client._id,
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(results.data._id))), results.data);
+    });
+
+    it(`should authorize a basic POST operation on a document where the user has a T2 role membership`, async function () {
+        let { edwin_institution, nathan_client, nathan_project } = await generate_test_setup();
+
+        let results = await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'Flammable Project',
+                institution_id: edwin_institution._id,
+                client_id: nathan_client._id,
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(results.data._id))), results.data);
+    });
+
+    it(`should reject a basic POST operation on a document where the user has a role membership without permission`, async function () {
+        let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
+
+        assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    name: 'Flammable Project',
+                    institution_id: edwin_institution._id,
+                    client_id: edna_client._id,
+                }
+            }).json();
+        },
+        { message: 'HTTPError: Response code 403 (Forbidden)' })
+    });
+
+    it(`should reject a basic POST operation on a document where the user has no role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project`, {
+                headers: {
+                    authorization: 'edwin'
+                },
+                json: {
+                    name: 'Flammable Project',
+                    institution_id: steve_institution._id,
+                    client_id: steve_client._id,
+                }
+            }).json();
+        },
+        { message: 'HTTPError: Response code 403 (Forbidden)' })
+    });
 });
