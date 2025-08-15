@@ -86,8 +86,8 @@ describe('Basic Server', function () {
 
     beforeEach(async function(){
         for(let collection of Object.values(registry.collections)){
-            // @ts-ignore
-            collection.model.collection.drop();
+            //@ts-ignore
+            await collection.model.collection.drop();
         }
     })
 
@@ -438,5 +438,94 @@ describe('Basic Server', function () {
         }, {
             message: 'HTTPError: Response code 403 (Forbidden)'
         });
+    });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    DELETE        /////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    it(`should be able to perform a basic DELETE operation`, async function () {
+
+        let test_institution = await institution.model.create({
+            name: 'test institution'
+        })
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${test_institution._id}`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institution)), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await institution.model.findById(test_institution._id))), undefined);
+    });
+
+    it(`should be able to perform a basic DELETE operation of something one layer deep`, async function () {
+        let test_institution = await institution.model.create({
+            name: 'test institution'
+        })
+
+        let test_client = await client.model.create({
+            name: 'test client',
+            institution_id: test_institution._id
+        })
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}`).json();
+        
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_client)), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.model.findById(test_client._id))), undefined);
+    });
+
+    it(`should be able to perform a basic DELETE operation of a leaf`, async function () {
+        this.timeout(1000 * 20);
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let test_project = await project.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`,
+            client_id: test_client._id,
+        })
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project/${test_project._id}`).json();
+        
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_project)), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(test_project._id))), undefined);
+    });
+
+    it(`should reject a DELETE operation at the wrong layer membership`, async function () {
+        let test_institution = await institution.model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let test_client_2 = await client.model.create({
+            institution_id: test_institution._id,
+            name: `Anna's Latex Emporium`
+        })
+
+        let test_project = await project.model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`,
+            client_id: test_client_2._id,
+        })
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project/${test_project._id}`).json();
+        
+        // this will just produce null rather than throwing an error, because there was nothing at the path to delete.
+        // this is different than a POST or PUT, where it's easier to detect a mismatch because the body may have an
+        // institution ID.
+        //@ts-ignore
+        assert.deepEqual(null, results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(test_project._id))), JSON.parse(JSON.stringify(test_project)));
     });
 });

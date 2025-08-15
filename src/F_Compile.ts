@@ -310,7 +310,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
             }
 
             if (!results) {
-                let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
+                let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
                 res.json(sendable);
             } else {
                 res.json({ data: results });
@@ -318,8 +318,49 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
             //await req.schema.fire_api_event('create', req, results);
         });
 
+        let delete_path = [
+            api_prefix,
+            ...base_layers_path_components,
+            `${collection.collection_id}/:document_id`
+        ].join('/')
 
+        app.delete(delete_path, async (req, res) => {
+            if (!isValidObjectId(req.params.document_id)) {
+                res.status(400);
+                res.json({ error: `${req.params.document_id} is not a valid document ID.` });
+                return;
+            }
 
+            let find = { '_id': req.params.document_id } as { [key: string]: any } ;
+            for(let layer of access_layers.layers){
+                find[`${layer}_id`] = req.params[layer];
+            }
 
+            let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'delete');
+            if (!permissive_security_model) {
+                res.status(403);
+                res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                return;
+            }
+
+            let results;
+            try {
+                //@ts-expect-error
+                results = await collection.model.findOneAndDelete(find, {lean: true });
+            } catch(err){
+                res.status(500);
+                res.json({ error: `there was a novel error` });
+                console.error(err);
+                return;
+            }
+
+            if (!results) {
+                let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'delete');
+                res.json(sendable);
+            } else {
+                res.json({ data: results });
+            }
+            // await req.schema.fire_api_event('delete', req, results);
+        });
     }
 }

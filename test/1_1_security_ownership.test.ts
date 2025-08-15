@@ -286,4 +286,43 @@ describe('Security Model Ownership', function () {
             message: 'HTTPError: Response code 403 (Forbidden)'
         })
     });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    DELETE        /////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+    it(`should authorize a basic DELETE operation authenticated properly`, async function () {
+        let { user, user_display } = await generate_user_and_display();
+
+        let results = await got.delete(`http://localhost:${port}/api/user_display/${user_display.id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(user_display)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.model.findById(user_display._id))), undefined);
+    });
+
+    it(`should reject a basic DELETE operation authenticated to the wrong user`, async function () {
+        let { user, user_display } = await generate_user_and_display();
+
+        let user_2 = await collection_user.model.create({
+            auth_id: 'sharon'
+        });
+
+        assert.rejects(async () => {
+            let results = await got.delete(`http://localhost:${port}/api/user_display/${user_display.id}`, {
+                headers: {
+                    authorization: 'sharon'
+                }
+            }).json();
+        }, {
+            message: 'HTTPError: Response code 403 (Forbidden)'
+        })
+    });
 });

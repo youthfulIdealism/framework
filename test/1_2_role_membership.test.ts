@@ -269,10 +269,10 @@ describe('Security Model Role Membership', function () {
             name: 'steve full access',
             institution_id: steve_institution._id,
             permissions: {
-                institution: ['read', 'write', 'create', 'update'],
-                client: ['read', 'write', 'create', 'update'],
-                project: ['read', 'write', 'create', 'update'],
-                role: ['read', 'write', 'create', 'update'],
+                institution: ['read', 'create', 'update', 'delete'],
+                client: ['read', 'create', 'update', 'delete'],
+                project: ['read', 'create', 'update', 'delete'],
+                role: ['read', 'create', 'update', 'delete'],
             }
         });
 
@@ -291,10 +291,10 @@ describe('Security Model Role Membership', function () {
             name: 'edwin full access',
             institution_id: edwin_institution._id,
             permissions: {
-                institution: ['read', 'write', 'create', 'update'],
-                client: ['read', 'write', 'create', 'update'],
-                project: ['read', 'write', 'create', 'update'],
-                role: ['read', 'write', 'create', 'update'],
+                institution: ['read', 'create', 'update', 'delete'],
+                client: ['read', 'create', 'update', 'delete'],
+                project: ['read', 'create', 'update', 'delete'],
+                role: ['read', 'create', 'update', 'delete'],
             }
         });
 
@@ -662,6 +662,67 @@ describe('Security Model Role Membership', function () {
                     name: 'Flammable Project',
                     institution_id: steve_institution._id,
                     client_id: steve_client._id,
+                }
+            }).json();
+        },
+        { message: 'HTTPError: Response code 403 (Forbidden)' })
+    });
+
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    DELETE        /////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    it(`should authorize a basic DELETE operation on a document where the user has a T1 role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(steve_project)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(steve_project._id))), undefined);
+    });
+
+    it(`should authorize a basic DELETE operation on a document where the user has a T2 role membership`, async function () {
+        let { edwin_institution, nathan_client, nathan_project } = await generate_test_setup();
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project/${nathan_project._id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(nathan_project)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(nathan_project._id))), undefined);
+    });
+
+    it(`should reject a basic DELETE operation on a document where the user has a role membership without permission`, async function () {
+        let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
+
+        assert.rejects(async () => {
+            let results = await got.delete(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project/${edna_project._id}`, {
+                headers: {
+                    authorization: 'steve'
+                }
+            }).json();
+        },
+        { message: 'HTTPError: Response code 403 (Forbidden)' })
+    });
+
+    it(`should reject a basic DELETE operation on a document where the user has no role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        assert.rejects(async () => {
+            let results = await got.delete(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
+                headers: {
+                    authorization: 'edwin'
                 }
             }).json();
         },
