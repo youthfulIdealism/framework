@@ -7,9 +7,10 @@ import { F_Collection_Registry } from '../dist/F_Collection_Registry.js'
 import { F_SM_Open_Access } from '../dist/F_Security_Models/F_SM_Open_Access.js'
 
 import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
+import { OpenApiBuilder } from "openapi3-ts/oas30";
 
 
-describe.only('OpenAPI', function () {
+describe('OpenAPI', function () {
 
     const validate_institution = z.object({
         _id: z_mongodb_id,
@@ -105,6 +106,8 @@ describe.only('OpenAPI', function () {
     })
 
     it(`should render to an openAPI doc`, async function () {
+        let builder = OpenApiBuilder.create();
+
         console.log(JSON.parse(JSON.stringify(registry.to_openapi('/api'))))
     });
 });
