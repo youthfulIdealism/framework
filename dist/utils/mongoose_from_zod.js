@@ -7,6 +7,9 @@ export const z_mongodb_id = z.custom((val) => {
         return false;
     }
     return underlying_mongodb_id_validator.parse(val) === val;
+}).meta({
+    "type": "string",
+    "format": "string",
 }).register(magic_values, { override_type: 'mongodb_id' });
 export function mongoose_from_zod(schema_name, zod_definition) {
     let mongoose_schema = schema_from_zod(zod_definition);

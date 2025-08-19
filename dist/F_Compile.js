@@ -1,7 +1,9 @@
 import * as z from "zod/v4";
 import { isValidObjectId } from "mongoose";
+import { OpenApiBuilder } from 'openapi3-ts/oas31';
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
+import { openAPI_from_collection } from "./utils/openapi_from_zod.js";
 export function compile(app, collection, api_prefix) {
     for (let access_layers of collection.access_layers) {
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
@@ -294,5 +296,30 @@ export function compile(app, collection, api_prefix) {
             }
         });
     }
+}
+export function to_openapi(collections, api_prefix) {
+    let open_api_builder = new OpenApiBuilder({
+        openapi: '3.1.0',
+        info: {
+            title: 'title',
+            description: 'description',
+            version: '0.0.0'
+        }
+    });
+    open_api_builder.addServer({
+        url: api_prefix,
+        description: 'description'
+    });
+    open_api_builder.addSecurityScheme('Authorization', {
+        name: 'Authorization',
+        type: 'apiKey',
+        description: 'Your token',
+        in: 'header',
+        scheme: 'Bearer'
+    });
+    for (let collection of collections) {
+        openAPI_from_collection(open_api_builder, api_prefix, collection);
+    }
+    return open_api_builder.getSpecAsJson();
 }
 //# sourceMappingURL=F_Compile.js.map

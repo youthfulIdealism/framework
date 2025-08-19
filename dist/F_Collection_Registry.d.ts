@@ -8,4 +8,5 @@ export declare class F_Collection_Registry<Collections = {}> {
         [key in Collection_ID]: F_Collection<Collection_ID, ZodSchema>;
     }>;
     compile(app: Router, api_prefix: string): void;
+    to_openapi(api_prefix: string): string;
 }

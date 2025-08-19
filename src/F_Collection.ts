@@ -10,7 +10,7 @@ export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodType> =
 }
 
 export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodType> {
-
+    schema: ZodSchema;
     collection_id: Collection_ID;
     model: Model<z.infer<ZodSchema>>;
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
@@ -22,6 +22,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodT
 
     constructor(collection_name: Collection_ID, schema: ZodSchema){
         this.collection_id = collection_name;
+        this.schema = schema;
         this.raw_schema = schema_from_zod(schema);
         this.model = mongoose_from_zod(collection_name, schema);
         // TODO: validate that the model doesn't use any fields that have special meaning in the query validator; for example: [param]_gt, [param]_in, sort,

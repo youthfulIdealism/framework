@@ -1,11 +1,14 @@
 import * as z from "zod/v4";
-
-import { F_Collection } from "./F_Collection.js";
-
 import { Router, Request, Response } from "express";
 import { isValidObjectId } from "mongoose";
+import { createDocument, ZodOpenApiPathsObject } from 'zod-openapi';
+import { OpenApiBuilder } from 'openapi3-ts/oas31';
+
+import { F_Collection } from "./F_Collection.js";
 import { F_Security_Model, Authenticated_Request } from "./F_Security_Models/F_Security_Model.js";
 import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
+import { z_mongodb_id } from "./utils/mongoose_from_zod.js";
+import { openAPI_from_collection } from "./utils/openapi_from_zod.js";
 
 export function compile<Collection_ID extends string, ZodSchema extends z.ZodType>(app: Router, collection: F_Collection<Collection_ID, ZodSchema>, api_prefix: string){
     for(let access_layers of collection.access_layers){
@@ -363,4 +366,216 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
             // await req.schema.fire_api_event('delete', req, results);
         });
     }
+}
+
+export function to_openapi<Collection_ID extends string, ZodSchema extends z.ZodType>(collections: F_Collection<Collection_ID, ZodSchema>[], api_prefix: string): string {
+    
+    let open_api_builder = new OpenApiBuilder({
+        openapi: '3.1.0',
+        info: {
+            title: 'title',
+            description: 'description',
+            version: '0.0.0'
+        }
+    });
+
+    open_api_builder.addServer({
+        url: api_prefix,
+        description: 'description'
+    });
+
+    open_api_builder.addSecurityScheme('Authorization', {
+        name: 'Authorization',
+        type: 'apiKey',
+        description: 'Your token',
+        in: 'header',
+        scheme: 'Bearer'
+    })
+
+    for(let collection of collections){
+        openAPI_from_collection(open_api_builder, api_prefix, collection);
+    }
+    
+    return open_api_builder.getSpecAsJson();
+    
+    
+    
+    
+    
+    /*let openapi_paths = {} as ZodOpenApiPathsObject;
+
+    for(let collection of collections){
+        for(let access_layers of collection.access_layers){
+
+            let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, `{${ele}_id}`]);
+
+            let document_path = [
+                api_prefix,
+                ...base_layers_path_components,
+                `${collection.collection_id}/{document_id}`
+            ].join('/')
+
+            let collection_path = [
+                api_prefix,
+                ...base_layers_path_components,
+                collection.collection_id
+            ].join('/')
+
+            let document_path_validator_entries = { document_id: z_mongodb_id } as {[key:string]: typeof z_mongodb_id};
+            access_layers.layers.forEach(ele => {
+                document_path_validator_entries[ele] = z_mongodb_id;
+            })
+            let document_path_validator = z.object(document_path_validator_entries);
+
+            let collection_path_validator_entries = { document_id: z_mongodb_id } as {[key:string]: typeof z_mongodb_id};
+            access_layers.layers.forEach(ele => {
+                collection_path_validator_entries[ele] = z_mongodb_id;
+            })
+            let collection_path_validator = z.object(collection_path_validator_entries);
+            
+
+            openapi_paths[document_path] = {
+                get: {
+                    requestParams: { path: document_path_validator },
+                    responses: {
+                        '200': {
+                            description: '200 OK',
+                            content: {
+                                'application/json': { schema: z.object({ data: collection.raw_schema}) },
+                            },
+                        },
+                        '403': {
+                            description: '403 No Permission',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                        '500': {
+                            description: '500 Server Error',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                    },
+                },
+                put: {
+                    requestParams: { path: document_path_validator },
+                    requestBody: {
+                        content: {
+                            'application/json': { schema: collection.put_schema },
+                        },
+                    },
+                    responses: {
+                        '200': {
+                            description: '200 OK',
+                            content: {
+                                'application/json': { schema: z.object({ data: collection.raw_schema}) },
+                            },
+                        },
+                        '403': {
+                            description: '403 No Permission',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                        '500': {
+                            description: '500 Server Error',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                    },
+                },
+                delete: {
+                    requestParams: { path: document_path_validator },
+                    responses: {
+                        '200': {
+                            description: '200 OK',
+                            content: {
+                                'application/json': { schema: z.object({ data: collection.raw_schema}) },
+                            },
+                        },
+                        '403': {
+                            description: '403 No Permission',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                        '500': {
+                            description: '500 Server Error',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                    },
+                }
+            }
+
+            openapi_paths[collection_path] = {
+                get: {
+                    requestParams: {
+                        path: collection_path_validator,
+                        query: collection.query_schema,
+                    },
+                    responses: {
+                        '200': {
+                            description: '200 OK',
+                            content: {
+                                'application/json': { schema: z.array(z.object({ data: collection.raw_schema})) },
+                            },
+                        },
+                        '403': {
+                            description: '403 No Permission',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                        '500': {
+                            description: '500 Server Error',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                    },
+                },
+                post: {
+                    requestParams: { path: collection_path_validator },
+                    requestBody: {
+                        content: {
+                            'application/json': { schema: collection.post_schema },
+                        },
+                    },
+                    responses: {
+                        '200': {
+                            description: '200 OK',
+                            content: {
+                                'application/json': { schema: z.object({ data: collection.raw_schema}) },
+                            },
+                        },
+                        '403': {
+                            description: '403 No Permission',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                        '500': {
+                            description: '500 Server Error',
+                            content: {
+                                'application/json': { schema: z.object({ error: z.string() }) },
+                            },
+                        },
+                    },
+                },
+            }
+        }
+    }
+
+    return createDocument({
+        openapi: '3.1.0',
+        info: {
+            title: 'My API',
+            version: '1.0.0',
+        },
+        paths: openapi_paths,
+    });*/
 }

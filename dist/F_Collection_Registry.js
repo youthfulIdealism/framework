@@ -1,4 +1,4 @@
-import { compile } from './F_Compile.js';
+import { compile, to_openapi } from './F_Compile.js';
 export class F_Collection_Registry {
     collections;
     constructor() {
@@ -13,6 +13,9 @@ export class F_Collection_Registry {
         for (let collection of Object.values(this.collections)) {
             compile(app, collection, api_prefix);
         }
+    }
+    to_openapi(api_prefix) {
+        return to_openapi(Object.values(this.collections), api_prefix);
     }
 }
 //# sourceMappingURL=F_Collection_Registry.js.map

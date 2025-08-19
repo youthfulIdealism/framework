@@ -9,7 +9,11 @@ const underlying_mongodb_id_validator = z.string().length(24);
 export const z_mongodb_id = z.custom<string>((val) => {
     if(!val){ return false; }
     return underlying_mongodb_id_validator.parse(val) === val;
+}).meta({
+    "type": "string",
+    "format": "string",
 }).register(magic_values, {override_type: 'mongodb_id'});
+//export const z_mongodb_id = underlying_mongodb_id_validator.register(magic_values, {override_type: 'mongodb_id'});
 
 export function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType) {
     let mongoose_schema = schema_from_zod(zod_definition);
@@ -93,7 +97,7 @@ export function schema_entry_from_zod(zod_definition: z.ZodTypeAny): any {
             return result;
         default:
             throw new Error("Cannot process zod type: " + zod_definition._zod.def.type);
-      }
+    }
 }
 
 function parse_object(def: z.core.$ZodObjectDef): any {

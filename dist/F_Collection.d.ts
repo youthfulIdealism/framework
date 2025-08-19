@@ -6,6 +6,7 @@ export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodType> =
     security_models: F_Security_Model<Collection_ID, ZodSchema>[];
 };
 export declare class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodType> {
+    schema: ZodSchema;
     collection_id: Collection_ID;
     model: Model<z.infer<ZodSchema>>;
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
