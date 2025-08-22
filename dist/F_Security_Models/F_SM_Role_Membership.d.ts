@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { F_Collection } from "../F_Collection.js";
 import { Cache } from "../utils/cache.js";
 import { Authenticated_Request, Empty_Query_Possibilities, F_Security_Model, Operation } from "./F_Security_Model.js";
-export declare class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extends z.ZodType> extends F_Security_Model<Collection_ID, ZodSchema> {
+export declare class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extends z.ZodObject> extends F_Security_Model<Collection_ID, ZodSchema> {
     user_id_field: string;
     role_id_field: string;
     layer_collection_id: string;

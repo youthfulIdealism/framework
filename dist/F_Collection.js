@@ -10,12 +10,12 @@ export class F_Collection {
     put_schema;
     post_schema;
     compiled;
-    constructor(collection_name, schema) {
+    constructor(collection_name, schema, mode = 'server') {
         this.collection_id = collection_name;
         this.schema = schema;
         this.raw_schema = schema_from_zod(schema);
         this.model = mongoose_from_zod(collection_name, schema);
-        this.query_schema = query_validator_from_zod(schema);
+        this.query_schema = query_validator_from_zod(schema, mode);
         this.put_schema = schema.partial();
         this.post_schema = schema.partial({ _id: true });
         this.access_layers = [];

@@ -1,8 +1,8 @@
 import * as z from 'zod/v4'
 import { F_Collection } from './F_Collection.js';
-import { compile, to_openapi } from './F_Compile.js'
+import { compile/*, to_openapi*/ } from './F_Compile.js'
 import { Router } from 'express';
-import { createDocument } from 'zod-openapi';
+//import { createDocument } from 'zod-openapi';
 
 
 export class F_Collection_Registry<Collections = {}> {
@@ -14,7 +14,7 @@ export class F_Collection_Registry<Collections = {}> {
         this.collections = {} as Collections;
     }
 
-    register<Collection_ID extends string, ZodSchema extends z.ZodType>(collection: F_Collection<Collection_ID, ZodSchema>): F_Collection_Registry<Collections & { [key in Collection_ID]: F_Collection<Collection_ID, ZodSchema>}>{
+    register<Collection_ID extends string, ZodSchema extends z.ZodObject>(collection: F_Collection<Collection_ID, ZodSchema>): F_Collection_Registry<Collections & { [key in Collection_ID]: F_Collection<Collection_ID, ZodSchema>}>{
         let collections = this.collections as Collections & { [key in Collection_ID]: F_Collection<Collection_ID, ZodSchema>};
         // @ts-expect-error
         collections[collection.collection_id] = collection;
@@ -26,9 +26,4 @@ export class F_Collection_Registry<Collections = {}> {
             compile(app, collection, api_prefix)
         }
     }
-
-    to_openapi(api_prefix: string): string {
-        return to_openapi(Object.values(this.collections), api_prefix);
-    }
-    
 }

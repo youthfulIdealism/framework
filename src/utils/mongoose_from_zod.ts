@@ -21,13 +21,18 @@ export function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core
 }
 
 export function schema_from_zod(zod_definition: z.core.$ZodType): any {
-    let mongoose_schema = schema_entry_from_zod(zod_definition as z.ZodTypeAny);
+    let mongoose_schema = schema_entry_from_zod(zod_definition as z.ZodType);
     delete mongoose_schema.type.required;
     delete mongoose_schema.type._id;
     return mongoose_schema.type;
 }
 
-export function schema_entry_from_zod(zod_definition: z.ZodTypeAny): any {
+export function schema_entry_from_zod(zod_definition: z.ZodType): any {
+    if(!zod_definition) {
+        console.log('ISSUE');
+        console.log(zod_definition);
+    }
+
     let result;
     switch (zod_definition._zod.def.type) {
         case "string":

@@ -22,6 +22,10 @@ export function schema_from_zod(zod_definition) {
     return mongoose_schema.type;
 }
 export function schema_entry_from_zod(zod_definition) {
+    if (!zod_definition) {
+        console.log('ISSUE');
+        console.log(zod_definition);
+    }
     let result;
     switch (zod_definition._zod.def.type) {
         case "string":

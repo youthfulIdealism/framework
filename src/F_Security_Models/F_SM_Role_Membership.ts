@@ -12,7 +12,7 @@ let operation_permission_map = {
     'delete': 'delete'
 }
 
-export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extends z.ZodType> extends F_Security_Model<Collection_ID, ZodSchema> {
+export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extends z.ZodObject> extends F_Security_Model<Collection_ID, ZodSchema> {
     user_id_field: string;
     role_id_field: string;
     layer_collection_id: string;

@@ -17,17 +17,18 @@
     "@types/node": "^22.10.7",
     "got": "^14.4.6",
     "mocha": "^11.1.0",
+    "rimraf": "^6.0.1",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",
     "zod": "^4.0.17"
   },
   "peerDependencies": {
     "express": "^4.21.2",
+    "ky": "^1.9.0",
     "mongoose": "^8.17.0",
     "zod": "^4.0.0"
   },
   "dependencies": {
-    "openapi3-ts": "^4.5.0",
-    "zod-openapi": "^5.3.1"
+    "mustache": "^4.2.0"
   }
 }

@@ -1,16 +1,13 @@
 import * as z from "zod/v4";
 import { Router, Request, Response } from "express";
 import { isValidObjectId } from "mongoose";
-import { createDocument, ZodOpenApiPathsObject } from 'zod-openapi';
-import { OpenApiBuilder } from 'openapi3-ts/oas31';
 
 import { F_Collection } from "./F_Collection.js";
 import { F_Security_Model, Authenticated_Request } from "./F_Security_Models/F_Security_Model.js";
 import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 import { z_mongodb_id } from "./utils/mongoose_from_zod.js";
-import { openAPI_from_collection } from "./utils/openapi_from_zod.js";
 
-export function compile<Collection_ID extends string, ZodSchema extends z.ZodType>(app: Router, collection: F_Collection<Collection_ID, ZodSchema>, api_prefix: string){
+export function compile<Collection_ID extends string, ZodSchema extends z.ZodObject>(app: Router, collection: F_Collection<Collection_ID, ZodSchema>, api_prefix: string){
     for(let access_layers of collection.access_layers){
 
         /*app.use((req, res, next) => {
@@ -193,6 +190,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
             // if you're accessing the document from /x/:x/y/:y, then you can't change x or y. Note that this does mean if you can access
             // the document from /x/:x, then you'd be able to change y.
             for(let layer of access_layers.layers){
+                //@ts-expect-error
                 if(validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]){
                     res.status(403);
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
@@ -288,6 +286,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
             // if you're accessing the document from /x/:x/y/:y, then you can't change x or y. Note that this does mean if you can access
             // the document from /x/:x, then you'd be able to change y.
             for(let layer of access_layers.layers){
+                //@ts-expect-error
                 if(validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]){
                     res.status(403);
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
@@ -366,35 +365,4 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodTyp
             // await req.schema.fire_api_event('delete', req, results);
         });
     }
-}
-
-export function to_openapi<Collection_ID extends string, ZodSchema extends z.ZodType>(collections: F_Collection<Collection_ID, ZodSchema>[], api_prefix: string): string {
-    
-    let open_api_builder = new OpenApiBuilder({
-        openapi: '3.1.0',
-        info: {
-            title: 'title',
-            description: 'description',
-            version: '0.0.0'
-        }
-    });
-
-    open_api_builder.addServer({
-        url: api_prefix,
-        description: 'description'
-    });
-
-    open_api_builder.addSecurityScheme('Authorization', {
-        name: 'Authorization',
-        type: 'apiKey',
-        description: 'Your token',
-        in: 'header',
-        scheme: 'Bearer'
-    })
-
-    for(let collection of collections){
-        openAPI_from_collection(open_api_builder, api_prefix, collection);
-    }
-    
-    return open_api_builder.getSpecAsJson();
 }

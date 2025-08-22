@@ -5,7 +5,7 @@ import { F_Collection } from "../F_Collection.js";
 
 export type Operation = 'get' | 'update' | 'create' | 'delete';
 
-export abstract class F_Security_Model<Collection_ID extends string, ZodSchema extends z.ZodType> {
+export abstract class F_Security_Model<Collection_ID extends string, ZodSchema extends z.ZodObject> {
     collection: F_Collection<Collection_ID, ZodSchema>;
     needs_auth_user: boolean
     static auth_fetcher: (req: Request) => Promise<Auth_Data | undefined>
