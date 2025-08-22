@@ -1,0 +1,21 @@
+import ky from 'ky';
+
+{{types}}
+
+
+export function api(base_url: string, get_auth: async () => any) {
+    return {
+        collection(collection_id: {{child_collection_id_types}}) {
+            switch(collection_id) {
+                {{#child_collections}}
+                    case "{{collection_id}}"":
+                        return {{built_collection}};
+                {{/child_collections}}
+                default:
+                    throw new Error(`Api does not have the collection ${collection_id}`)
+            }
+        }
+    }
+}
+
+

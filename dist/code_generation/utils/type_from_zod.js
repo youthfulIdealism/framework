@@ -24,10 +24,6 @@ export function type_from_zod(zod_definition, indent_level) {
             return ['null'];
         case "array":
             return parse_array(zod_definition._zod.def, indent_level);
-        case "pipe":
-            console.log('-');
-            console.log(zod_definition._zod.def.out._zod.def);
-            throw new Error("Cannot process zod type: " + zod_definition._zod.def.type);
         case "map":
             return parse_map(zod_definition._zod.def, indent_level);
         case "enum":
@@ -57,7 +53,11 @@ function parse_object(def, indent_level) {
     let retval = ['{'];
     for (let [key, value] of Object.entries(def.shape)) {
         let key_phrase = (value.safeParse(undefined).success || value._zod.def.type === 'optional') ? `"${key}"?:` : `"${key}":`;
-        let type_value = value._zod.def.type === 'optional' ? type_from_zod(value._zod.def.innerType, indent_level + 1) : type_from_zod(value, indent_level + 1);
+        let non_optional_type = value;
+        while (non_optional_type._zod.def.type === 'optional') {
+            non_optional_type = non_optional_type._zod.def.innerType;
+        }
+        let type_value = type_from_zod(non_optional_type, indent_level + 1);
         if (type_value.length > 1) {
             retval.push(indent(indent_level + 1, `${key_phrase} ${type_value[0]}`));
             retval.push(...type_value.slice(1));

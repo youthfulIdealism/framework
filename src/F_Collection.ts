@@ -31,7 +31,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         this.query_schema = query_validator_from_zod(schema, mode);
         // TODO: we can make this more closely match the mongoDB PUT operation and allow updates to eg array.3.element fields
         this.put_schema = schema.partial();
-        this.post_schema = schema.partial({_id: true});
+        this.post_schema = Object.hasOwn(this.raw_schema, '_id') ? schema.partial({_id: true}) : schema;
         this.access_layers = [];
         this.compiled = false;
     }

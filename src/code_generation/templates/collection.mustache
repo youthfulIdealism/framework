@@ -1,0 +1,26 @@
+{
+
+
+
+
+}
+
+async get(get_auth: () => any, document_id: string): Promise<REPLACE>{
+    return ky.get() as REPLACE;
+}
+
+async query(get_auth: () => any,query: REPLACE_query): Promise<REPLACE[]>{
+    return {} as REPLACE[];
+}
+
+async put(get_auth: () => any,document_id: string, update: REPLACE_put): Promise<REPLACE>{
+    return {} as REPLACE;
+}
+
+async post(get_auth: () => any,document: REPLACE_post): Promise<REPLACE>{
+    return {} as REPLACE;
+}
+
+async remove(get_auth: () => any,document_id: string): Promise<REPLACE>{
+    return {} as REPLACE;
+}

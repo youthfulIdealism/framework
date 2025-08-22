@@ -39,13 +39,6 @@ export function type_from_zod(zod_definition: z.ZodType, indent_level: number): 
             return ['null']
         case "array":
             return parse_array(zod_definition._zod.def as z.core.$ZodArrayDef, indent_level)
-        case "pipe":
-            //console.log(zod_definition)
-            console.log('-')
-            //console.log(zod_definition._zod.def)
-            //@ts-ignore
-            console.log(zod_definition._zod.def.out._zod.def)
-        throw new Error("Cannot process zod type: " + zod_definition._zod.def.type);
         /*
         case "any":
             return ["any"]
@@ -86,8 +79,12 @@ function parse_object(def: z.core.$ZodObjectDef, indent_level: number): string[]
         //@ts-ignore
         let key_phrase = (value.safeParse(undefined).success || value._zod.def.type === 'optional') ? `"${key}"?:` : `"${key}":`;
 
+        let non_optional_type = value;
+        
         //@ts-ignore
-        let type_value = value._zod.def.type === 'optional' ? type_from_zod(value._zod.def.innerType as ZodType, indent_level + 1) : type_from_zod(value as z.ZodType, indent_level + 1)
+        while(non_optional_type._zod.def.type === 'optional'){ non_optional_type = non_optional_type._zod.def.innerType;}
+        let type_value = type_from_zod(non_optional_type as ZodType, indent_level + 1)
+        
         if(type_value.length > 1 ){
             retval.push(indent(indent_level + 1, `${key_phrase} ${type_value[0]}`))
             retval.push(...type_value.slice(1))

@@ -4,8 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "tsc && mocha",
-    "build": "tsc"
+    "test": "build && mocha",
+    "build": "tsc && rimraf \"./dist/code_generation/templates\" && copyfiles \"./src/code_generation/templates/*.mustache\" \"./dist/code_generation/templates\""
   },
   "author": "",
   "license": "ISC",
@@ -14,7 +14,9 @@
     "@openapitools/openapi-generator-cli": "^2.22.0",
     "@types/express": "^5.0.0",
     "@types/mocha": "^10.0.10",
+    "@types/mustache": "^4.2.6",
     "@types/node": "^22.10.7",
+    "copyfiles": "^2.4.1",
     "got": "^14.4.6",
     "mocha": "^11.1.0",
     "rimraf": "^6.0.1",
