@@ -1,7 +1,8 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { type_from_zod } from "./utils/type_from_zod.js";
 import mustache from 'mustache';
-export async function generate_client_library(path, collection_registry) {
+import { existsSync } from "node:fs";
+export async function generate_client_library(path, collection_registry, service_name = 'default-service') {
     let api_builder = {
         mustache_context: {},
         children: {}
@@ -11,13 +12,13 @@ export async function generate_client_library(path, collection_registry) {
         let mustache_context = {
             collection_id: collection.collection_id,
             type_return: `${get_type_name(collection.collection_id)}`,
-            path_type_return: `types_${get_type_name(collection.collection_id)}.ts`,
+            path_type_return: `types/${get_type_name(collection.collection_id)}`,
             type_query: `${get_type_name(collection.collection_id)}_query`,
-            path_type_query: `types_${get_type_name(collection.collection_id)}_query.ts`,
+            path_type_query: `types/${get_type_name(collection.collection_id)}_query`,
             type_put: `${get_type_name(collection.collection_id)}_put`,
-            path_type_put: `types_${get_type_name(collection.collection_id)}_put.ts`,
+            path_type_put: `types/${get_type_name(collection.collection_id)}_put`,
             type_post: `${get_type_name(collection.collection_id)}_post`,
-            path_type_post: `types_${get_type_name(collection.collection_id)}_post.ts`,
+            path_type_post: `types/${get_type_name(collection.collection_id)}_post`,
         };
         let collection_type_definition_builder = [];
         let collection_type_main = type_from_zod(collection.schema, 0);
@@ -31,18 +32,34 @@ export async function generate_client_library(path, collection_registry) {
         let collection_post_type_definition_builder = [];
         let collection_type_post = type_from_zod(collection.post_schema, 0);
         collection_post_type_definition_builder.push(`export type ${mustache_context.type_post} = ${collection_type_post[0]}`, ...collection_type_post.slice(1));
-        await writeFile([path, mustache_context.path_type_return].join('/'), collection_type_definition_builder.join('\n'));
-        await writeFile([path, mustache_context.path_type_query].join('/'), collection_query_type_definition_builder.join('\n'));
-        await writeFile([path, mustache_context.path_type_put].join('/'), collection_query_type_definition_builder.join('\n'));
-        await writeFile([path, mustache_context.path_type_post].join('/'), collection_query_type_definition_builder.join('\n'));
+        if (!existsSync([path, 'src'].join('/'))) {
+            await mkdir([path, 'src'].join('/'));
+        }
+        if (!existsSync([path, 'dist'].join('/'))) {
+            await mkdir([path, 'dist'].join('/'));
+        }
+        if (!existsSync([path, 'src', 'types'].join('/'))) {
+            await mkdir([path, 'src', 'types'].join('/'));
+        }
+        if (!existsSync([path, 'src', 'utils'].join('/'))) {
+            await mkdir([path, 'src', 'utils'].join('/'));
+        }
+        await writeFile([path, 'src', 'utils', 'utils.ts'].join('/'), await readFile(import.meta.resolve('./templates/utils.ts.mustache').slice(8), { encoding: 'utf-8' }));
+        await writeFile([path, 'tsconfig.json'].join('/'), await readFile(import.meta.resolve('./templates/tsconfig.json.mustache').slice(8), { encoding: 'utf-8' }));
+        await writeFile([path, '.gitignore'].join('/'), await readFile(import.meta.resolve('./templates/.gitignore.mustache').slice(8), { encoding: 'utf-8' }));
+        await writeFile([path, 'src', mustache_context.path_type_return + '.ts'].join('/'), collection_type_definition_builder.join('\n'));
+        await writeFile([path, 'src', mustache_context.path_type_query + '.ts'].join('/'), collection_query_type_definition_builder.join('\n'));
+        await writeFile([path, 'src', mustache_context.path_type_put + '.ts'].join('/'), collection_put_type_definition_builder.join('\n'));
+        await writeFile([path, 'src', mustache_context.path_type_post + '.ts'].join('/'), collection_post_type_definition_builder.join('\n'));
         for (let access_layer of collection.access_layers) {
             let builder = get_builder(api_builder, access_layer.layers, collection, mustache_context);
         }
     }
-    console.log(import.meta.resolve('./src/code_generation/templates/main.mustache'));
-    let mustache_main = await readFile(import.meta.resolve('./src/code_generation/templates/main.mustache'), { encoding: 'utf-8' });
-    let mustache_types = await readFile(import.meta.resolve('./src/code_generation/templates/types.mustache'), { encoding: 'utf-8' });
-    let mustache_collection = await readFile(import.meta.resolve('./src/code_generation/templates/types.mustache'), { encoding: 'utf-8' });
+    console.log(import.meta.resolve('./templates/main.mustache').slice(8));
+    let mustache_main = await readFile(import.meta.resolve('./templates/main.mustache').slice(8), { encoding: 'utf-8' });
+    let mustache_types = await readFile(import.meta.resolve('./templates/types.mustache').slice(8), { encoding: 'utf-8' });
+    let mustache_collection = await readFile(import.meta.resolve('./templates/collection.mustache').slice(8), { encoding: 'utf-8' });
+    let mustache_package = await readFile(import.meta.resolve('./templates/package.json.mustache').slice(8), { encoding: 'utf-8' });
     let builder_leaves = [];
     let queue = [api_builder];
     while (queue.length > 0) {
@@ -58,14 +75,60 @@ export async function generate_client_library(path, collection_registry) {
         builder.mustache_context.child_collections = children.map(ele => {
             return {
                 collection_id: ele.mustache_context.collection_id,
-                built_collection: 'PLACHOLDER'
+                built_collection: uppercase(ele.mustache_context.collection_id),
+                built_collection_path: `./${uppercase(ele.mustache_context.collection_id)}.js`
             };
         });
     }
-    await writeFile([path, './index.ts'].join('/'), mustache.render(mustache_main, api_builder.mustache_context));
+    let original_escape = mustache.escape;
+    mustache.escape = (text) => text;
+    let rendered_index = mustache.render(mustache_main, api_builder.mustache_context);
+    let rendered_collection_manipulators = [];
+    queue = Object.values(api_builder.children);
+    let added = new Set(Object.values(api_builder.children));
+    while (queue.length > 0) {
+        let builder = queue.shift();
+        builder.mustache_context.my_built_collection = uppercase(builder.mustache_context.collection_id);
+        builder.mustache_context.my_built_collection_path = `./${uppercase(builder.mustache_context.collection_id)}`;
+        builder.mustache_context.types = mustache.render(mustache_types, builder.mustache_context);
+        builder.mustache_context.has_subcollections = builder.mustache_context.child_collections.length > 0;
+        rendered_collection_manipulators.push({ builder: builder, text: mustache.render(mustache_collection, builder.mustache_context) });
+        queue.push(...Object.values(builder.children).filter(ele => !added.has(ele)));
+        for (let child of Object.values(builder.children)) {
+            added.add(child);
+        }
+    }
+    let rendered_package_json = mustache.render(mustache_package, {
+        server_name: service_name
+    });
+    mustache.escape = original_escape;
+    await writeFile([path, 'src', './index.ts'].join('/'), rendered_index);
+    for (let manipulator of rendered_collection_manipulators) {
+        await writeFile([path, 'src', manipulator.builder.mustache_context.my_built_collection_path + '.ts'].join('/'), manipulator.text);
+    }
+    await writeFile([path, './package.json'].join('/'), rendered_package_json);
 }
 export function get_type_name(collection_id, suffix) {
     return suffix ? `${collection_id}_${suffix}`.replace(/[^(a-zA-Z0-9\_)]/g, '_') : collection_id.replace(/[^(a-zA-Z0-9\_)]/g, '_');
+}
+export function uppercase(str) {
+    let upper_on = true;
+    let joinable = [];
+    for (let char of str) {
+        if (char === '_') {
+            upper_on = true;
+            joinable.push(char);
+            continue;
+        }
+        if (upper_on) {
+            upper_on = false;
+            joinable.push(char.toUpperCase());
+        }
+        else {
+            joinable.push(char);
+        }
+    }
+    return joinable.join('');
 }
 function get_builder(root, parent_collection_ids, collection, mustache_context) {
     let builder = root;

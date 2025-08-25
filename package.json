@@ -4,8 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "build && mocha",
-    "build": "tsc && rimraf \"./dist/code_generation/templates\" && copyfiles \"./src/code_generation/templates/*.mustache\" \"./dist/code_generation/templates\""
+    "test": "npm run-script build && mocha",
+    "build": "tsc && rimraf \"./dist/code_generation/templates\" && copyfiles -a -u 3 \"./src/code_generation/templates/*.mustache\" \"./dist/code_generation/templates\""
   },
   "author": "",
   "license": "ISC",
