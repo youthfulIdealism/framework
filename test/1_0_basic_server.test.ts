@@ -361,13 +361,12 @@ describe('Basic Server', function () {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     it(`should be able to perform a basic POST operation`, async function () {
-
         let results = await got.post(`http://localhost:${port}/api/institution`, {
             json: {
                 name: 'Leather Pants Co'
             },
         }).json();
-
+        
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(await institution.model.findById(results.data._id))), results.data);
     });

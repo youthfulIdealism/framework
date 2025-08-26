@@ -55,7 +55,6 @@ export async function generate_client_library(path, collection_registry, service
             let builder = get_builder(api_builder, access_layer.layers, collection, mustache_context);
         }
     }
-    console.log(import.meta.resolve('./templates/main.mustache').slice(8));
     let mustache_main = await readFile(import.meta.resolve('./templates/main.mustache').slice(8), { encoding: 'utf-8' });
     let mustache_types = await readFile(import.meta.resolve('./templates/types.mustache').slice(8), { encoding: 'utf-8' });
     let mustache_collection = await readFile(import.meta.resolve('./templates/collection.mustache').slice(8), { encoding: 'utf-8' });

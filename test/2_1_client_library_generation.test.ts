@@ -15,7 +15,7 @@ import mongoose, { mongo, Mongoose } from "mongoose";
 import { Server } from "http";
 import { mkdir, readFile } from "fs/promises";
 
-import { api } from "./tmp/dist/index.js"
+import { exec, spawn } from "child_process";
 
 /*mongoose.connection.on('connected', () => console.log('connected'));
 mongoose.connection.on('open', () => console.log('open'));
@@ -26,72 +26,231 @@ mongoose.connection.on('close', () => console.log('close'));*/
 
 const remove_whitespace = (input: string): string => input.replaceAll(/[\n\r\s]+/g, '')
 
-describe.only('Client Library Generation: Library Generation', function () {
+describe('Client Library Generation: Library Generation', function () {
+    const port = 4601;
+    let express_app: Express;
+    let server: Server;
+    let db_connection: Mongoose;
+
+    const validate_institution = z.object({
+        _id: z_mongodb_id,
+        name: z.string(),
+    });
+
+    const validate_client = z.object({
+        _id: z_mongodb_id,
+        name: z.string(),
+        institution_id: z_mongodb_id,
+    });
+
+    const validate_project = z.object({
+        _id: z_mongodb_id,
+        name: z.string(),
+        institution_id: z_mongodb_id,
+        client_id: z_mongodb_id,
+        project_number: z.number(),
+    });
+
+    const validate_brief_news_category = z.object({
+        _id: z_mongodb_id,
+        name: z.string(),
+        slug: z.string(),
+        institution_id: z_mongodb_id,
+        client_id: z_mongodb_id,
+    });
+
+    let collection_institution: F_Collection<'institution', typeof validate_institution>;
+    let collection_client: F_Collection<'client', typeof validate_client>;
+    let collection_project: F_Collection<'project', typeof validate_project>;
+    let collection_brief_news_category: F_Collection<'brief_news_category', typeof validate_brief_news_category>;
+
+    let registry: F_Collection_Registry;
 
     // before any tests run, set up the server and the db connection
     before(async function() {
+        this.timeout(10 * 1000)
+
+        express_app = express();
+        express_app.use(express.json());
+        db_connection = await mongoose.connect('mongodb://127.0.0.1:27017/');
+        
+        await rimraf('./test/tmp');
+        await mkdir('./test/tmp');
+
+        collection_institution = new F_Collection('institution', validate_institution, 'client');
+        collection_institution.add_layers([], [new F_SM_Open_Access(collection_institution)])
+
+        collection_client = new F_Collection('client', validate_client, 'client');
+        collection_client.add_layers(['institution'], [new F_SM_Open_Access(collection_client)])
+
+        collection_project = new F_Collection('project', validate_project, 'client');
+        collection_project.add_layers(['institution', 'client'], [new F_SM_Open_Access(collection_project)])
+
+        collection_brief_news_category = new F_Collection('brief_news_category', validate_brief_news_category, 'client');
+        collection_brief_news_category.add_layers(['institution', 'client'], [new F_SM_Open_Access(collection_brief_news_category)])
+
+        let proto_registry = new F_Collection_Registry();
+        registry = proto_registry
+            .register(collection_institution)
+            .register(collection_client)
+            .register(collection_project)
+            .register(collection_brief_news_category)
+        registry.compile(express_app, '/api');
+
+        server = express_app.listen(port);
+
+        await generate_client_library('./test/tmp', registry);
+
+        await new Promise((resolve, rej) => {
+            exec('npm install', { cwd: './test/tmp/' }, (err, stdout, stderr) => {
+                if (err) {
+                    // node couldn't execute the command
+                    console.error(err)
+                    throw err;
+                }
+
+                console.error(stderr)
+                resolve('');
+            });
+        })
+
+        await new Promise((resolve, rej) => {
+            exec('npm run-script build', { cwd: './test/tmp/' }, (err, stdout, stderr) => {
+                if (err) {
+                    // node couldn't execute the command
+                    console.error(err)
+                    throw err;
+                }
+
+                console.error(stderr)
+                resolve('');
+            });
+        })
 
         // wait for a moment because otherwise stuff breaks for no reason
         await new Promise(resolve => setTimeout(resolve, 200))
     })
 
     after(async function (){
+        await server.close();
+        mongoose.connection.modelNames().forEach(ele => mongoose.connection.deleteModel(ele));
+        db_connection.modelNames().forEach(ele => db_connection.deleteModel(ele));
+        await db_connection.disconnect()
     });
 
     beforeEach(async function(){
-        this.timeout(20000);
-        mongoose.connection.modelNames().forEach(ele => mongoose.connection.deleteModel(ele));
-
-        await rimraf('./test/tmp');
-        await mkdir('./test/tmp');
+        for(let collection of Object.values(registry.collections)){
+            //@ts-ignore
+            await collection.model.collection.drop();
+        }
     })
 
-    it(`should be able to generate a query for a plain object`, async function () {
-        const validate_institution = z.object({
-            _id:z_mongodb_id,
-            name: z.string(),
+    async function generate_test_setup(){
+        let institution = await collection_institution.model.create({
+            name: 'test institution'
         });
 
-        const validate_client = z.object({
-            _id: z_mongodb_id,
-            name: z.string(),
-            institution_id: z_mongodb_id,
+        let client = await collection_client.model.create({
+            name: 'test client',
+            institution_id: institution._id,
         });
 
-        const validate_project = z.object({
-            _id: z_mongodb_id,
-            name: z.string(),
-            institution_id: z_mongodb_id,
-            client_id: z_mongodb_id,
-        });
+        let test_projects: z.infer<typeof collection_project.schema>[] = [];
+        for(let q = 0; q < 10; q++){
+            test_projects.push(await collection_project.model.create({
+                name: 'test project',
+                institution_id: institution._id,
+                client_id: client._id,
+                project_number: 1
+            }))
+        }
 
-        const validate_brief_news_category = z.object({
-            _id: z_mongodb_id,
-            name: z.string(),
-            slug: z.string(),
-            institution_id: z_mongodb_id,
-            client_id: z_mongodb_id,
-        });
+        return { institution,  client, test_projects}
+    }
 
-        let collection_institution = new F_Collection('institution', validate_institution, 'client');
-        collection_institution.add_layers([], [])
-
-        let collection_client = new F_Collection('client', validate_client, 'client');
-        collection_client.add_layers(['institution'], [])
-
-        let collection_project = new F_Collection('project', validate_project, 'client');
-        collection_project.add_layers(['institution', 'client'], [])
-
-        let collection_brief_news_category = new F_Collection('brief_news_category', validate_brief_news_category, 'client');
-        collection_brief_news_category.add_layers(['institution', 'client'], [])
-
-        let proto_registry = new F_Collection_Registry();
-        let registry = proto_registry
-            .register(collection_institution)
-            .register(collection_client)
-            .register(collection_project)
-            .register(collection_brief_news_category)
-
-        await generate_client_library('./test/tmp', registry);
+    it(`should be able to service a basic GET request`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution } = await generate_test_setup();
+        
+        let result = await api(`http://localhost:${port}/api`, async () => "todd").collection('institution').document(institution._id).get();
+        assert.deepEqual(
+            JSON.parse(JSON.stringify(institution)),
+            result
+        )
     });
+
+    it(`should be able to service a basic query`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution } = await generate_test_setup();
+        
+        let result = await api(`http://localhost:${port}/api`, async () => "todd").collection('institution').query({});
+        assert.deepEqual(
+            [JSON.parse(JSON.stringify(institution))],
+            result
+        )
+    });
+
+    it(`should be able to service a basic POST`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { } = await generate_test_setup();
+        
+        let result = await api(`http://localhost:${port}/api`, async () => "todd").collection('institution').post({
+            name: 'new institution',
+        });
+        assert.deepEqual(
+            JSON.parse(JSON.stringify(await collection_institution.model.findById(result._id))),
+            JSON.parse(JSON.stringify(result)),
+        )
+    });
+
+    it(`should be able to service a basic PUT`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution } = await generate_test_setup();
+        
+        let result = await api(`http://localhost:${port}/api`, async () => "todd").collection('institution').document(institution._id).put({
+            name: 'redo institution name',
+        });
+        assert.deepEqual(
+            JSON.parse(JSON.stringify(await collection_institution.model.findById(institution._id))),
+            JSON.parse(JSON.stringify(result)),
+        )
+    });
+
+    it(`should be able to service a basic DELETE`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution } = await generate_test_setup();
+        
+        let result = await api(`http://localhost:${port}/api`, async () => "todd").collection('institution').document(institution._id).remove();
+        assert.deepEqual(
+            await collection_institution.model.findById(institution._id),
+            undefined,
+        )
+    });
+
+    it(`should be able to service a basic query on nested collections`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution, client, test_projects } = await generate_test_setup();
+        
+        let result;
+        try {
+            result = await api(`http://localhost:${port}/api`, async () => "todd")
+                .collection('institution')
+                .document(institution._id)
+                .collection('client')
+                .document(client._id)
+                .collection("project")
+                .query({
+                    project_number_gt: 5
+                });
+        } catch(err) {
+            console.error(await err.response.json())
+        }
+        
+
+        assert.deepEqual(
+            JSON.parse(JSON.stringify(test_projects.filter(ele => ele.project_number > 5))),
+            result
+        )
+    });
+    
 });

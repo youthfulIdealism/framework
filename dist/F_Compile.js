@@ -56,7 +56,7 @@ export function compile(app, collection, api_prefix) {
             }
             catch (err) {
                 if (err instanceof z.ZodError) {
-                    res.status(403);
+                    res.status(400);
                     res.json({ error: err.issues });
                     return;
                 }
@@ -142,7 +142,7 @@ export function compile(app, collection, api_prefix) {
             }
             catch (err) {
                 if (err instanceof z.ZodError) {
-                    res.status(403);
+                    res.status(400);
                     res.json({ error: err.issues });
                     return;
                 }
@@ -218,7 +218,7 @@ export function compile(app, collection, api_prefix) {
             }
             catch (err) {
                 if (err instanceof z.ZodError) {
-                    res.status(403);
+                    res.status(400);
                     res.json({ error: err.issues });
                     return;
                 }

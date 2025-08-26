@@ -78,7 +78,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 validated_query_args = collection.query_schema.parse(req.query);
             } catch(err){
                 if(err instanceof z.ZodError){
-                    res.status(403);
+                    res.status(400);
                     res.json({ error: err.issues });
                     return;
                 } else {
@@ -176,7 +176,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 validated_request_body = await collection.put_schema.parse(req.body);
             } catch(err){
                  if(err instanceof z.ZodError){
-                    res.status(403);
+                    res.status(400);
                     res.json({ error: err.issues });
                     return;
                 } else {
@@ -272,7 +272,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 validated_request_body = await collection.post_schema.parse(req.body);
             } catch(err){
                  if(err instanceof z.ZodError){
-                    res.status(403);
+                    res.status(400);
                     res.json({ error: err.issues });
                     return;
                 } else {

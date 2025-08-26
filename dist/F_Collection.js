@@ -17,7 +17,7 @@ export class F_Collection {
         this.model = mongoose_from_zod(collection_name, schema);
         this.query_schema = query_validator_from_zod(schema, mode);
         this.put_schema = schema.partial();
-        this.post_schema = Object.hasOwn(this.raw_schema, '_id') ? schema.partial({ _id: true }) : schema;
+        this.post_schema = Object.hasOwn(this.schema._zod.def.shape, '_id') ? schema.partial({ _id: true }) : schema;
         this.access_layers = [];
         this.compiled = false;
     }
