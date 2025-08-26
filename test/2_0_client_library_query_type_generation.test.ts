@@ -55,7 +55,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -78,7 +78,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -105,7 +105,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -133,7 +133,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -157,7 +157,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -183,7 +183,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -210,7 +210,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -238,7 +238,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -269,7 +269,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -313,7 +313,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string
@@ -339,7 +339,7 @@ describe('Client Library Generation: Query Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection_query = {
                     "limit"?: number
                     "cursor"?: string

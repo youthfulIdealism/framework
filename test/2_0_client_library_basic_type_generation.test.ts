@@ -55,7 +55,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {}`)
         )
     });
@@ -73,7 +73,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": string
                 }`)
@@ -93,7 +93,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": number
                 }`)
@@ -113,7 +113,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": boolean
                 }`)
@@ -133,7 +133,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": Date
                 }`)
@@ -153,7 +153,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": string
                 }`)
@@ -173,7 +173,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": ("red" | "green" | "blue")
                 }`)
@@ -193,7 +193,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": ("red" | "green" | "blue")[]
                 }`)
@@ -214,7 +214,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": {}
                 }`)
@@ -242,7 +242,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": {
                         "field_string": string
@@ -273,7 +273,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "field_string": string[]
                     "field_number": number[]
@@ -302,7 +302,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                 "field_array": {
                         "field_string": string[]
@@ -334,7 +334,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                 "field_array": {
                         "field_string": string[]
@@ -359,7 +359,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test"?: string
                 }`)
@@ -379,7 +379,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test"?: string
                 }`)
@@ -399,7 +399,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": {[key: string]: string}
                 }`)
@@ -422,7 +422,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": {[key: string]: { "test_2": string }}
                 }`)
@@ -442,7 +442,7 @@ describe('Client Library Generation: Basic Types', function () {
         await generate_client_library('./test/tmp', registry);
 
         assert.equal(
-            remove_whitespace(await readFile('./test/tmp/types_test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "test": {[key: string]: string[]}
                 }`)
