@@ -6,15 +6,14 @@ export function query_validator_from_zod(zod_definition, mode = 'server') {
         cursor: z_mongodb_id.optional(),
         sort_order: z.enum(['ascending', 'descending']).optional()
     };
-    let object_filters = parse_object(zod_definition._zod.def, '', mode);
+    let object_filters = parse_object(zod_definition._zod.def, '', new Set(), mode);
     for (let filter of object_filters) {
         retval[filter.path.slice(1)] = filter.filter;
     }
     retval.sort = z.enum(object_filters.filter(ele => ele.sortable).map(ele => ele.path.slice(1))).optional();
     return z.object(retval).strict();
 }
-function parse_any(zod_definition, prefix, mode = 'server') {
-    let result;
+function parse_any(zod_definition, prefix, loop_detector = new Set(), mode = 'server') {
     switch (zod_definition._zod.def.type) {
         case "enum":
             return parse_enum(zod_definition._zod.def, prefix, mode);
@@ -24,13 +23,13 @@ function parse_any(zod_definition, prefix, mode = 'server') {
         case "int":
             return parse_number(prefix, mode);
         case "object":
-            return parse_object(zod_definition._zod.def, prefix, mode);
+            return parse_object(zod_definition._zod.def, prefix, loop_detector, mode);
         case "boolean":
             return parse_boolean(prefix, mode);
         case "date":
             return parse_date(prefix, mode);
         case "array":
-            return parse_array(zod_definition._zod.def, prefix, mode);
+            return parse_array(zod_definition._zod.def, prefix, loop_detector, mode);
         case "union":
             return parse_union(zod_definition._zod.def, prefix, mode);
         case "custom":
@@ -45,15 +44,15 @@ function parse_any(zod_definition, prefix, mode = 'server') {
                 throw new Error(`could not find custom parser for ${override_type} in the magic value dictionary`);
             }
         case "default":
-            return parse_any(zod_definition._zod.def.innerType, prefix, mode);
+            return parse_any(zod_definition._zod.def.innerType, prefix, loop_detector, mode);
         default:
             return [];
     }
 }
-function parse_array(def, prefix, mode) {
+function parse_array(def, prefix, loop_detector, mode) {
     let simple_children = ['enum', 'string', 'number', 'int', 'boolean'];
     if (simple_children.includes(def.element._zod.def.type)) {
-        return parse_any(def.element, prefix, mode).filter(ele => ele.path == prefix);
+        return parse_any(def.element, prefix, loop_detector, mode).filter(ele => ele.path == prefix);
     }
     else if (def.element._zod.def.type === 'custom') {
         if (!magic_values.has(def.element)) {
@@ -66,10 +65,14 @@ function parse_array(def, prefix, mode) {
     }
     return [];
 }
-function parse_object(def, prefix, mode) {
+function parse_object(def, prefix, loop_detector, mode) {
+    if (loop_detector.has(def)) {
+        return [];
+    }
+    loop_detector.add(def);
     let retval = [];
     for (let [key, value] of Object.entries(def.shape)) {
-        let filters = parse_any(value, `${prefix}.${key}`, mode);
+        let filters = parse_any(value, `${prefix}.${key}`, loop_detector, mode);
         retval.push(...filters);
     }
     return retval;

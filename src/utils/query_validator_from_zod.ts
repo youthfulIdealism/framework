@@ -14,9 +14,8 @@ export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode
         limit: z.coerce.number().int().optional(),
         cursor: z_mongodb_id.optional(),
         sort_order: z.enum([/*'asc', 'desc', */'ascending', 'descending']).optional()
-
     } as $ZodLooseShape;
-    let object_filters = parse_object(zod_definition._zod.def, '', mode);
+    let object_filters = parse_object(zod_definition._zod.def, '', new Set(), mode);
     for(let filter of object_filters){
         retval[filter.path.slice(1)] = filter.filter;
     }
@@ -26,8 +25,7 @@ export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode
     return z.object(retval).strict();
 }
 
-function parse_any(zod_definition: z.ZodTypeAny, prefix: string, mode: Mode = 'server'): type_filters {
-    let result;
+function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: Set<any> = new Set(), mode: Mode = 'server'): type_filters {
     switch (zod_definition._zod.def.type) {
         case "enum":
             return parse_enum(zod_definition._zod.def as z.core.$ZodEnumDef, prefix, mode);
@@ -37,13 +35,13 @@ function parse_any(zod_definition: z.ZodTypeAny, prefix: string, mode: Mode = 's
         case "int":
             return parse_number(prefix, mode);
         case "object":
-            return parse_object(zod_definition._zod.def as z.core.$ZodObjectDef, prefix, mode);
+            return parse_object(zod_definition._zod.def as z.core.$ZodObjectDef, prefix, loop_detector, mode);
         case "boolean":
             return parse_boolean(prefix, mode);
         case "date":
             return parse_date(prefix, mode);
         case "array":
-            return parse_array(zod_definition._zod.def as z.core.$ZodArrayDef, prefix, mode)
+            return parse_array(zod_definition._zod.def as z.core.$ZodArrayDef, prefix, loop_detector, mode)
         case "union":
             return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, prefix, mode)
         case "custom":
@@ -59,17 +57,17 @@ function parse_any(zod_definition: z.ZodTypeAny, prefix: string, mode: Mode = 's
             }
         case "default":
             //@ts-ignore
-            return parse_any((zod_definition._zod.def as z.core.$ZodDefaultDef).innerType, prefix, mode)
+            return parse_any((zod_definition._zod.def as z.core.$ZodDefaultDef).innerType, prefix, loop_detector, mode)
         default:
             return []
     }
 }
 
-function parse_array(def: z.core.$ZodArrayDef, prefix: string, mode: Mode) {
+function parse_array(def: z.core.$ZodArrayDef, prefix: string, loop_detector: Set<any>, mode: Mode) {
     let simple_children = ['enum', 'string', 'number', 'int', 'boolean']
     if(simple_children.includes(def.element._zod.def.type)) {
         //@ts-ignore
-        return parse_any(def.element, prefix, mode).filter(ele => ele.path == prefix)
+        return parse_any(def.element, prefix, loop_detector, mode).filter(ele => ele.path == prefix)
     } else if(def.element._zod.def.type === 'custom'){
         if(!magic_values.has(def.element)) {
             return [];
@@ -84,11 +82,17 @@ function parse_array(def: z.core.$ZodArrayDef, prefix: string, mode: Mode) {
     return [];
 }
 
-function parse_object(def: z.core.$ZodObjectDef, prefix: string, mode: Mode): type_filters {
+function parse_object(def: z.core.$ZodObjectDef, prefix: string, loop_detector: Set<any>, mode: Mode): type_filters {
+    if(loop_detector.has(def)) {
+        return [];
+    }
+    loop_detector.add(def);
+
+    
     let retval = [] as type_filters;
     for(let [key, value] of Object.entries(def.shape)){
         //@ts-ignore
-        let filters = parse_any(value, `${prefix}.${key}`, mode);
+        let filters = parse_any(value, `${prefix}.${key}`, loop_detector, mode);
         retval.push(...filters);
     }
     return retval;

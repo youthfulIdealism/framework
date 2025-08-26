@@ -3,6 +3,7 @@ import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
 import { schema_from_zod, z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { Schema } from 'mongoose'
+import { required } from "zod/mini";
 
 describe('Mongoose from Zod', function () {
 
@@ -217,18 +218,43 @@ describe('Mongoose from Zod', function () {
         assert.deepEqual({ test_value: {type: Schema.Types.Mixed, required: false} }, mongooseSchema)
     });
 
-
-
-    /*it.only(`should convert recursive schemas`, function () {
-        let query_group = z.object({
+    it(`should convert recursive schemas`, function () {
+        let zodSchema = z.object({
             type: z.enum(['group']),
             operator: z.enum(['all', 'any']),
             get children() {
-                return z.array(query_group)
+                return z.array(zodSchema)
             },
             locked: z.boolean().optional()
         })
-        let mongooseSchema = schema_from_zod(query_group)
-        //assert.deepEqual({ test_value: {type: String, required: true, default: 'chunky'} }, mongooseSchema)
-    })*/
+        let mongooseSchema = schema_from_zod(zodSchema)
+
+        assert.deepEqual({ 
+            type: {type: String, required: true },
+            operator: {type: String, required: true },
+            children: {type: [{ type: Schema.Types.Mixed, required: true }], required: true },
+            locked: {type: Boolean, required: false },
+        }, mongooseSchema)
+    })
+
+    it(`should not treat similar schemas as recursive`, function () {
+        let zodSchema = z.object({
+            a: z.object({
+                name: z.string()
+            }),
+            b: z.object({
+                name: z.string()
+            }),
+            c: z.object({
+                name: z.string()
+            }),
+        })
+        let mongooseSchema = schema_from_zod(zodSchema)
+
+        assert.deepEqual({ 
+            a: { type: { name: { type: String, required: true } }, required: true },
+            b: { type: { name: { type: String, required: true } }, required: true },
+            c: { type: { name: { type: String, required: true } }, required: true },
+        }, mongooseSchema)
+    })
 });

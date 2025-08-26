@@ -136,6 +136,35 @@ describe('query validator from zod', function () {
         );
     });
 
+    it('should be able to discard a recursive schema', async function () {
+        let zod_validator = z.object({
+            name: z.string(),
+            get recurse() {
+                return zod_validator;
+            }
+        })
+
+        let query_validator = query_validator_from_zod(zod_validator);
+
+        assert.deepEqual(
+            query_validator.parse({
+                name: 'fungus',
+            }),
+            {
+                name: 'fungus',
+            }
+        );
+
+        assert.throws(() => {
+            assert.deepEqual(
+                query_validator.parse({
+                    'recurse.name': 'fungus',
+                }),
+                {}
+            );
+        })
+    });
+
     it('should be able to process string membership in an array', async function () {
         let query_validator = query_validator_from_zod(
             z.object({

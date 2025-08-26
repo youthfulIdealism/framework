@@ -10,4 +10,4 @@ export declare function mongoose_from_zod<T>(schema_name: string, zod_definition
     __v: number;
 } : never : never)>, any>;
 export declare function schema_from_zod(zod_definition: z.core.$ZodType): any;
-export declare function schema_entry_from_zod(zod_definition: z.ZodType): any;
+export declare function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector?: Set<any>): any;

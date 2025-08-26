@@ -21,10 +21,10 @@ export function schema_from_zod(zod_definition) {
     delete mongoose_schema.type._id;
     return mongoose_schema.type;
 }
-export function schema_entry_from_zod(zod_definition) {
+export function schema_entry_from_zod(zod_definition, loop_detector = new Set()) {
     if (!zod_definition) {
-        console.log('ISSUE');
-        console.log(zod_definition);
+        console.error('ISSUE');
+        console.error(zod_definition);
     }
     let result;
     switch (zod_definition._zod.def.type) {
@@ -38,7 +38,7 @@ export function schema_entry_from_zod(zod_definition) {
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "object":
-            result = parse_object(zod_definition._zod.def);
+            result = parse_object(zod_definition._zod.def, loop_detector);
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "boolean":
@@ -54,21 +54,21 @@ export function schema_entry_from_zod(zod_definition) {
         case "null":
             throw new Error(`Zod type not yet supported: ${zod_definition._zod.def.type});`);
         case "array":
-            result = parse_array(zod_definition._zod.def);
+            result = parse_array(zod_definition._zod.def, loop_detector);
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "nullable":
-            return schema_entry_from_zod(zod_definition._zod.def.innerType);
+            return schema_entry_from_zod(zod_definition._zod.def.innerType, loop_detector);
         case "optional":
-            return parse_optional(zod_definition._zod.def);
+            return parse_optional(zod_definition._zod.def, loop_detector);
         case "map":
-            result = parse_map(zod_definition._zod.def);
+            result = parse_map(zod_definition._zod.def, loop_detector);
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "any":
             result = { type: Schema.Types.Mixed };
         case "default":
-            result = parse_default(zod_definition._zod.def);
+            result = parse_default(zod_definition._zod.def, loop_detector);
             result.required = true;
             return result;
         case "enum":
@@ -98,15 +98,19 @@ export function schema_entry_from_zod(zod_definition) {
             throw new Error("Cannot process zod type: " + zod_definition._zod.def.type);
     }
 }
-function parse_object(def) {
+function parse_object(def, loop_detector) {
+    if (loop_detector.has(def)) {
+        return { type: Schema.Types.Mixed, required: true };
+    }
+    loop_detector.add(def);
     let retval = {};
     for (let [key, value] of Object.entries(def.shape)) {
-        retval[key] = schema_entry_from_zod(value);
+        retval[key] = schema_entry_from_zod(value, loop_detector);
     }
     return { type: retval, required: true };
 }
-function parse_array(def) {
-    let retval = { type: [schema_entry_from_zod(def.element)] };
+function parse_array(def, loop_detector) {
+    let retval = { type: [schema_entry_from_zod(def.element, loop_detector)] };
     retval.required = true;
     return retval;
 }
@@ -120,11 +124,11 @@ function parse_union(def) {
     retval.required = true;
     return retval;
 }
-function parse_map(def) {
+function parse_map(def, loop_detector) {
     if (def.keyType._zod.def.type !== 'string') {
         throw new Error('mongoDB only supports maps where the key is a string.');
     }
-    let retval = { type: Schema.Types.Map, of: schema_entry_from_zod(def.valueType), required: true };
+    let retval = { type: Schema.Types.Map, of: schema_entry_from_zod(def.valueType, loop_detector), required: true };
     retval.required = true;
     return retval;
 }
@@ -144,13 +148,13 @@ function parse_date(def) {
     let retval = { type: Date };
     return retval;
 }
-function parse_default(def) {
-    let type_definition = schema_entry_from_zod(def.innerType);
+function parse_default(def, loop_detector) {
+    let type_definition = schema_entry_from_zod(def.innerType, loop_detector);
     type_definition.default = def.defaultValue;
     return type_definition;
 }
-function parse_optional(def) {
-    let type_definition = schema_entry_from_zod(def.innerType);
+function parse_optional(def, loop_detector) {
+    let type_definition = schema_entry_from_zod(def.innerType, loop_detector);
     type_definition.required = false;
     return type_definition;
 }

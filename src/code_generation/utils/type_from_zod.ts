@@ -69,6 +69,7 @@ export function type_from_zod(zod_definition: z.ZodType, indent_level: number): 
 
             return result;
         default:
+            //console.error(zod_definition._zod.def)
             throw new Error("Cannot process zod type: " + zod_definition._zod.def.type);
     }
 }

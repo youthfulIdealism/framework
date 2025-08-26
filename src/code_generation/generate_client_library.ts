@@ -4,6 +4,7 @@ import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { type_from_zod } from "./utils/type_from_zod.js";
 import mustache from 'mustache'
 import { existsSync } from "node:fs";
+import { pretty_print } from "../utils/pretty_print_zod.js";
 
 
 type api_builder = {
