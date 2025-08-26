@@ -43,19 +43,19 @@ export async function generate_client_library<Collections>(path: string, collect
         }
 
         let collection_type_definition_builder = [] as string[];
-        let collection_type_main = type_from_zod(collection.schema, 0);
+        let collection_type_main = type_from_zod(collection.validator, 0);
         collection_type_definition_builder.push(`export type ${mustache_context.type_return} = ${collection_type_main[0]}`, ...collection_type_main.slice(1));
 
         let collection_query_type_definition_builder = [] as string[];
-        let collection_type_query = type_from_zod(collection.query_schema_client, 0);
+        let collection_type_query = type_from_zod(collection.query_validator_client, 0);
         collection_query_type_definition_builder.push(`export type ${mustache_context.type_query} = ${collection_type_query[0]}`, ...collection_type_query.slice(1));
 
         let collection_put_type_definition_builder = [] as string[];
-        let collection_type_put = type_from_zod(collection.put_schema, 0);
+        let collection_type_put = type_from_zod(collection.put_validator, 0);
         collection_put_type_definition_builder.push(`export type ${mustache_context.type_put} = ${collection_type_put[0]}`, ...collection_type_put.slice(1));
 
         let collection_post_type_definition_builder = [] as string[];
-        let collection_type_post = type_from_zod(collection.post_schema, 0);
+        let collection_type_post = type_from_zod(collection.post_validator, 0);
         collection_post_type_definition_builder.push(`export type ${mustache_context.type_post} = ${collection_type_post[0]}`, ...collection_type_post.slice(1));
 
         if(!existsSync([path, 'src'].join('/'))){ await mkdir([path, 'src'].join('/')); }

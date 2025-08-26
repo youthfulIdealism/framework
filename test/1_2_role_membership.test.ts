@@ -157,7 +157,7 @@ describe('Security Model Role Membership', function () {
         F_Security_Model.set_auth_fetcher(async (req: Request) => {
             if(!req.headers.authorization){ return undefined; }
 
-            let user_record = await collection_user.model.findOne({auth_id: req.headers.authorization})
+            let user_record = await collection_user.mongoose_model.findOne({auth_id: req.headers.authorization})
             if(!user_record){ return undefined; }
 
             return { user_id: user_record._id, layers: [] };
@@ -180,7 +180,7 @@ describe('Security Model Role Membership', function () {
     beforeEach(async function(){
         for(let collection of Object.values(registry.collections)){
             //@ts-ignore
-            await collection.model.collection.drop();
+            await collection.mongoose_model.collection.drop();
         }
     })
 
@@ -205,67 +205,67 @@ describe('Security Model Role Membership', function () {
      * @returns 
      */
     async function generate_test_setup(){
-        let user_steve = await collection_user.model.create({
+        let user_steve = await collection_user.mongoose_model.create({
             auth_id: 'steve'
         });
 
-        let user_edwin = await collection_user.model.create({
+        let user_edwin = await collection_user.mongoose_model.create({
             auth_id: 'edwin'
         });
 
-        let steve_institution = await collection_institution.model.create({
+        let steve_institution = await collection_institution.mongoose_model.create({
             name: `steve institution`
         });
 
-        let edwin_institution = await collection_institution.model.create({
+        let edwin_institution = await collection_institution.mongoose_model.create({
             name: `edwin institution`
         });
 
-        let steve_client = await collection_client.model.create({
+        let steve_client = await collection_client.mongoose_model.create({
             institution_id: steve_institution._id,
             name: 'steve client'
         })
 
-        let joe_client = await collection_client.model.create({
+        let joe_client = await collection_client.mongoose_model.create({
             institution_id: steve_institution._id,
             name: 'joe client'
         })
 
-        let nathan_client = await collection_client.model.create({
+        let nathan_client = await collection_client.mongoose_model.create({
             institution_id: edwin_institution._id,
             name: 'nathan client'
         })
 
-        let edna_client = await collection_client.model.create({
+        let edna_client = await collection_client.mongoose_model.create({
             institution_id: edwin_institution._id,
             name: 'edna client'
         })
 
-        let steve_project = await collection_project.model.create({
+        let steve_project = await collection_project.mongoose_model.create({
             institution_id: steve_institution._id,
             client_id: steve_client,
             name: 'steve project'
         })
 
-        let joe_project = await collection_project.model.create({
+        let joe_project = await collection_project.mongoose_model.create({
             institution_id: steve_institution._id,
             client_id: joe_client,
             name: 'joe project'
         })
 
-        let nathan_project = await collection_project.model.create({
+        let nathan_project = await collection_project.mongoose_model.create({
             institution_id: edwin_institution._id,
             client_id: nathan_client,
             name: 'nathan project'
         })
 
-        let edna_project = await collection_project.model.create({
+        let edna_project = await collection_project.mongoose_model.create({
             institution_id: edwin_institution._id,
             client_id: edna_client,
             name: 'edna project'
         })
 
-        let access_role_steve_institution_grants_project = await collection_role.model.create({
+        let access_role_steve_institution_grants_project = await collection_role.mongoose_model.create({
             name: 'steve full access',
             institution_id: steve_institution._id,
             permissions: {
@@ -276,7 +276,7 @@ describe('Security Model Role Membership', function () {
             }
         });
 
-        let access_role_steve_institution_grants_minimal = await collection_role.model.create({
+        let access_role_steve_institution_grants_minimal = await collection_role.mongoose_model.create({
             name: 'steve limited access',
             institution_id: steve_institution._id,
             permissions: {
@@ -287,7 +287,7 @@ describe('Security Model Role Membership', function () {
             }
         });
 
-         let access_role_edwin_institution_grants_project = await collection_role.model.create({
+         let access_role_edwin_institution_grants_project = await collection_role.mongoose_model.create({
             name: 'edwin full access',
             institution_id: edwin_institution._id,
             permissions: {
@@ -298,7 +298,7 @@ describe('Security Model Role Membership', function () {
             }
         });
 
-        let access_role_edwin_institution_grants_minimal = await collection_role.model.create({
+        let access_role_edwin_institution_grants_minimal = await collection_role.mongoose_model.create({
             name: 'edwin limited access',
             institution_id: edwin_institution._id,
             permissions: {
@@ -309,33 +309,33 @@ describe('Security Model Role Membership', function () {
             }
         });
 
-        let steve_steve_institution_role_membership = await collection_institution_role_membership.model.create({
+        let steve_steve_institution_role_membership = await collection_institution_role_membership.mongoose_model.create({
             role_id: access_role_steve_institution_grants_project._id,
             user_id: user_steve._id,
             institution_id: steve_institution._id,
         })
 
-        let steve_edwin_institution_role_membership = await collection_institution_role_membership.model.create({
+        let steve_edwin_institution_role_membership = await collection_institution_role_membership.mongoose_model.create({
             role_id: access_role_edwin_institution_grants_minimal._id,
             user_id: user_steve._id,
             institution_id: edwin_institution._id,
         })
 
-        let steve_nathan_client_role_membership = await collection_client_role_membership.model.create({
+        let steve_nathan_client_role_membership = await collection_client_role_membership.mongoose_model.create({
             role_id: access_role_edwin_institution_grants_project._id,
             user_id: user_steve._id,
             institution_id: edwin_institution._id,
             client_id: nathan_client._id
         })
 
-        let steve_edna_client_role_membership = await collection_client_role_membership.model.create({
+        let steve_edna_client_role_membership = await collection_client_role_membership.mongoose_model.create({
             role_id: access_role_edwin_institution_grants_minimal._id,
             user_id: user_steve._id,
             institution_id: edwin_institution._id,
             client_id: edna_client._id
         })
         
-        let edwin_edwin_institution_role_membership = await collection_institution_role_membership.model.create({
+        let edwin_edwin_institution_role_membership = await collection_institution_role_membership.mongoose_model.create({
             role_id: access_role_edwin_institution_grants_project._id,
             user_id: user_edwin._id,
             institution_id: edwin_institution._id,
@@ -433,7 +433,7 @@ describe('Security Model Role Membership', function () {
 
         let projects = [steve_project];
         for(let q = 0; q < 5; q++){
-            projects.push(await collection_project.model.create({
+            projects.push(await collection_project.mongoose_model.create({
                 institution_id: steve_institution._id,
                 client_id: steve_client,
                 name: `additional project ${q}`
@@ -455,7 +455,7 @@ describe('Security Model Role Membership', function () {
 
         let projects = [nathan_project];
         for(let q = 0; q < 5; q++){
-            projects.push(await collection_project.model.create({
+            projects.push(await collection_project.mongoose_model.create({
                 institution_id: edwin_institution._id,
                 client_id: nathan_client,
                 name: `additional project ${q}`
@@ -477,7 +477,7 @@ describe('Security Model Role Membership', function () {
 
         let projects = [edna_project];
         for(let q = 0; q < 5; q++){
-            projects.push(await collection_project.model.create({
+            projects.push(await collection_project.mongoose_model.create({
                 institution_id: edwin_institution._id,
                 client_id: edna_client,
                 name: `additional project ${q}`
@@ -499,7 +499,7 @@ describe('Security Model Role Membership', function () {
 
         let projects = [steve_project];
         for(let q = 0; q < 5; q++){
-            projects.push(await collection_project.model.create({
+            projects.push(await collection_project.mongoose_model.create({
                 institution_id: steve_institution._id,
                 client_id: steve_client,
                 name: `additional project ${q}`
@@ -539,7 +539,7 @@ describe('Security Model Role Membership', function () {
         //@ts-ignore
         assert.notDeepEqual(JSON.parse(JSON.stringify(steve_project)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(steve_project._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(steve_project._id))), results.data);
     });
 
     it(`should authorize a basic PUT operation on a document where the user has a T2 role membership`, async function () {
@@ -557,7 +557,7 @@ describe('Security Model Role Membership', function () {
         //@ts-ignore
         assert.notDeepEqual(JSON.parse(JSON.stringify(nathan_project)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(nathan_project._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(nathan_project._id))), results.data);
     });
 
     it(`should reject a basic PUT operation on a document where the user has a role membership without permission`, async function () {
@@ -611,7 +611,7 @@ describe('Security Model Role Membership', function () {
         }).json();
 
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(results.data._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(results.data._id))), results.data);
     });
 
     it(`should authorize a basic POST operation on a document where the user has a T2 role membership`, async function () {
@@ -629,7 +629,7 @@ describe('Security Model Role Membership', function () {
         }).json();
 
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(results.data._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(results.data._id))), results.data);
     });
 
     it(`should reject a basic POST operation on a document where the user has a role membership without permission`, async function () {
@@ -685,7 +685,7 @@ describe('Security Model Role Membership', function () {
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(steve_project)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(steve_project._id))), undefined);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(steve_project._id))), undefined);
     });
 
     it(`should authorize a basic DELETE operation on a document where the user has a T2 role membership`, async function () {
@@ -700,7 +700,7 @@ describe('Security Model Role Membership', function () {
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(nathan_project)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.model.findById(nathan_project._id))), undefined);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(nathan_project._id))), undefined);
     });
 
     it(`should reject a basic DELETE operation on a document where the user has a role membership without permission`, async function () {

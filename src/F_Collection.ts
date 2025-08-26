@@ -11,35 +11,37 @@ export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodObject>
 }
 
 export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodObject> {
-    schema: ZodSchema;
     collection_id: Collection_ID;
-    model: Model<z.infer<ZodSchema>>;
-    access_layers: F_Layer<Collection_ID, ZodSchema>[];
-    raw_schema: any;
-    query_schema_server: z.ZodType;
-    query_schema_client: z.ZodType;
-    put_schema: z.ZodType;
-    post_schema: z.ZodType;
-    compiled: boolean;
+    validator: ZodSchema;
+    mongoose_schema: any;
+    mongoose_model: Model<z.infer<ZodSchema>>;
+    
+    query_validator_server: z.ZodType;
+    query_validator_client: z.ZodType;
+    put_validator: z.ZodType;
+    post_validator: z.ZodType;
+    is_compiled: boolean;
 
-    constructor(collection_name: Collection_ID, schema: ZodSchema){
+    access_layers: F_Layer<Collection_ID, ZodSchema>[];
+
+    constructor(collection_name: Collection_ID, validator: ZodSchema){
         this.collection_id = collection_name;
-        this.schema = schema;
-        this.raw_schema = schema_from_zod(schema);
-        this.model = mongoose_from_zod(collection_name, schema);
+        this.validator = validator;
+        this.mongoose_schema = schema_from_zod(validator);
+        this.mongoose_model = mongoose_from_zod(collection_name, validator);
         // TODO: validate that the model doesn't use any fields that have special meaning in the query validator; for example: [param]_gt, [param]_in, sort,
         //@ts-ignore
-        this.query_schema_server = query_validator_from_zod(schema, 'server');
-        this.query_schema_client = query_validator_from_zod(schema, 'client');
+        this.query_validator_server = query_validator_from_zod(validator, 'server');
+        this.query_validator_client = query_validator_from_zod(validator, 'client');
         // TODO: we can make this more closely match the mongoDB PUT operation and allow updates to eg array.3.element fields
-        this.put_schema = schema.partial();
-        this.post_schema = Object.hasOwn(this.schema._zod.def.shape, '_id') ? schema.partial({_id: true}) : schema;
+        this.put_validator = validator.partial();
+        this.post_validator = Object.hasOwn(this.validator._zod.def.shape, '_id') ? validator.partial({_id: true}) : validator;
         this.access_layers = [];
-        this.compiled = false;
+        this.is_compiled = false;
     }
 
     add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[], is_layer_owner = false){
-        if(this.compiled){ throw new Error(`Manipulating a model post-compilation doesn't work.`); }
+        if(this.is_compiled){ throw new Error(`Manipulating a model post-compilation doesn't work.`); }
         this.access_layers.push({
             layers: layers,
             security_models: security_models

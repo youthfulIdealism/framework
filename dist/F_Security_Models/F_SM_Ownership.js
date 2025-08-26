@@ -34,7 +34,7 @@ export class F_SM_Ownership extends F_Security_Model {
     }
     async handle_empty_query_results(req, res, operation) {
         if (req.params.document_id) {
-            let document_result = await this.collection.model.findById(req.params.document_id);
+            let document_result = await this.collection.mongoose_model.findById(req.params.document_id);
             if (document_result) {
                 res.status(403);
                 return { error: `You do not have permission to ${operation} documents from ${req.params.document_type}.` };

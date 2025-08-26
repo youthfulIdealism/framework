@@ -59,7 +59,7 @@ export class F_SM_Ownership<Collection_ID extends string, ZodSchema extends z.Zo
     
     async handle_empty_query_results(req: Request, res: Response, operation: Operation): Promise<Empty_Query_Possibilities> {
         if (req.params.document_id) {
-            let document_result = await this.collection.model.findById(req.params.document_id);
+            let document_result = await this.collection.mongoose_model.findById(req.params.document_id);
 
             if (document_result) {
                 res.status(403);

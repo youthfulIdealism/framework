@@ -25,7 +25,7 @@ export class F_SM_Role_Membership extends F_Security_Model {
         this.role_membership_cache = role_membership_cache ?? new Cache(60);
         this.role_collection = role_collection;
         this.role_cache = role_cache ?? new Cache(60);
-        if (!this.role_collection.raw_schema.permissions) {
+        if (!this.role_collection.mongoose_schema.permissions) {
             throw new Error(`could not find field "permissions" on role collection. Permissions should be an object of the format {[key: collection_id]: ('read'| 'create'| 'update'| 'delete')[]}`);
         }
     }
@@ -33,7 +33,7 @@ export class F_SM_Role_Membership extends F_Security_Model {
         let user_id = req.auth.user_id;
         let layer_id = req.params[this.layer_collection_id];
         let role_membership = await this.role_membership_cache.first_fetch_then_refresh(`${user_id}-${layer_id}`, async () => {
-            let role_memberships = await this.role_membership_collection.model.find({
+            let role_memberships = await this.role_membership_collection.mongoose_model.find({
                 [this.user_id_field]: user_id,
                 [`${this.layer_collection_id}_id`]: new mongoose.Types.ObjectId(layer_id)
             });
@@ -50,7 +50,7 @@ export class F_SM_Role_Membership extends F_Security_Model {
             return false;
         }
         let role = await this.role_cache.first_fetch_then_refresh(role_membership[this.role_id_field], async () => {
-            let role = await this.role_collection.model.findById(role_membership[this.role_id_field]);
+            let role = await this.role_collection.mongoose_model.findById(role_membership[this.role_id_field]);
             return role;
         });
         if (!role) {

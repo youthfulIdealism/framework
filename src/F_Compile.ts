@@ -47,7 +47,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             let document;
             try {
                 //@ts-expect-error
-                document = await collection.model.findOne(find, undefined, { 'lean': true });
+                document = await collection.mongoose_model.findOne(find, undefined, { 'lean': true });
             } catch(err){
                 res.status(500);
                 res.json({ error: `there was a novel error` });
@@ -75,7 +75,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         app.get(get_multiple_path, async (req: Request, res: Response) => {
             let validated_query_args: { [key: string]: any } ;
             try {
-                validated_query_args = collection.query_schema_server.parse(req.query);
+                validated_query_args = collection.query_validator_server.parse(req.query);
             } catch(err){
                 if(err instanceof z.ZodError){
                     res.status(400);
@@ -104,8 +104,8 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             let documents;
             try {
                 //@ts-expect-error
-                let query = collection.model.find(find, undefined, { 'lean': true });
-                let fetch = query_object_to_mongodb_limits(query, collection.query_schema_server);
+                let query = collection.mongoose_model.find(find, undefined, { 'lean': true });
+                let fetch = query_object_to_mongodb_limits(query, collection.query_validator_server);
                 documents = await fetch;
             } catch(err){
                 if (err.name == 'CastError') {
@@ -156,7 +156,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 return;
             }
 
-            if(collection.raw_schema.updated_by?.type === String) {
+            if(collection.mongoose_schema.updated_by?.type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
                     req.body.updated_by = (req as Authenticated_Request).auth?.user_id;
@@ -165,7 +165,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
             }
 
-            if(collection.raw_schema.updated_at?.type === Date) {
+            if(collection.mongoose_schema.updated_at?.type === Date) {
                 req.body.updated_at = new Date();
             }
 
@@ -173,7 +173,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             // syntax to allow for targeted updating of nested stuff
             let validated_request_body;
             try {
-                validated_request_body = await collection.put_schema.parse(req.body);
+                validated_request_body = await collection.put_validator.parse(req.body);
             } catch(err){
                  if(err instanceof z.ZodError){
                     res.status(400);
@@ -209,7 +209,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             let results;
             try {
                 //@ts-expect-error
-                results = await collection.model.findOneAndUpdate(find, validated_request_body, { returnDocument: 'after', lean: true });
+                results = await collection.mongoose_model.findOneAndUpdate(find, validated_request_body, { returnDocument: 'after', lean: true });
             } catch(err){
                 res.status(500);
                 res.json({ error: `there was a novel error` });
@@ -241,7 +241,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 return;
             }
 
-            if(collection.raw_schema.updated_by?.type === String) {
+            if(collection.mongoose_schema.updated_by?.type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
                     req.body.updated_by = (req as Authenticated_Request).auth?.user_id;
@@ -250,11 +250,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
             }
 
-            if(collection.raw_schema.updated_at?.type === Date) {
+            if(collection.mongoose_schema.updated_at?.type === Date) {
                 req.body.updated_at = new Date();
             }
 
-            if(collection.raw_schema.created_by?.type === String) {
+            if(collection.mongoose_schema.created_by?.type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
                     req.body.created_by = (req as Authenticated_Request).auth?.user_id;
@@ -263,13 +263,13 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
             }
 
-            if(collection.raw_schema.created_at?.type === Date) {
+            if(collection.mongoose_schema.created_at?.type === Date) {
                 req.body.created_at = new Date();
             }
 
             let validated_request_body;
             try {
-                validated_request_body = await collection.post_schema.parse(req.body);
+                validated_request_body = await collection.post_validator.parse(req.body);
             } catch(err){
                  if(err instanceof z.ZodError){
                     res.status(400);
@@ -303,7 +303,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
             let results;
             try {
-                results = await collection.model.create(validated_request_body);
+                results = await collection.mongoose_model.create(validated_request_body);
             } catch(err){
                 res.status(500);
                 res.json({ error: `there was a novel error` });
@@ -348,7 +348,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             let results;
             try {
                 //@ts-expect-error
-                results = await collection.model.findOneAndDelete(find, {lean: true });
+                results = await collection.mongoose_model.findOneAndDelete(find, {lean: true });
             } catch(err){
                 res.status(500);
                 res.json({ error: `there was a novel error` });

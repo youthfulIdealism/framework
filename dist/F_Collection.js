@@ -1,30 +1,30 @@
 import { mongoose_from_zod, schema_from_zod } from "./utils/mongoose_from_zod.js";
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
 export class F_Collection {
-    schema;
     collection_id;
-    model;
+    validator;
+    mongoose_schema;
+    mongoose_model;
+    query_validator_server;
+    query_validator_client;
+    put_validator;
+    post_validator;
+    is_compiled;
     access_layers;
-    raw_schema;
-    query_schema_server;
-    query_schema_client;
-    put_schema;
-    post_schema;
-    compiled;
-    constructor(collection_name, schema) {
+    constructor(collection_name, validator) {
         this.collection_id = collection_name;
-        this.schema = schema;
-        this.raw_schema = schema_from_zod(schema);
-        this.model = mongoose_from_zod(collection_name, schema);
-        this.query_schema_server = query_validator_from_zod(schema, 'server');
-        this.query_schema_client = query_validator_from_zod(schema, 'client');
-        this.put_schema = schema.partial();
-        this.post_schema = Object.hasOwn(this.schema._zod.def.shape, '_id') ? schema.partial({ _id: true }) : schema;
+        this.validator = validator;
+        this.mongoose_schema = schema_from_zod(validator);
+        this.mongoose_model = mongoose_from_zod(collection_name, validator);
+        this.query_validator_server = query_validator_from_zod(validator, 'server');
+        this.query_validator_client = query_validator_from_zod(validator, 'client');
+        this.put_validator = validator.partial();
+        this.post_validator = Object.hasOwn(this.validator._zod.def.shape, '_id') ? validator.partial({ _id: true }) : validator;
         this.access_layers = [];
-        this.compiled = false;
+        this.is_compiled = false;
     }
     add_layers(layers, security_models, is_layer_owner = false) {
-        if (this.compiled) {
+        if (this.is_compiled) {
             throw new Error(`Manipulating a model post-compilation doesn't work.`);
         }
         this.access_layers.push({

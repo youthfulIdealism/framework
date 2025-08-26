@@ -87,7 +87,7 @@ describe('Basic Server', function () {
     beforeEach(async function(){
         for(let collection of Object.values(registry.collections)){
             //@ts-ignore
-            await collection.model.collection.drop();
+            await collection.mongoose_model.collection.drop();
         }
     })
 
@@ -96,11 +96,11 @@ describe('Basic Server', function () {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     it(`should be able to perform a basic GET operation`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
@@ -111,11 +111,11 @@ describe('Basic Server', function () {
     });
 
     it(`should be able to perform a basic GET operation of something one layer deep`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
@@ -126,16 +126,16 @@ describe('Basic Server', function () {
     });
 
     it(`should be able to perform a basic GET operation of a leaf`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
 
-        let test_project = await project.model.create({
+        let test_project = await project.mongoose_model.create({
             institution_id: test_institution._id,
             client_id: test_client._id,
             name: `Spandex Reincarnation`
@@ -154,7 +154,7 @@ describe('Basic Server', function () {
     it(`should be able to perform a basic GET multiple operation`, async function () {
         let test_institutions = []
         for(let q = 0; q < 5; q++){
-            let test_institution = await institution.model.create({
+            let test_institution = await institution.mongoose_model.create({
                 name: ['spandex co',
                     'the ordinary institute',
                     'saliva branding collective',
@@ -177,17 +177,17 @@ describe('Basic Server', function () {
     });
 
     it(`should be able to perform a basic GET multiple operation of something one layer deep`, async function () {
-        let test_institution_1 = await institution.model.create({
+        let test_institution_1 = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_institution_2 = await institution.model.create({
+        let test_institution_2 = await institution.mongoose_model.create({
             name: 'the ordinary institute'
         });
 
         let test_clients = []
         for(let q = 0; q < 5; q++){
-            let test_client = await client.model.create({
+            let test_client = await client.mongoose_model.create({
                 institution_id: test_institution_1._id,
                 name: `test_client_${q}`
             });
@@ -196,7 +196,7 @@ describe('Basic Server', function () {
 
             // create a test client for the other institution to make sure
             // the endpoint doesn't return test clients from other institutions
-            await client.model.create({
+            await client.mongoose_model.create({
                 institution_id: test_institution_2._id,
                 name: `test_client_${q}`
             });
@@ -208,27 +208,27 @@ describe('Basic Server', function () {
     });
 
     it(`should be able to perform a basic GET multiple operation of a leaf`, async function () {
-        let test_institution_1 = await institution.model.create({
+        let test_institution_1 = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client_1 = await client.model.create({
+        let test_client_1 = await client.mongoose_model.create({
             institution_id: test_institution_1._id,
             name: `Bob's spandex house`
         })
 
-        let test_institution_2 = await institution.model.create({
+        let test_institution_2 = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client_2 = await client.model.create({
+        let test_client_2 = await client.mongoose_model.create({
             institution_id: test_institution_2._id,
             name: `Bob's spandex house`
         })
 
         let test_projects = []
         for(let q = 0; q < 5; q++){
-            let test_client = await project.model.create({
+            let test_client = await project.mongoose_model.create({
                 institution_id: test_institution_1._id,
                 client_id: test_client_1._id,
                 name: `Spandex Reincarnation`
@@ -238,7 +238,7 @@ describe('Basic Server', function () {
 
             // create a test project for the other institution to make sure
             // the endpoint doesn't return test project from other institutions
-            await project.model.create({
+            await project.mongoose_model.create({
                 institution_id: test_institution_2._id,
                 client_id: test_client_2._id,
                 name: `Spandex Reincarnation`
@@ -258,7 +258,7 @@ describe('Basic Server', function () {
 
 
     it(`should be able to perform a basic PUT operation`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
@@ -271,15 +271,15 @@ describe('Basic Server', function () {
         //@ts-ignore
         assert.notDeepEqual(JSON.parse(JSON.stringify(test_institution)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await institution.model.findById(test_institution._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await institution.mongoose_model.findById(test_institution._id))), results.data);
     });
 
     it(`should be able to perform a basic PUT operation of something one layer deep`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
@@ -292,20 +292,20 @@ describe('Basic Server', function () {
         //@ts-ignore
         assert.notDeepEqual(JSON.parse(JSON.stringify(test_client)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await client.model.findById(test_client._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.mongoose_model.findById(test_client._id))), results.data);
     });
 
     it(`should be able to perform a basic PUT operation of a leaf`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
 
-        let test_project = await project.model.create({
+        let test_project = await project.mongoose_model.create({
             institution_id: test_institution._id,
             client_id: test_client._id,
             name: `Spandex Reincarnation`
@@ -319,25 +319,25 @@ describe('Basic Server', function () {
         //@ts-ignore
         assert.notDeepEqual(JSON.parse(JSON.stringify(test_project)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(test_project._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await project.mongoose_model.findById(test_project._id))), results.data);
     });
 
     it(`should reject a PUT operation that changes layer membership`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
 
-        let test_client_2 = await client.model.create({
+        let test_client_2 = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Anna's Latex Emporium`
         })
 
-        let test_project = await project.model.create({
+        let test_project = await project.mongoose_model.create({
             institution_id: test_institution._id,
             client_id: test_client._id,
             name: `Spandex Reincarnation`
@@ -368,12 +368,12 @@ describe('Basic Server', function () {
         }).json();
         
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await institution.model.findById(results.data._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await institution.mongoose_model.findById(results.data._id))), results.data);
     });
 
     it(`should be able to perform a basic POST operation of something one layer deep`, async function () {
         this.timeout(1000 * 20);
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
@@ -385,16 +385,16 @@ describe('Basic Server', function () {
         }).json();
         
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await client.model.findById(results.data._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.mongoose_model.findById(results.data._id))), results.data);
     });
 
     it(`should be able to perform a basic POST operation of a leaf`, async function () {
         this.timeout(1000 * 20);
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
@@ -408,20 +408,20 @@ describe('Basic Server', function () {
         }).json();
         
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(results.data._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await project.mongoose_model.findById(results.data._id))), results.data);
     });
 
     it(`should reject a POST operation at the wrong layer membership`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
 
-        let test_client_2 = await client.model.create({
+        let test_client_2 = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Anna's Latex Emporium`
         })
@@ -445,7 +445,7 @@ describe('Basic Server', function () {
     
     it(`should be able to perform a basic DELETE operation`, async function () {
 
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'test institution'
         })
 
@@ -453,15 +453,15 @@ describe('Basic Server', function () {
 
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(test_institution)), results.data);
-        assert.deepEqual(JSON.parse(JSON.stringify(await institution.model.findById(test_institution._id))), undefined);
+        assert.deepEqual(JSON.parse(JSON.stringify(await institution.mongoose_model.findById(test_institution._id))), undefined);
     });
 
     it(`should be able to perform a basic DELETE operation of something one layer deep`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'test institution'
         })
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             name: 'test client',
             institution_id: test_institution._id
         })
@@ -470,21 +470,21 @@ describe('Basic Server', function () {
         
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(test_client)), results.data);
-        assert.deepEqual(JSON.parse(JSON.stringify(await client.model.findById(test_client._id))), undefined);
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.mongoose_model.findById(test_client._id))), undefined);
     });
 
     it(`should be able to perform a basic DELETE operation of a leaf`, async function () {
         this.timeout(1000 * 20);
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
 
-        let test_project = await project.model.create({
+        let test_project = await project.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`,
             client_id: test_client._id,
@@ -494,25 +494,25 @@ describe('Basic Server', function () {
         
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(test_project)), results.data);
-        assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(test_project._id))), undefined);
+        assert.deepEqual(JSON.parse(JSON.stringify(await project.mongoose_model.findById(test_project._id))), undefined);
     });
 
     it(`should reject a DELETE operation at the wrong layer membership`, async function () {
-        let test_institution = await institution.model.create({
+        let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
 
-        let test_client = await client.model.create({
+        let test_client = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`
         })
 
-        let test_client_2 = await client.model.create({
+        let test_client_2 = await client.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Anna's Latex Emporium`
         })
 
-        let test_project = await project.model.create({
+        let test_project = await project.mongoose_model.create({
             institution_id: test_institution._id,
             name: `Bob's spandex house`,
             client_id: test_client_2._id,
@@ -525,6 +525,6 @@ describe('Basic Server', function () {
         // institution ID.
         //@ts-ignore
         assert.deepEqual(null, results.data);
-        assert.deepEqual(JSON.parse(JSON.stringify(await project.model.findById(test_project._id))), JSON.parse(JSON.stringify(test_project)));
+        assert.deepEqual(JSON.parse(JSON.stringify(await project.mongoose_model.findById(test_project._id))), JSON.parse(JSON.stringify(test_project)));
     });
 });

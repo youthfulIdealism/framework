@@ -40,7 +40,7 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         this.role_collection = role_collection;
         this.role_cache = role_cache ?? new Cache(60);
 
-        if(!this.role_collection.raw_schema.permissions){
+        if(!this.role_collection.mongoose_schema.permissions){
             throw new Error(`could not find field "permissions" on role collection. Permissions should be an object of the format {[key: collection_id]: ('read'| 'create'| 'update'| 'delete')[]}`)
         }
     }
@@ -53,7 +53,7 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         // a cheap operation even though it makes an extra database query. Use the cache's first_fetch_then_refresh
         // method so that we aren't keeping out-of-date auth data in the cache.
         let role_membership = await this.role_membership_cache.first_fetch_then_refresh(`${user_id}-${layer_id}`, async () => {
-            let role_memberships = await this.role_membership_collection.model.find({ 
+            let role_memberships = await this.role_membership_collection.mongoose_model.find({ 
                 [this.user_id_field]: user_id,
                 [`${this.layer_collection_id}_id`]: new mongoose.Types.ObjectId(layer_id)
             })
@@ -71,7 +71,7 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         // a cheap operation even though it makes an extra database query. Use the cache's first_fetch_then_refresh
         // method so that we aren't keeping out-of-date auth data in the cache.
         let role = await this.role_cache.first_fetch_then_refresh(role_membership[this.role_id_field], async () => {
-            let role = await this.role_collection.model.findById(role_membership[this.role_id_field]);
+            let role = await this.role_collection.mongoose_model.findById(role_membership[this.role_id_field]);
             return role;
         })
         

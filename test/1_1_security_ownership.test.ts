@@ -59,7 +59,7 @@ describe('Security Model Ownership', function () {
         F_Security_Model.set_auth_fetcher(async (req: Request) => {
             if(!req.headers.authorization){ return undefined; }
 
-            let user_record = await collection_user.model.findOne({auth_id: req.headers.authorization})
+            let user_record = await collection_user.mongoose_model.findOne({auth_id: req.headers.authorization})
             if(!user_record){ return undefined; }
 
             return { user_id: user_record._id, layers: [] };
@@ -82,16 +82,16 @@ describe('Security Model Ownership', function () {
     beforeEach(async function(){
         for(let collection of Object.values(registry.collections)){
             //@ts-ignore
-            await collection.model.collection.drop();
+            await collection.mongoose_model.collection.drop();
         }
     })
 
     async function generate_user_and_display(){
-        let user = await collection_user.model.create({
+        let user = await collection_user.mongoose_model.create({
             auth_id: 'steve'
         });
 
-        let user_display = await collection_user_display.model.create({
+        let user_display = await collection_user_display.mongoose_model.create({
             user_id: user._id,
             name: 'steve',
             email: 'steve@example.com'
@@ -122,7 +122,7 @@ describe('Security Model Ownership', function () {
     it(`should reject a basic GET operation authenticated to the wrong user`, async function () {
         let { user, user_display } = await generate_user_and_display();
 
-        let user_2 = await collection_user.model.create({
+        let user_2 = await collection_user.mongoose_model.create({
             auth_id: 'sharon'
         });
 
@@ -143,13 +143,13 @@ describe('Security Model Ownership', function () {
 
 
     it(`should authorize a basic GET multiple operation authenticated properly`, async function () {
-        let user = await collection_user.model.create({
+        let user = await collection_user.mongoose_model.create({
             auth_id: 'steve'
         });
 
         let user_displays = [] as any[];
         for(let q = 0; q < 5; q++){
-            user_displays.push(await collection_user_display.model.create({
+            user_displays.push(await collection_user_display.mongoose_model.create({
                 user_id: user._id,
                 name: 'steve',
                 email: 'steve@example.com'
@@ -167,17 +167,17 @@ describe('Security Model Ownership', function () {
     });
 
     it(`should reject a basic GET multiple operation when performed by the wrong user`, async function () {
-        let user = await collection_user.model.create({
+        let user = await collection_user.mongoose_model.create({
             auth_id: 'steve'
         });
 
-        let user_2 = await collection_user.model.create({
+        let user_2 = await collection_user.mongoose_model.create({
             auth_id: 'sharon'
         });
 
         let user_displays = [] as any[];
         for(let q = 0; q < 5; q++){
-            user_displays.push(await collection_user_display.model.create({
+            user_displays.push(await collection_user_display.mongoose_model.create({
                 user_id: user._id,
                 name: 'steve',
                 email: 'steve@example.com'
@@ -217,13 +217,13 @@ describe('Security Model Ownership', function () {
         //@ts-ignore
         assert.notDeepEqual(JSON.parse(JSON.stringify(user_display)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.model.findById(user_display._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.mongoose_model.findById(user_display._id))), results.data);
     });
 
     it(`should reject a basic PUT operation authenticated to the wrong user`, async function () {
         let { user, user_display } = await generate_user_and_display();
 
-        let user_2 = await collection_user.model.create({
+        let user_2 = await collection_user.mongoose_model.create({
             auth_id: 'sharon'
         });
 
@@ -261,13 +261,13 @@ describe('Security Model Ownership', function () {
         }).json();
 
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.model.findById(results.data._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.mongoose_model.findById(results.data._id))), results.data);
     });
 
     it(`should reject a basic POST operation authenticated to the wrong user`, async function () {
         let { user, user_display } = await generate_user_and_display();
 
-        let user_2 = await collection_user.model.create({
+        let user_2 = await collection_user.mongoose_model.create({
             auth_id: 'sharon'
         });
 
@@ -305,13 +305,13 @@ describe('Security Model Ownership', function () {
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(user_display)), results.data);
         //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.model.findById(user_display._id))), undefined);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.mongoose_model.findById(user_display._id))), undefined);
     });
 
     it(`should reject a basic DELETE operation authenticated to the wrong user`, async function () {
         let { user, user_display } = await generate_user_and_display();
 
-        let user_2 = await collection_user.model.create({
+        let user_2 = await collection_user.mongoose_model.create({
             auth_id: 'sharon'
         });
 

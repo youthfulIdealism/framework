@@ -77,16 +77,16 @@ describe('Client Library Generation: Library Generation', function () {
         await rimraf('./test/tmp');
         await mkdir('./test/tmp');
 
-        collection_institution = new F_Collection('institution', validate_institution, 'client');
+        collection_institution = new F_Collection('institution', validate_institution);
         collection_institution.add_layers([], [new F_SM_Open_Access(collection_institution)])
 
-        collection_client = new F_Collection('client', validate_client, 'client');
+        collection_client = new F_Collection('client', validate_client);
         collection_client.add_layers(['institution'], [new F_SM_Open_Access(collection_client)])
 
-        collection_project = new F_Collection('project', validate_project, 'client');
+        collection_project = new F_Collection('project', validate_project);
         collection_project.add_layers(['institution', 'client'], [new F_SM_Open_Access(collection_project)])
 
-        collection_brief_news_category = new F_Collection('brief_news_category', validate_brief_news_category, 'client');
+        collection_brief_news_category = new F_Collection('brief_news_category', validate_brief_news_category);
         collection_brief_news_category.add_layers(['institution', 'client'], [new F_SM_Open_Access(collection_brief_news_category)])
 
         let proto_registry = new F_Collection_Registry();
@@ -141,23 +141,23 @@ describe('Client Library Generation: Library Generation', function () {
     beforeEach(async function(){
         for(let collection of Object.values(registry.collections)){
             //@ts-ignore
-            await collection.model.collection.drop();
+            await collection.mongoose_model.collection.drop();
         }
     })
 
     async function generate_test_setup(){
-        let institution = await collection_institution.model.create({
+        let institution = await collection_institution.mongoose_model.create({
             name: 'test institution'
         });
 
-        let client = await collection_client.model.create({
+        let client = await collection_client.mongoose_model.create({
             name: 'test client',
             institution_id: institution._id,
         });
 
-        let test_projects: z.infer<typeof collection_project.schema>[] = [];
+        let test_projects: z.infer<typeof collection_project.validator>[] = [];
         for(let q = 0; q < 10; q++){
-            test_projects.push(await collection_project.model.create({
+            test_projects.push(await collection_project.mongoose_model.create({
                 name: 'test project',
                 institution_id: institution._id,
                 client_id: client._id,
@@ -198,7 +198,7 @@ describe('Client Library Generation: Library Generation', function () {
             name: 'new institution',
         });
         assert.deepEqual(
-            JSON.parse(JSON.stringify(await collection_institution.model.findById(result._id))),
+            JSON.parse(JSON.stringify(await collection_institution.mongoose_model.findById(result._id))),
             JSON.parse(JSON.stringify(result)),
         )
     });
@@ -211,7 +211,7 @@ describe('Client Library Generation: Library Generation', function () {
             name: 'redo institution name',
         });
         assert.deepEqual(
-            JSON.parse(JSON.stringify(await collection_institution.model.findById(institution._id))),
+            JSON.parse(JSON.stringify(await collection_institution.mongoose_model.findById(institution._id))),
             JSON.parse(JSON.stringify(result)),
         )
     });
@@ -222,7 +222,7 @@ describe('Client Library Generation: Library Generation', function () {
         
         let result = await api(`http://localhost:${port}/api`, async () => "todd").collection('institution').document(institution._id).remove();
         assert.deepEqual(
-            await collection_institution.model.findById(institution._id),
+            await collection_institution.mongoose_model.findById(institution._id),
             undefined,
         )
     });
@@ -245,7 +245,6 @@ describe('Client Library Generation: Library Generation', function () {
         } catch(err) {
             console.error(await err.response.json())
         }
-        
 
         assert.deepEqual(
             JSON.parse(JSON.stringify(test_projects.filter(ele => ele.project_number > 5))),
