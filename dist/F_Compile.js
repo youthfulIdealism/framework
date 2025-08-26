@@ -52,7 +52,7 @@ export function compile(app, collection, api_prefix) {
         app.get(get_multiple_path, async (req, res) => {
             let validated_query_args;
             try {
-                validated_query_args = collection.query_schema.parse(req.query);
+                validated_query_args = collection.query_schema_server.parse(req.query);
             }
             catch (err) {
                 if (err instanceof z.ZodError) {
@@ -80,7 +80,7 @@ export function compile(app, collection, api_prefix) {
             let documents;
             try {
                 let query = collection.model.find(find, undefined, { 'lean': true });
-                let fetch = query_object_to_mongodb_limits(query, collection.query_schema);
+                let fetch = query_object_to_mongodb_limits(query, collection.query_schema_server);
                 documents = await fetch;
             }
             catch (err) {

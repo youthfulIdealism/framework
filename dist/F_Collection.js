@@ -6,16 +6,18 @@ export class F_Collection {
     model;
     access_layers;
     raw_schema;
-    query_schema;
+    query_schema_server;
+    query_schema_client;
     put_schema;
     post_schema;
     compiled;
-    constructor(collection_name, schema, mode = 'server') {
+    constructor(collection_name, schema) {
         this.collection_id = collection_name;
         this.schema = schema;
         this.raw_schema = schema_from_zod(schema);
         this.model = mongoose_from_zod(collection_name, schema);
-        this.query_schema = query_validator_from_zod(schema, mode);
+        this.query_schema_server = query_validator_from_zod(schema, 'server');
+        this.query_schema_client = query_validator_from_zod(schema, 'client');
         this.put_schema = schema.partial();
         this.post_schema = Object.hasOwn(this.schema._zod.def.shape, '_id') ? schema.partial({ _id: true }) : schema;
         this.access_layers = [];

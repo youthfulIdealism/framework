@@ -75,7 +75,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         app.get(get_multiple_path, async (req: Request, res: Response) => {
             let validated_query_args: { [key: string]: any } ;
             try {
-                validated_query_args = collection.query_schema.parse(req.query);
+                validated_query_args = collection.query_schema_server.parse(req.query);
             } catch(err){
                 if(err instanceof z.ZodError){
                     res.status(400);
@@ -105,7 +105,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             try {
                 //@ts-expect-error
                 let query = collection.model.find(find, undefined, { 'lean': true });
-                let fetch = query_object_to_mongodb_limits(query, collection.query_schema);
+                let fetch = query_object_to_mongodb_limits(query, collection.query_schema_server);
                 documents = await fetch;
             } catch(err){
                 if (err.name == 'CastError') {

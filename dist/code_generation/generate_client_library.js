@@ -24,7 +24,7 @@ export async function generate_client_library(path, collection_registry, service
         let collection_type_main = type_from_zod(collection.schema, 0);
         collection_type_definition_builder.push(`export type ${mustache_context.type_return} = ${collection_type_main[0]}`, ...collection_type_main.slice(1));
         let collection_query_type_definition_builder = [];
-        let collection_type_query = type_from_zod(collection.query_schema, 0);
+        let collection_type_query = type_from_zod(collection.query_schema_client, 0);
         collection_query_type_definition_builder.push(`export type ${mustache_context.type_query} = ${collection_type_query[0]}`, ...collection_type_query.slice(1));
         let collection_put_type_definition_builder = [];
         let collection_type_put = type_from_zod(collection.put_schema, 0);

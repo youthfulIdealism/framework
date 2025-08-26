@@ -11,10 +11,11 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     model: Model<z.infer<ZodSchema>>;
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
     raw_schema: any;
-    query_schema: z.ZodType;
+    query_schema_server: z.ZodType;
+    query_schema_client: z.ZodType;
     put_schema: z.ZodType;
     post_schema: z.ZodType;
     compiled: boolean;
-    constructor(collection_name: Collection_ID, schema: ZodSchema, mode?: 'server' | 'client');
+    constructor(collection_name: Collection_ID, schema: ZodSchema);
     add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[], is_layer_owner?: boolean): void;
 }

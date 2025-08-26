@@ -25,8 +25,6 @@ export async function generate_client_library<Collections>(path: string, collect
     // build the typescript types
     for(let col of Object.values(collection_registry.collections)){
         let collection = col as F_Collection<string, any>;
-        //console.log(collection.collection_id)
-        //console.log(`START FILE types_${collection.collection_id.replace(/[^(a-zA-Z0-9\-\_)]/g, '-')}.ts`)
 
         let mustache_context = {
             collection_id: collection.collection_id,
@@ -49,7 +47,7 @@ export async function generate_client_library<Collections>(path: string, collect
         collection_type_definition_builder.push(`export type ${mustache_context.type_return} = ${collection_type_main[0]}`, ...collection_type_main.slice(1));
 
         let collection_query_type_definition_builder = [] as string[];
-        let collection_type_query = type_from_zod(collection.query_schema, 0);
+        let collection_type_query = type_from_zod(collection.query_schema_client, 0);
         collection_query_type_definition_builder.push(`export type ${mustache_context.type_query} = ${collection_type_query[0]}`, ...collection_type_query.slice(1));
 
         let collection_put_type_definition_builder = [] as string[];
