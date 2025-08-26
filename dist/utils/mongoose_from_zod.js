@@ -75,6 +75,10 @@ export function schema_entry_from_zod(zod_definition) {
             result = parse_enum(zod_definition._zod.def);
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
+        case "union":
+            result = parse_union(zod_definition._zod.def);
+            result.required = !zod_definition.safeParse(undefined).success;
+            return result;
         case "readonly":
             throw new Error(`Zod type not yet supported: ${zod_definition._zod.def.type});`);
         case "custom":
@@ -108,6 +112,11 @@ function parse_array(def) {
 }
 function parse_enum(def) {
     let retval = { type: String };
+    retval.required = true;
+    return retval;
+}
+function parse_union(def) {
+    let retval = { type: Schema.Types.Mixed };
     retval.required = true;
     return retval;
 }

@@ -110,6 +110,32 @@ describe('query validator from zod', function () {
         );
     });
 
+    it('should be able to process a union', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z.string().or(z.number())
+            })
+        );
+
+        assert.deepEqual(
+            query_validator.parse({
+                parameter: 'fungus',
+            }),
+            {
+                parameter: 'fungus',
+            }
+        );
+
+        assert.deepEqual(
+            query_validator.parse({
+                parameter: '5',
+            }),
+            {
+                parameter: 5,
+            }
+        );
+    });
+
     it('should be able to process string membership in an array', async function () {
         let query_validator = query_validator_from_zod(
             z.object({

@@ -31,6 +31,8 @@ function parse_any(zod_definition, prefix, mode = 'server') {
             return parse_date(prefix, mode);
         case "array":
             return parse_array(zod_definition._zod.def, prefix, mode);
+        case "union":
+            return parse_union(zod_definition._zod.def, prefix, mode);
         case "custom":
             if (!magic_values.has(zod_definition)) {
                 throw new Error(`could not find custom parser in the magic value dictionary`);
@@ -71,6 +73,21 @@ function parse_object(def, prefix, mode) {
         retval.push(...filters);
     }
     return retval;
+}
+function parse_union(def, prefix, mode) {
+    let simple_children = ['enum', 'string', 'number', 'int', 'boolean'];
+    let filter_queue = def.options.slice().filter(ele => simple_children.includes(ele._zod.def.type));
+    let root = filter_queue.shift();
+    for (let filter of filter_queue) {
+        root = root.or(filter);
+    }
+    return [
+        {
+            path: prefix,
+            filter: root,
+            sortable: true,
+        }
+    ];
 }
 function parse_string(prefix, mode) {
     let array_parser = mode === 'client' ? z.array(z.string()) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));

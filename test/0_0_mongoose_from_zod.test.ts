@@ -192,4 +192,43 @@ describe('Mongoose from Zod', function () {
         let mongooseSchema = schema_from_zod(zodSchema)
         assert.deepEqual({ test_value: {type: String, required: true, default: 'chunky'} }, mongooseSchema)
     });
+
+    it(`should convert union types to a mixed schema`, function () {
+        let zodSchema = z.object({
+            test_value: z.number().or(z.string())
+        })
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({ test_value: {type: Schema.Types.Mixed, required: true} }, mongooseSchema)
+    });
+
+    it(`should convert union types to a mixed schema with default values`, function () {
+        let zodSchema = z.object({
+            test_value: z.number().or(z.string()).default(2)
+        })
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({ test_value: {type: Schema.Types.Mixed, required: true, default: 2} }, mongooseSchema)
+    });
+
+    it(`should convert union types to a mixed schema with optional`, function () {
+        let zodSchema = z.object({
+            test_value: z.number().or(z.string()).optional()
+        })
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({ test_value: {type: Schema.Types.Mixed, required: false} }, mongooseSchema)
+    });
+
+
+
+    /*it.only(`should convert recursive schemas`, function () {
+        let query_group = z.object({
+            type: z.enum(['group']),
+            operator: z.enum(['all', 'any']),
+            get children() {
+                return z.array(query_group)
+            },
+            locked: z.boolean().optional()
+        })
+        let mongooseSchema = schema_from_zod(query_group)
+        //assert.deepEqual({ test_value: {type: String, required: true, default: 'chunky'} }, mongooseSchema)
+    })*/
 });

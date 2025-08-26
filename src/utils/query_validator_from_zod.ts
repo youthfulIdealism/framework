@@ -44,6 +44,8 @@ function parse_any(zod_definition: z.ZodTypeAny, prefix: string, mode: Mode = 's
             return parse_date(prefix, mode);
         case "array":
             return parse_array(zod_definition._zod.def as z.core.$ZodArrayDef, prefix, mode)
+        case "union":
+            return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, prefix, mode)
         case "custom":
             if(!magic_values.has(zod_definition)) {
                 throw new Error(`could not find custom parser in the magic value dictionary`)
@@ -90,6 +92,24 @@ function parse_object(def: z.core.$ZodObjectDef, prefix: string, mode: Mode): ty
         retval.push(...filters);
     }
     return retval;
+}
+
+function parse_union(def: z.core.$ZodUnionDef, prefix: string, mode: Mode): type_filters {
+    let simple_children = ['enum', 'string', 'number', 'int', 'boolean']
+    let filter_queue = def.options.slice().filter(ele => simple_children.includes(ele._zod.def.type));
+    let root = filter_queue.shift();
+    for(let filter of  filter_queue){
+        //@ts-expect-error
+        root = root.or(filter);
+    }
+    return [
+        {
+            path: prefix,
+            //@ts-expect-error
+            filter: root,
+            sortable: true,
+        }
+    ];
 }
 
 function parse_string(prefix: string, mode: Mode): type_filters {
