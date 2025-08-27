@@ -1,7 +1,7 @@
 {
-  "name": "framework",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@liminalfunctions/framework",
+  "version": "1.0.2",
+  "main": "./dist/index.js",
   "type": "module",
   "scripts": {
     "test": "npm run-script build && mocha",
@@ -25,8 +25,8 @@
     "zod": "^4.0.17"
   },
   "peerDependencies": {
-    "express": "^4.21.2",
     "ky": "^1.9.0",
+    "express": "^5.1.0",
     "mongoose": "^8.17.0",
     "zod": "^4.0.0"
   },
