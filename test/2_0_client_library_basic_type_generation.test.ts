@@ -379,9 +379,9 @@ describe('Client Library Generation: Basic Types', function () {
         )
     });
 
-    it(`should be able to generate a plain object containing a map`, async function () {
+    it(`should be able to generate a plain object containing a record`, async function () {
         const validate_test_collection = z.object({
-            test: z.map(z.string(), z.string())
+            test: z.record(z.string(), z.string())
         });
 
         let test_collection = new F_Collection('test_collection', validate_test_collection);
@@ -400,9 +400,9 @@ describe('Client Library Generation: Basic Types', function () {
     });
 
 
-    it(`should be able to generate a plain object containing an object map`, async function () {
+    it(`should be able to generate a plain object containing an object record`, async function () {
         const validate_test_collection = z.object({
-            test: z.map(z.string(), z.object({
+            test: z.record(z.string(), z.object({
                 test_2: z.string()
             }))
         });
@@ -422,9 +422,9 @@ describe('Client Library Generation: Basic Types', function () {
         )
     });
 
-    it(`should be able to generate a plain object containing an array map`, async function () {
+    it(`should be able to generate a plain object containing an array record`, async function () {
         const validate_test_collection = z.object({
-            test: z.map(z.string(), z.array(z.string()))
+            test: z.record(z.string(), z.array(z.string()))
         });
 
         let test_collection = new F_Collection('test_collection', validate_test_collection);

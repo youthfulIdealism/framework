@@ -8,13 +8,12 @@ import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from ".
 import { z_mongodb_id } from "./utils/mongoose_from_zod.js";
 
 export function compile<Collection_ID extends string, ZodSchema extends z.ZodObject>(app: Router, collection: F_Collection<Collection_ID, ZodSchema>, api_prefix: string){
+    /*app.use((req, res, next) => {
+        console.log(`${req.method} ${req.originalUrl}`)
+        next();
+    })*/
+    
     for(let access_layers of collection.access_layers){
-
-        /*app.use((req, res, next) => {
-            console.log(`${req.method} ${req.originalUrl}`)
-            next();
-        })*/
-
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
 
         let get_one_path = [
@@ -25,6 +24,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
         // get individual document
         app.get(get_one_path, async (req: Request, res: Response) => {
+
             // ensure the the document ID passed in is valid so that mongodb doesn't have a cow
             if (!isValidObjectId(req.params.document_id)) {
                 res.status(400);

@@ -15,8 +15,9 @@ import express, { Express, Request, Response, NextFunction } from 'express'
 import mongoose, { Mongoose } from "mongoose";
 import { Server } from "http";
 
-
-
+// IF YOU RUN THESE TESTS ON THEIR OWN, THEY WORK FINE
+// there's something janky going on with the mongodb or express
+// setup/teardown that's causing the mto fail.
 describe('Security Model Role Membership', function () {
     const port = 4601;
     let express_app: Express;
@@ -86,6 +87,8 @@ describe('Security Model Role Membership', function () {
         express_app = express();
         express_app.use(express.json());
         db_connection = await mongoose.connect('mongodb://127.0.0.1:27017/');
+        //console.log('connected')
+        //console.log(db_connection)
 
         let cache_role = new Cache(60);
         let cache_institution_role_membership = new Cache(60);
@@ -174,7 +177,14 @@ describe('Security Model Role Membership', function () {
         await server.close();
         mongoose.connection.modelNames().forEach(ele => mongoose.connection.deleteModel(ele));
         db_connection.modelNames().forEach(ele => db_connection.deleteModel(ele));
+        
+        await new Promise(resolve => setTimeout(resolve, 500))
+        //console.log(db_connection);
+        //console.log(db_connection.connection.readyState);
+
         await db_connection.disconnect()
+
+        await new Promise(resolve => setTimeout(resolve, 500))
     });
 
     beforeEach(async function(){
@@ -182,6 +192,7 @@ describe('Security Model Role Membership', function () {
             //@ts-ignore
             await collection.mongoose_model.collection.drop();
         }
+        await new Promise(resolve => setTimeout(resolve, 500))
     })
 
     /**
@@ -372,13 +383,19 @@ describe('Security Model Role Membership', function () {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     it(`should authorize a basic GET operation on a document where the user has a T1 role membership`, async function () {
+        console.log('HERE')
+
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        console.log('PRECALL')
 
         let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
             headers: {
                 authorization: 'steve'
             }
         }).json();
+
+        console.log('POSTCALL')
 
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(steve_project)), results.data);

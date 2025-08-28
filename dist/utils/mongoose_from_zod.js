@@ -6,7 +6,13 @@ export const z_mongodb_id = z.custom((val) => {
     if (!val) {
         return false;
     }
-    return underlying_mongodb_id_validator.parse(val) === val;
+    let parsed = underlying_mongodb_id_validator.safeParse(val);
+    if (!parsed.success) {
+        return false;
+    }
+    else {
+        return true;
+    }
 }).meta({
     "type": "string",
     "format": "string",
@@ -61,8 +67,8 @@ export function schema_entry_from_zod(zod_definition, loop_detector = new Set())
             return schema_entry_from_zod(zod_definition._zod.def.innerType, loop_detector);
         case "optional":
             return parse_optional(zod_definition._zod.def, loop_detector);
-        case "map":
-            result = parse_map(zod_definition._zod.def, loop_detector);
+        case "record":
+            result = parse_record(zod_definition._zod.def, loop_detector);
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "any":
@@ -124,7 +130,7 @@ function parse_union(def) {
     retval.required = true;
     return retval;
 }
-function parse_map(def, loop_detector) {
+function parse_record(def, loop_detector) {
     if (def.keyType._zod.def.type !== 'string') {
         throw new Error('mongoDB only supports maps where the key is a string.');
     }

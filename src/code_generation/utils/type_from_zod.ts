@@ -46,8 +46,8 @@ export function type_from_zod(zod_definition: z.ZodType, indent_level: number): 
             //stuff is nullable in mongodb by default, so just return the ordinary results of the parse
             //@ts-expect-error
             return type_from_zod((zod_definition as z.core.$ZodNullable)._zod.def.innerType)*/
-        case "map":
-            return  parse_map(zod_definition._zod.def as z.core.$ZodMapDef, indent_level);
+        case "record":
+            return  parse_record(zod_definition._zod.def as z.core.$ZodRecordDef, indent_level);
         case "enum":
             return parse_enum(zod_definition._zod.def as z.core.$ZodEnumDef)
         case "readonly":
@@ -109,7 +109,7 @@ function parse_enum(def: z.core.$ZodEnumDef): any {
     return [ `("${Object.values(def.entries).join('" | "')}")`];
 }
 
-function parse_map(def: z.core.$ZodMapDef, indent_level: number): any {
+function parse_record(def: z.core.$ZodRecordDef, indent_level: number): any {
     let retval = ['{']
     //@ts-ignore
     let key_phrase = `[key: ${type_from_zod(def.keyType, indent_level + 1)}]:`;

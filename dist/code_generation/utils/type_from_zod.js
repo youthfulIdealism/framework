@@ -24,8 +24,8 @@ export function type_from_zod(zod_definition, indent_level) {
             return ['null'];
         case "array":
             return parse_array(zod_definition._zod.def, indent_level);
-        case "map":
-            return parse_map(zod_definition._zod.def, indent_level);
+        case "record":
+            return parse_record(zod_definition._zod.def, indent_level);
         case "enum":
             return parse_enum(zod_definition._zod.def);
         case "readonly":
@@ -77,7 +77,7 @@ function parse_array(def, indent_level) {
 function parse_enum(def) {
     return [`("${Object.values(def.entries).join('" | "')}")`];
 }
-function parse_map(def, indent_level) {
+function parse_record(def, indent_level) {
     let retval = ['{'];
     let key_phrase = `[key: ${type_from_zod(def.keyType, indent_level + 1)}]:`;
     let type_value = type_from_zod(def.valueType, indent_level + 1);

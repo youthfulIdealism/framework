@@ -8,7 +8,12 @@ export const magic_values = z.registry<{ override_type: string }>();
 const underlying_mongodb_id_validator = z.string().length(24);
 export const z_mongodb_id = z.custom<string>((val) => {
     if(!val){ return false; }
-    return underlying_mongodb_id_validator.parse(val) === val;
+    let parsed = underlying_mongodb_id_validator.safeParse(val);
+    if (!parsed.success) {
+        return false;
+    } else {
+        return true;
+    }
 }).meta({
     "type": "string",
     "format": "string",
@@ -70,8 +75,8 @@ export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: 
             return schema_entry_from_zod((zod_definition as z.core.$ZodNullable)._zod.def.innerType, loop_detector)
         case "optional":
             return parse_optional(zod_definition._zod.def as z.core.$ZodOptionalDef, loop_detector);
-        case "map":
-            result = parse_map(zod_definition._zod.def as z.core.$ZodMapDef, loop_detector);
+        case "record":
+            result = parse_record(zod_definition._zod.def as z.core.$ZodRecordDef, loop_detector);
             result.required = !zod_definition.safeParse(undefined).success
             return result;
         case "any" :
@@ -142,7 +147,7 @@ function parse_union(def: z.core.$ZodUnionDef): any {
     return retval;
 }
 
-function parse_map(def: z.core.$ZodMapDef, loop_detector: Set<any>): any {
+function parse_record(def: z.core.$ZodRecordDef, loop_detector: Set<any>): any {
     if(def.keyType._zod.def.type !== 'string') { throw new Error('mongoDB only supports maps where the key is a string.'); }
     //@ts-ignore
     let retval = { type: Schema.Types.Map, of: schema_entry_from_zod(def.valueType, loop_detector), required: true}

@@ -76,7 +76,12 @@ describe('Security Model Ownership', function () {
         await server.close();
         mongoose.connection.modelNames().forEach(ele => mongoose.connection.deleteModel(ele));
         db_connection.modelNames().forEach(ele => db_connection.deleteModel(ele));
+
+        await new Promise(resolve => setTimeout(resolve, 500))
+
         await db_connection.disconnect()
+
+        await new Promise(resolve => setTimeout(resolve, 500))
     });
 
     beforeEach(async function(){

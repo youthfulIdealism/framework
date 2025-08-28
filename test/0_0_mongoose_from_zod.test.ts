@@ -5,6 +5,8 @@ import { schema_from_zod, z_mongodb_id } from '../dist/utils/mongoose_from_zod.j
 import { Schema } from 'mongoose'
 import { required } from "zod/mini";
 
+process.env.DEBUG = 'express:*'
+
 describe('Mongoose from Zod', function () {
 
     it('should convert an empty object', function () {
@@ -152,21 +154,21 @@ describe('Mongoose from Zod', function () {
         map conversions
     */
     for(let basic_type of basic_types) {
-        it(`should convert map of ${basic_type.label} to mongoose type`, function () {
-            let zodSchema = z.object({ test_value: z.map(z.string(), basic_type.zod_function()) })
+        it(`should convert record of ${basic_type.label} to mongoose type`, function () {
+            let zodSchema = z.object({ test_value: z.record(z.string(), basic_type.zod_function()) })
             let mongooseSchema = schema_from_zod(zodSchema)
             assert.deepEqual({ test_value: {type: Schema.Types.Map, of: { type: basic_type.mongoose_type, required: true }, required: true} }, mongooseSchema)
         });
 
-        it(`should convert map of ${basic_type.label} to mongoose type with optional`, function () {
-            let zodSchema = z.object({ test_value: z.map(z.string(), basic_type.zod_function()).optional() })
+        it(`should convert record of ${basic_type.label} to mongoose type with optional`, function () {
+            let zodSchema = z.object({ test_value: z.record(z.string(), basic_type.zod_function()).optional() })
             let mongooseSchema = schema_from_zod(zodSchema)
             assert.deepEqual({ test_value: {type: Schema.Types.Map, of: { type: basic_type.mongoose_type, required: true }, required: false} }, mongooseSchema)
         });
 
-        it(`should convert map of ${basic_type.label} to mongoose type with default values`, function () {
+        it(`should convert record of ${basic_type.label} to mongoose type with default values`, function () {
             //@ts-ignore
-            let zodSchema = z.object({ test_value: z.map(z.string(), basic_type.zod_function()).default({}) })
+            let zodSchema = z.object({ test_value: z.record(z.string(), basic_type.zod_function()).default({}) })
             let mongooseSchema = schema_from_zod(zodSchema)
             assert.deepEqual({ test_value: {type: Schema.Types.Map, of: { type: basic_type.mongoose_type, required: true }, required: true, default: {}} }, mongooseSchema)
         });
