@@ -31,13 +31,13 @@ export const z_mongodb_id_optional = z.custom((val) => {
 }).meta({ framework_override_type: 'mongodb_id' });
 export function mongoose_from_zod(schema_name, zod_definition) {
     let mongoose_schema = schema_from_zod(zod_definition);
-    return mongoose.model(schema_name, mongoose_schema);
+    return mongoose.model(schema_name, new Schema(mongoose_schema, { typeKey: 'mongoose_type' }));
 }
 export function schema_from_zod(zod_definition) {
     let mongoose_schema = schema_entry_from_zod(zod_definition);
-    delete mongoose_schema.type.required;
-    delete mongoose_schema.type._id;
-    return mongoose_schema.type;
+    delete mongoose_schema.mongoose_type.required;
+    delete mongoose_schema.mongoose_type._id;
+    return mongoose_schema.mongoose_type;
 }
 export function schema_entry_from_zod(zod_definition, loop_detector = new Set()) {
     if (!zod_definition) {
@@ -84,7 +84,7 @@ export function schema_entry_from_zod(zod_definition, loop_detector = new Set())
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "any":
-            result = { type: Schema.Types.Mixed, required: false };
+            result = { mongoose_type: Schema.Types.Mixed, required: false };
             return result;
         case "default":
             result = parse_default(zod_definition._zod.def, loop_detector);
@@ -119,27 +119,27 @@ export function schema_entry_from_zod(zod_definition, loop_detector = new Set())
 }
 function parse_object(def, loop_detector) {
     if (loop_detector.has(def)) {
-        return { type: Schema.Types.Mixed, required: true };
+        return { mongoose_type: Schema.Types.Mixed, required: true };
     }
     loop_detector.add(def);
     let retval = {};
     for (let [key, value] of Object.entries(def.shape)) {
         retval[key] = schema_entry_from_zod(value, loop_detector);
     }
-    return { type: retval, required: true };
+    return { mongoose_type: retval, required: true };
 }
 function parse_array(def, loop_detector) {
-    let retval = { type: [schema_entry_from_zod(def.element, loop_detector)] };
+    let retval = { mongoose_type: [schema_entry_from_zod(def.element, loop_detector)] };
     retval.required = true;
     return retval;
 }
 function parse_enum(def) {
-    let retval = { type: String };
+    let retval = { mongoose_type: String };
     retval.required = true;
     return retval;
 }
 function parse_union(def) {
-    let retval = { type: Schema.Types.Mixed };
+    let retval = { mongoose_type: Schema.Types.Mixed };
     retval.required = true;
     return retval;
 }
@@ -147,24 +147,24 @@ function parse_record(def, loop_detector) {
     if (def.keyType._zod.def.type !== 'string') {
         throw new Error('mongoDB only supports maps where the key is a string.');
     }
-    let retval = { type: Schema.Types.Map, of: schema_entry_from_zod(def.valueType, loop_detector), required: true };
+    let retval = { mongoose_type: Schema.Types.Map, of: schema_entry_from_zod(def.valueType, loop_detector), required: true };
     retval.required = true;
     return retval;
 }
 function parse_string(def) {
-    let retval = { type: String };
+    let retval = { mongoose_type: String };
     return retval;
 }
 function parse_number(def) {
-    let retval = { type: Number };
+    let retval = { mongoose_type: Number };
     return retval;
 }
 function parse_boolean(def) {
-    let retval = { type: Boolean };
+    let retval = { mongoose_type: Boolean };
     return retval;
 }
 function parse_date(def) {
-    let retval = { type: Date };
+    let retval = { mongoose_type: Date };
     return retval;
 }
 function parse_default(def, loop_detector) {
@@ -178,6 +178,6 @@ function parse_optional(def, loop_detector) {
     return type_definition;
 }
 function parse_mongodb_id(def) {
-    return { type: Schema.Types.ObjectId };
+    return { mongoose_type: Schema.Types.ObjectId };
 }
 //# sourceMappingURL=mongoose_from_zod.js.map

@@ -33,14 +33,14 @@ export const z_mongodb_id_optional = z.custom<string>((val) => {
 
 export function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType) {
     let mongoose_schema = schema_from_zod(zod_definition);
-    return mongoose.model<T>(schema_name, mongoose_schema);
+    return mongoose.model<T>(schema_name, new Schema(mongoose_schema, {typeKey: 'mongoose_type'}));
 }
 
 export function schema_from_zod(zod_definition: z.core.$ZodType): any {
     let mongoose_schema = schema_entry_from_zod(zod_definition as z.ZodType);
-    delete mongoose_schema.type.required;
-    delete mongoose_schema.type._id;
-    return mongoose_schema.type;
+    delete mongoose_schema.mongoose_type.required;
+    delete mongoose_schema.mongoose_type._id;
+    return mongoose_schema.mongoose_type;
 }
 
 export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: Set<any> = new Set()): any {
@@ -91,7 +91,7 @@ export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: 
             result.required = !zod_definition.safeParse(undefined).success
             return result;
         case "any" :
-            result = { type: Schema.Types.Mixed, required: false };
+            result = { mongoose_type: Schema.Types.Mixed, required: false };
             return result;
         case "default":
             result = parse_default(zod_definition._zod.def as z.core.$ZodDefaultDef, loop_detector);
@@ -128,7 +128,7 @@ export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: 
 
 function parse_object(def: z.core.$ZodObjectDef, loop_detector: Set<any>): any {
     if(loop_detector.has(def)) {
-        return {type: Schema.Types.Mixed, required: true}
+        return {mongoose_type: Schema.Types.Mixed, required: true}
     }
     loop_detector.add(def);
 
@@ -137,24 +137,24 @@ function parse_object(def: z.core.$ZodObjectDef, loop_detector: Set<any>): any {
         //@ts-ignore
         retval[key] = schema_entry_from_zod(value, loop_detector);
     }
-    return {type: retval, required: true};
+    return {mongoose_type: retval, required: true};
 }
 
 function parse_array(def: z.core.$ZodArrayDef, loop_detector: Set<any>): any {
     //@ts-ignore
-    let retval = { type: [schema_entry_from_zod(def.element, loop_detector)] } as any;
+    let retval = { mongoose_type: [schema_entry_from_zod(def.element, loop_detector)] } as any;
     retval.required = true;
     return retval;
 }
 
 function parse_enum(def: z.core.$ZodEnumDef): any {
-    let retval = { type: String } as any;
+    let retval = { mongoose_type: String } as any;
     retval.required = true;
     return retval;
 }
 
 function parse_union(def: z.core.$ZodUnionDef): any {
-    let retval = { type: Schema.Types.Mixed } as any;
+    let retval = { mongoose_type: Schema.Types.Mixed } as any;
     retval.required = true;
     return retval;
 }
@@ -162,30 +162,30 @@ function parse_union(def: z.core.$ZodUnionDef): any {
 function parse_record(def: z.core.$ZodRecordDef, loop_detector: Set<any>): any {
     if(def.keyType._zod.def.type !== 'string') { throw new Error('mongoDB only supports maps where the key is a string.'); }
     //@ts-ignore
-    let retval = { type: Schema.Types.Map, of: schema_entry_from_zod(def.valueType, loop_detector), required: true}
+    let retval = { mongoose_type: Schema.Types.Map, of: schema_entry_from_zod(def.valueType, loop_detector), required: true}
     retval.required = true;
     return retval;
 }
 
 function parse_string(def: z.core.$ZodStringDef): any {
-    let retval = { type: String } as any;
+    let retval = { mongoose_type: String } as any;
     // for fixing the optional issue
     // https://github.com/colinhacks/zod/issues/4824
     return retval;
 }
 
 function parse_number(def: z.core.$ZodNumberDef): any {
-    let retval = { type: Number } as any;
+    let retval = { mongoose_type: Number } as any;
     return retval;
 }
 
 function parse_boolean(def: z.core.$ZodBooleanDef): any {
-    let retval = { type: Boolean } as any;
+    let retval = { mongoose_type: Boolean } as any;
     return retval;
 }
 
 function parse_date(def: z.core.$ZodDateDef): any {
-    let retval = { type: Date } as any;
+    let retval = { mongoose_type: Date } as any;
     return retval;
 }
 
@@ -204,5 +204,5 @@ function parse_optional(def: z.core.$ZodOptionalDef, loop_detector: Set<any>): a
 }
 
 function parse_mongodb_id(def: z.core.$ZodCustomDef): any {
-    return { type: Schema.Types.ObjectId };
+    return { mongoose_type: Schema.Types.ObjectId };
 }
