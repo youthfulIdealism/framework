@@ -1,11 +1,16 @@
 import * as z from "zod/v4";
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { isValidObjectId } from "mongoose";
 
 import { F_Collection } from "./F_Collection.js";
 import { F_Security_Model, Authenticated_Request } from "./F_Security_Models/F_Security_Model.js";
 import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 import { z_mongodb_id } from "./utils/mongoose_from_zod.js";
+
+/*process.on('unhandledRejection', (reason, promise) => {
+    console.log(`CAUGHT UNHANDLED REJECTION`)
+    console.log(reason)
+})*/
 
 export function compile<Collection_ID extends string, ZodSchema extends z.ZodObject>(app: Router, collection: F_Collection<Collection_ID, ZodSchema>, api_prefix: string){
     /*app.use((req, res, next) => {
@@ -22,47 +27,54 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             `${collection.collection_id}/:document_id`
         ].join('/')
 
+        //console.log(get_one_path);
+
         // get individual document
-        app.get(get_one_path, async (req: Request, res: Response) => {
-
-            // ensure the the document ID passed in is valid so that mongodb doesn't have a cow
-            if (!isValidObjectId(req.params.document_id)) {
-                res.status(400);
-                res.json({ error: `${req.params.document_id} is not a valid document ID.` });
-                return;
-            }
-
-            let find = { '_id': req.params.document_id } as { [key: string]: any } 
-            for(let layer of access_layers.layers){
-                find[`${layer}_id`] = req.params[layer];
-            }
-
-            let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
-            if (!permissive_security_model) {
-                res.status(403);
-                res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
-                return;
-            }
-
-            let document;
+        app.get(get_one_path, async (req: Request, res: Response, next: NextFunction) => {
+            console.log('CALLED')
             try {
-                //@ts-expect-error
-                document = await collection.mongoose_model.findOne(find, undefined, { 'lean': true });
+                // ensure the the document ID passed in is valid so that mongodb doesn't have a cow
+                if (!isValidObjectId(req.params.document_id)) {
+                    res.status(400);
+                    res.json({ error: `${req.params.document_id} is not a valid document ID.` });
+                    return;
+                }
+
+                let find = { '_id': req.params.document_id } as { [key: string]: any } 
+                for(let layer of access_layers.layers){
+                    find[`${layer}_id`] = req.params[layer];
+                }
+
+                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
+                if (!permissive_security_model) {
+                    res.status(403);
+                    res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                    return;
+                }
+
+                let document;
+                try {
+                    //@ts-expect-error
+                    document = await collection.mongoose_model.findOne(find, undefined, { 'lean': true });
+                } catch(err){
+                    res.status(500);
+                    res.json({ error: `there was a novel error` });
+                    console.error(err);
+                    return;
+                }
+                
+                if (!document) {
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'get');
+                    res.json(sendable);
+                } else {
+                    //await req.schema.handle_pre_send(req, document);
+                    res.json({ data: document });
+                }
+                //await req.schema.fire_api_event('get', req, [document]);
             } catch(err){
-                res.status(500);
-                res.json({ error: `there was a novel error` });
                 console.error(err);
-                return;
+                return next(err);
             }
-            
-            if (!document) {
-                let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'get');
-                res.json(sendable);
-            } else {
-                //await req.schema.handle_pre_send(req, document);
-                res.json({ data: document });
-            }
-            //await req.schema.fire_api_event('get', req, [document]);
         })
 
 

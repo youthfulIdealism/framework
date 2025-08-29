@@ -387,6 +387,10 @@ describe('Security Model Role Membership', function () {
 
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
 
+        console.log('DEBUGDAT')
+
+        console.log(await collection_project.mongoose_model.find({}));
+
         console.log('PRECALL')
 
         let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
@@ -424,7 +428,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
     it(`should reject a basic GET operation on a document where the user has no role membership`, async function () {
@@ -437,7 +441,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
 
@@ -508,7 +512,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
     it(`should reject a basic GET multiple operation where the user has no role membership`, async function () {
@@ -530,7 +534,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
 
@@ -590,7 +594,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
     it(`should reject a basic PUT operation on a document where the user has no role membership`, async function () {
@@ -606,7 +610,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -664,7 +668,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
     it(`should reject a basic POST operation on a document where the user has no role membership`, async function () {
@@ -682,7 +686,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
 
@@ -730,7 +734,7 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 
     it(`should reject a basic DELETE operation on a document where the user has no role membership`, async function () {
@@ -743,6 +747,6 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         },
-        { message: 'HTTPError: Response code 403 (Forbidden)' })
+        { message: 'Response code 403 (Forbidden)' })
     });
 });
