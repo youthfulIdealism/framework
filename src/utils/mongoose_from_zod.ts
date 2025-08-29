@@ -91,7 +91,8 @@ export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: 
             result.required = !zod_definition.safeParse(undefined).success
             return result;
         case "any" :
-            result = { type: Schema.Types.Mixed };
+            result = { type: Schema.Types.Mixed, required: false };
+            return result;
         case "default":
             result = parse_default(zod_definition._zod.def as z.core.$ZodDefaultDef, loop_detector);
             result.required = true;

@@ -84,7 +84,8 @@ export function schema_entry_from_zod(zod_definition, loop_detector = new Set())
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "any":
-            result = { type: Schema.Types.Mixed };
+            result = { type: Schema.Types.Mixed, required: false };
+            return result;
         case "default":
             result = parse_default(zod_definition._zod.def, loop_detector);
             result.required = true;
