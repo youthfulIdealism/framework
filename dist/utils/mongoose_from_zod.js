@@ -1,6 +1,5 @@
 import { z } from "zod/v4";
 import mongoose, { Schema } from "mongoose";
-export const magic_values = z.registry();
 const underlying_mongodb_id_validator = z.string().length(24);
 const underlying_mongodb_id_validator_optional = underlying_mongodb_id_validator.optional();
 export const z_mongodb_id = z.custom((val) => {
@@ -17,7 +16,7 @@ export const z_mongodb_id = z.custom((val) => {
 }).meta({
     "type": "string",
     "format": "string",
-}).register(magic_values, { override_type: 'mongodb_id' });
+}).meta({ framework_override_type: 'mongodb_id' });
 export const z_mongodb_id_optional = z.custom((val) => {
     let parsed = underlying_mongodb_id_validator_optional.safeParse(val);
     if (!parsed.success) {
@@ -29,7 +28,7 @@ export const z_mongodb_id_optional = z.custom((val) => {
 }).meta({
     "type": "string",
     "format": "string",
-}).register(magic_values, { override_type: 'mongodb_id' });
+}).meta({ framework_override_type: 'mongodb_id' });
 export function mongoose_from_zod(schema_name, zod_definition) {
     let mongoose_schema = schema_from_zod(zod_definition);
     return mongoose.model(schema_name, mongoose_schema);
@@ -101,15 +100,15 @@ export function schema_entry_from_zod(zod_definition, loop_detector = new Set())
         case "readonly":
             throw new Error(`Zod type not yet supported: ${zod_definition._zod.def.type});`);
         case "custom":
-            if (!magic_values.has(zod_definition)) {
+            if (!zod_definition.meta()) {
                 throw new Error(`could not find custom parser in the magic value dictionary`);
             }
-            let { override_type } = magic_values.get(zod_definition);
-            if (override_type === 'mongodb_id') {
+            let { framework_override_type } = zod_definition.meta();
+            if (framework_override_type === 'mongodb_id') {
                 result = parse_mongodb_id(zod_definition._zod.def);
             }
             else {
-                throw new Error(`could not find custom parser for ${override_type} in the magic value dictionary`);
+                throw new Error(`could not find custom parser for ${framework_override_type} in the magic value dictionary`);
             }
             result.required = !zod_definition.safeParse(undefined).success;
             return result;

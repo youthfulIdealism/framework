@@ -1,5 +1,4 @@
 import { z } from "zod/v4"
-import { magic_values } from "./mongoose_from_zod.js";
 
 export function pretty_print(zod_definition: z.ZodObject){
     console.log(parse_object(zod_definition._zod.def, new Set())); 
@@ -25,15 +24,15 @@ function parse_any(zod_definition: z.ZodType, loop_detector: Set<any> = new Set(
         case "union":
             return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef,)
         case "custom":
-            if(!magic_values.has(zod_definition)) {
+            if(!zod_definition.meta()) {
                 throw new Error(`could not find custom parser in the magic value dictionary`)
             }
-            let { override_type } = magic_values.get(zod_definition);
+            let { framework_override_type } = zod_definition.meta();
 
-            if(override_type === 'mongodb_id'){
+            if(framework_override_type === 'mongodb_id'){
                 return 'mongodb_id';
             } else {
-                throw new Error(`could not find custom parser for ${override_type} in the magic value dictionary`)
+                throw new Error(`could not find custom parser for ${framework_override_type} in the magic value dictionary`)
             }
         case "default":
             //@ts-ignore

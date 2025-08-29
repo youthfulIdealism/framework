@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { magic_values, z_mongodb_id } from "./mongoose_from_zod.js";
+import { z_mongodb_id } from "./mongoose_from_zod.js";
 export function query_validator_from_zod(zod_definition, mode = 'server') {
     let retval = {
         limit: z.coerce.number().int().optional(),
@@ -33,15 +33,15 @@ function parse_any(zod_definition, prefix, loop_detector = new Set(), mode = 'se
         case "union":
             return parse_union(zod_definition._zod.def, prefix, mode);
         case "custom":
-            if (!magic_values.has(zod_definition)) {
+            if (!zod_definition.meta()) {
                 throw new Error(`could not find custom parser in the magic value dictionary`);
             }
-            let { override_type } = magic_values.get(zod_definition);
-            if (override_type === 'mongodb_id') {
+            let { framework_override_type } = zod_definition.meta();
+            if (framework_override_type === 'mongodb_id') {
                 return parse_mongodb_id(prefix, mode);
             }
             else {
-                throw new Error(`could not find custom parser for ${override_type} in the magic value dictionary`);
+                throw new Error(`could not find custom parser for ${framework_override_type} in the magic value dictionary`);
             }
         case "default":
             return parse_any(zod_definition._zod.def.innerType, prefix, loop_detector, mode);
@@ -55,11 +55,11 @@ function parse_array(def, prefix, loop_detector, mode) {
         return parse_any(def.element, prefix, loop_detector, mode).filter(ele => ele.path == prefix);
     }
     else if (def.element._zod.def.type === 'custom') {
-        if (!magic_values.has(def.element)) {
+        if (!def.element.meta()) {
             return [];
         }
-        let { override_type } = magic_values.get(def.element);
-        if (override_type === 'mongodb_id') {
+        let { framework_override_type } = def.element.meta();
+        if (framework_override_type === 'mongodb_id') {
             return parse_mongodb_id(prefix, mode).filter(ele => ele.path == prefix);
         }
     }

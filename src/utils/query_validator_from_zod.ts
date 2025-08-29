@@ -1,6 +1,6 @@
 import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
-import { magic_values, z_mongodb_id } from "./mongoose_from_zod.js";
+import { z_mongodb_id } from "./mongoose_from_zod.js";
 
 type type_filters = {
     path: string,
@@ -45,15 +45,15 @@ function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: 
         case "union":
             return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, prefix, mode)
         case "custom":
-            if(!magic_values.has(zod_definition)) {
+            if(!zod_definition.meta()) {
                 throw new Error(`could not find custom parser in the magic value dictionary`)
             }
-            let { override_type } = magic_values.get(zod_definition);
+            let { framework_override_type } = zod_definition.meta();
 
-            if(override_type === 'mongodb_id'){
+            if(framework_override_type === 'mongodb_id'){
                 return parse_mongodb_id(prefix, mode);
             } else {
-                throw new Error(`could not find custom parser for ${override_type} in the magic value dictionary`)
+                throw new Error(`could not find custom parser for ${framework_override_type} in the magic value dictionary`)
             }
         case "default":
             //@ts-ignore
@@ -67,14 +67,16 @@ function parse_array(def: z.core.$ZodArrayDef, prefix: string, loop_detector: Se
     let simple_children = ['enum', 'string', 'number', 'int', 'boolean']
     if(simple_children.includes(def.element._zod.def.type)) {
         //@ts-ignore
-        return parse_any(def.element, prefix, loop_detector, mode).filter(ele => ele.path == prefix)
+        return parse_any(def.element, prefix, loop_detector, mode).filter(ele => ele.path == prefix);
     } else if(def.element._zod.def.type === 'custom'){
-        if(!magic_values.has(def.element)) {
+        //@ts-ignore
+        if(!def.element.meta()) {
             return [];
         }
-        let { override_type } = magic_values.get(def.element);
+        //@ts-ignore
+        let { framework_override_type } = def.element.meta();
 
-        if(override_type === 'mongodb_id'){
+        if(framework_override_type === 'mongodb_id'){
             return parse_mongodb_id(prefix, mode).filter(ele => ele.path == prefix);
         }
     }

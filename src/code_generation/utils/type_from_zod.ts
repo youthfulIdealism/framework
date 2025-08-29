@@ -1,6 +1,5 @@
 import { z, ZodType } from "zod/v4"
 import mongoose, { Schema } from "mongoose";
-import { magic_values } from "../../utils/mongoose_from_zod.js"
 import { indent } from "./tab_indent.js"
 
 /*export function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType) {
@@ -56,15 +55,15 @@ export function type_from_zod(zod_definition: z.ZodType, indent_level: number): 
             return type_from_zod((zod_definition._zod.def as z.core.$ZodDefaultDef).innerType as ZodType, indent_level);
         case "custom":
             let result = [];
-            if(!magic_values.has(zod_definition)) {
+            if(!zod_definition.meta()) {
                 throw new Error(`could not find custom parser in the magic value dictionary for type_from_zod`)
             }
-            let { override_type } = magic_values.get(zod_definition);
+            let { framework_override_type } = zod_definition.meta();
 
-            if(override_type === 'mongodb_id'){
+            if(framework_override_type === 'mongodb_id'){
                 result = ['string'];
             } else {
-                throw new Error(`could not find custom parser for ${override_type} in the magic value dictionary`)
+                throw new Error(`could not find custom parser for ${framework_override_type} in the magic value dictionary`)
             }
 
             return result;
