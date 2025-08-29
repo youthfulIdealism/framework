@@ -6,6 +6,8 @@ export const magic_values = z.registry<{ override_type: string }>();
 //export const z_mongodb_id = z.string().length(24).describe('F_Mongodb_ID');
 //export const mongodb_id = () => z_mongodb_id;
 const underlying_mongodb_id_validator = z.string().length(24);
+const underlying_mongodb_id_validator_optional = underlying_mongodb_id_validator.optional();
+
 export const z_mongodb_id = z.custom<string>((val) => {
     if(!val){ return false; }
     let parsed = underlying_mongodb_id_validator.safeParse(val);
@@ -18,6 +20,19 @@ export const z_mongodb_id = z.custom<string>((val) => {
     "type": "string",
     "format": "string",
 }).register(magic_values, {override_type: 'mongodb_id'});
+
+export const z_mongodb_id_optional = z.custom<string>((val) => {
+    let parsed = underlying_mongodb_id_validator_optional.safeParse(val);
+    if (!parsed.success) {
+        return false;
+    } else {
+        return true;
+    }
+}).meta({
+    "type": "string",
+    "format": "string",
+}).register(magic_values, {override_type: 'mongodb_id'});
+
 //export const z_mongodb_id = underlying_mongodb_id_validator.register(magic_values, {override_type: 'mongodb_id'});
 
 export function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType) {

@@ -2,11 +2,24 @@ import { z } from "zod/v4";
 import mongoose, { Schema } from "mongoose";
 export const magic_values = z.registry();
 const underlying_mongodb_id_validator = z.string().length(24);
+const underlying_mongodb_id_validator_optional = underlying_mongodb_id_validator.optional();
 export const z_mongodb_id = z.custom((val) => {
     if (!val) {
         return false;
     }
     let parsed = underlying_mongodb_id_validator.safeParse(val);
+    if (!parsed.success) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}).meta({
+    "type": "string",
+    "format": "string",
+}).register(magic_values, { override_type: 'mongodb_id' });
+export const z_mongodb_id_optional = z.custom((val) => {
+    let parsed = underlying_mongodb_id_validator_optional.safeParse(val);
     if (!parsed.success) {
         return false;
     }
