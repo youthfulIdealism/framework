@@ -1,7 +1,7 @@
 import { z } from "zod/v4"
 
 
-type validator_group = {
+export type validator_group = {
     handle: string,
     validator: z.ZodType,
     appearances: number,

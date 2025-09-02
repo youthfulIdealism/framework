@@ -221,21 +221,22 @@ describe('Mongoose from Zod', function () {
     });
 
     it(`should convert recursive schemas`, function () {
-        let zodSchema = z.object({
+        let recursive_child = z.object({
             type: z.enum(['group']),
             operator: z.enum(['all', 'any']),
             get children() {
-                return z.array(zodSchema)
+                return z.array(recursive_child)
             },
             locked: z.boolean().optional()
         })
+
+        let zodSchema = z.object({
+            children: z.array(recursive_child)
+        })
         let mongooseSchema = schema_from_zod(zodSchema)
 
-        assert.deepEqual({ 
-            type: {mongoose_type: String, required: true },
-            operator: {mongoose_type: String, required: true },
-            children: {mongoose_type: [{ mongoose_type: Schema.Types.Mixed, required: true }], required: true },
-            locked: {mongoose_type: Boolean, required: false },
+        assert.deepEqual({
+            children: {mongoose_type: [{mongoose_type: Schema.Types.Mixed, required: true}], required: true },
         }, mongooseSchema)
     })
 

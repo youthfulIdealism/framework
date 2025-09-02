@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import mongoose, { Schema } from "mongoose";
+import { find_loops } from './zod_loop_seperator.js';
 const underlying_mongodb_id_validator = z.string().length(24);
 const underlying_mongodb_id_validator_optional = underlying_mongodb_id_validator.optional();
 export const z_mongodb_id = z.custom((val) => {
@@ -34,12 +35,13 @@ export function mongoose_from_zod(schema_name, zod_definition) {
     return mongoose.model(schema_name, new Schema(mongoose_schema, { typeKey: 'mongoose_type' }));
 }
 export function schema_from_zod(zod_definition) {
-    let mongoose_schema = schema_entry_from_zod(zod_definition);
+    let loops = find_loops(zod_definition);
+    let mongoose_schema = schema_entry_from_zod(zod_definition, loops);
     delete mongoose_schema.mongoose_type.required;
     delete mongoose_schema.mongoose_type._id;
     return mongoose_schema.mongoose_type;
 }
-export function schema_entry_from_zod(zod_definition, loop_detector = new Set()) {
+export function schema_entry_from_zod(zod_definition, loop_detector) {
     if (!zod_definition) {
         console.error('ISSUE');
         console.error(zod_definition);
@@ -121,7 +123,6 @@ function parse_object(def, loop_detector) {
     if (loop_detector.has(def)) {
         return { mongoose_type: Schema.Types.Mixed, required: true };
     }
-    loop_detector.add(def);
     let retval = {};
     for (let [key, value] of Object.entries(def.shape)) {
         retval[key] = schema_entry_from_zod(value, loop_detector);
