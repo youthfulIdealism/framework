@@ -100,7 +100,7 @@ function parse_object(def: z.core.$ZodObjectDef, indent_level: number, loop_dete
         let loop = loop_detector.get(def);
         let zod_object = loop.validator;
         //@ts-ignore
-        if(!loop.meta.name && zod_object.meta().id) { loop.meta.name = `type_${zod_object.meta().id}` }
+        if(!loop.meta.name && zod_object.meta()?.id) { loop.meta.name = `type_${zod_object.meta().id}` }
         if(!loop.meta.name) { loop.meta.name = `type_${randomString()}` }
         return [ loop.meta.name ];
     };

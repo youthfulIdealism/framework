@@ -65,7 +65,7 @@ function parse_object(def, indent_level, loop_detector, skip_once) {
     if (loop_detector.has(def) && def !== skip_once) {
         let loop = loop_detector.get(def);
         let zod_object = loop.validator;
-        if (!loop.meta.name && zod_object.meta().id) {
+        if (!loop.meta.name && zod_object.meta()?.id) {
             loop.meta.name = `type_${zod_object.meta().id}`;
         }
         if (!loop.meta.name) {
