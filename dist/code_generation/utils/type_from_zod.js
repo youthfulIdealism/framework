@@ -23,6 +23,8 @@ export function type_from_zod(zod_definition, indent_level) {
             return ['null'];
         case "array":
             return parse_array(zod_definition._zod.def, indent_level);
+        case "nullable":
+            return [`${type_from_zod(zod_definition._zod.def.innerType, indent_level)} | null`];
         case "record":
             return parse_record(zod_definition._zod.def, indent_level);
         case "enum":

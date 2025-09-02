@@ -40,11 +40,10 @@ export function type_from_zod(zod_definition: z.ZodType, indent_level: number): 
             return parse_array(zod_definition._zod.def as z.core.$ZodArrayDef, indent_level)
         /*
         case "any":
-            return ["any"]
+            return ["any"]*/
         case "nullable":
-            //stuff is nullable in mongodb by default, so just return the ordinary results of the parse
             //@ts-expect-error
-            return type_from_zod((zod_definition as z.core.$ZodNullable)._zod.def.innerType)*/
+            return [`${type_from_zod((zod_definition._zod.def as z.core.$ZodNullable).innerType as ZodType, indent_level)} | null`]
         case "record":
             return  parse_record(zod_definition._zod.def as z.core.$ZodRecordDef, indent_level);
         case "enum":
