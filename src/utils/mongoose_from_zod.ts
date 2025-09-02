@@ -46,7 +46,7 @@ export function schema_from_zod(zod_definition: z.core.$ZodType): any {
     return mongoose_schema.mongoose_type;
 }
 
-export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: Map<any, validator_group> ): any {
+export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: Map<any, validator_group>): any {
     if(!zod_definition) {
         console.error('ISSUE');
         console.error(zod_definition);

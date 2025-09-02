@@ -17,7 +17,7 @@ function discover_loops(zod_definition, validator_groups = new Map()) {
     }
     switch (zod_definition._zod.def.type) {
         case "object":
-            parse_object(zod_definition._zod.def, validator_groups);
+            parse_object(zod_definition, validator_groups);
             break;
         case "array":
             discover_loops(zod_definition._zod.def.element, validator_groups);
@@ -38,7 +38,8 @@ function discover_loops(zod_definition, validator_groups = new Map()) {
     }
     return validator_groups;
 }
-function parse_object(def, validator_groups) {
+function parse_object(object_validator, validator_groups) {
+    let def = object_validator._zod.def;
     if (validator_groups.has(def)) {
         validator_groups.get(def).appearances++;
         return;
@@ -46,7 +47,9 @@ function parse_object(def, validator_groups) {
     validator_groups.set(def, {
         appearances: 1,
         handle: ``,
-        validator: def
+        validator: object_validator,
+        def: def,
+        meta: {},
     });
     for (let [key, value] of Object.entries(def.shape)) {
         discover_loops(value, validator_groups);

@@ -4,7 +4,9 @@ import { z } from "zod/v4"
 export type validator_group = {
     handle: string,
     validator: z.ZodType,
+    def: z.core.$ZodType
     appearances: number,
+    meta: {[key: string]: any}
 }
 
 export function is_validator_group(candidate: any): boolean {
@@ -29,7 +31,7 @@ function discover_loops(
 
     switch (zod_definition._zod.def.type) {
         case "object":
-            parse_object(zod_definition._zod.def as z.core.$ZodObjectDef, validator_groups);
+            parse_object(zod_definition as z.ZodObject,  validator_groups);
             break;
         case "array" :
             //@ts-expect-error
@@ -53,7 +55,8 @@ function discover_loops(
     return validator_groups;
 }
 
-function parse_object(def: z.core.$ZodObjectDef, validator_groups: Map<any, validator_group>) {
+function parse_object(object_validator: z.ZodObject, validator_groups: Map<any, validator_group>) {
+    let def = object_validator._zod.def;
     if(validator_groups.has(def)) {
         validator_groups.get(def).appearances++;
         return;
@@ -61,8 +64,10 @@ function parse_object(def: z.core.$ZodObjectDef, validator_groups: Map<any, vali
     validator_groups.set(def, {
         appearances: 1,
         handle: ``,
+        validator: object_validator,
         //@ts-ignore
-        validator: def
+        def: def,
+        meta: {},
     })
     for(let [key, value] of Object.entries(def.shape)){
         //@ts-ignore

@@ -505,4 +505,35 @@ describe('Client Library Generation: Basic Types', function () {
                 }`)
         )
     });
+
+    it(`should be able to generate a recursive object`, async function () {
+        const recursive = z.object({
+            name: z.string(),
+            get child() {
+                return recursive;
+            }
+        }).meta({id: 'test_recursive_object'})
+
+        const validate_test_collection = z.object({
+            test: recursive
+        });
+
+        let test_collection = new F_Collection('test_collection', validate_test_collection);
+
+        let proto_registry = new F_Collection_Registry();
+        let registry = proto_registry.register(test_collection);
+
+        await generate_client_library('./test/tmp', registry);
+
+        assert.equal(
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(`export type test_collection = {
+                    "test": type_test_recursive_object
+                }
+                type type_test_recursive_object = {
+                    "name": string
+                    "child": type_test_recursive_object
+                }`)
+        )
+    });
 });
