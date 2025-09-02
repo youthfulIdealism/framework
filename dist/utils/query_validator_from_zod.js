@@ -1,19 +1,21 @@
 import { z } from "zod/v4";
 import { z_mongodb_id } from "./mongoose_from_zod.js";
+import { find_loops } from './zod_loop_seperator.js';
 export function query_validator_from_zod(zod_definition, mode = 'server') {
+    let loops = find_loops(zod_definition);
     let retval = {
         limit: z.coerce.number().int().optional(),
         cursor: z_mongodb_id.optional(),
         sort_order: z.enum(['ascending', 'descending']).optional()
     };
-    let object_filters = parse_object(zod_definition._zod.def, '', new Set(), mode);
+    let object_filters = parse_object(zod_definition._zod.def, '', loops, mode);
     for (let filter of object_filters) {
         retval[filter.path.slice(1)] = filter.filter;
     }
     retval.sort = z.enum(object_filters.filter(ele => ele.sortable).map(ele => ele.path.slice(1))).optional();
     return z.object(retval).strict();
 }
-function parse_any(zod_definition, prefix, loop_detector = new Set(), mode = 'server') {
+function parse_any(zod_definition, prefix, loop_detector, mode = 'server') {
     switch (zod_definition._zod.def.type) {
         case "enum":
             return parse_enum(zod_definition._zod.def, prefix, mode);
@@ -69,7 +71,6 @@ function parse_object(def, prefix, loop_detector, mode) {
     if (loop_detector.has(def)) {
         return [];
     }
-    loop_detector.add(def);
     let retval = [];
     for (let [key, value] of Object.entries(def.shape)) {
         let filters = parse_any(value, `${prefix}.${key}`, loop_detector, mode);

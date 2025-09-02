@@ -146,19 +146,10 @@ describe('query validator from zod', function () {
 
         let query_validator = query_validator_from_zod(zod_validator);
 
-        assert.deepEqual(
-            query_validator.parse({
-                name: 'fungus',
-            }),
-            {
-                name: 'fungus',
-            }
-        );
-
         assert.throws(() => {
             assert.deepEqual(
                 query_validator.parse({
-                    'recurse.name': 'fungus',
+                    'name': 'fungus',
                 }),
                 {}
             );

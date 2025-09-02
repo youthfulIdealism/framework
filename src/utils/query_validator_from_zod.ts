@@ -1,6 +1,7 @@
 import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
 import { z_mongodb_id } from "./mongoose_from_zod.js";
+import { find_loops, validator_group } from './zod_loop_seperator.js'
 
 type type_filters = {
     path: string,
@@ -10,12 +11,15 @@ type type_filters = {
 type Mode = 'client' | 'server'
 
 export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode = 'server'){
+    let loops = find_loops(zod_definition as z.ZodType);
+
     let retval = {
         limit: z.coerce.number().int().optional(),
         cursor: z_mongodb_id.optional(),
         sort_order: z.enum([/*'asc', 'desc', */'ascending', 'descending']).optional()
     } as $ZodLooseShape;
-    let object_filters = parse_object(zod_definition._zod.def, '', new Set(), mode);
+
+    let object_filters = parse_object(zod_definition._zod.def, '', loops, mode);
     for(let filter of object_filters){
         retval[filter.path.slice(1)] = filter.filter;
     }
@@ -25,7 +29,7 @@ export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode
     return z.object(retval).strict();
 }
 
-function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: Set<any> = new Set(), mode: Mode = 'server'): type_filters {
+function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: Map<any, validator_group>, mode: Mode = 'server'): type_filters {
     switch (zod_definition._zod.def.type) {
         case "enum":
             return parse_enum(zod_definition._zod.def as z.core.$ZodEnumDef, prefix, mode);
@@ -63,7 +67,7 @@ function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: 
     }
 }
 
-function parse_array(def: z.core.$ZodArrayDef, prefix: string, loop_detector: Set<any>, mode: Mode) {
+function parse_array(def: z.core.$ZodArrayDef, prefix: string, loop_detector: Map<any, validator_group>, mode: Mode) {
     let simple_children = ['enum', 'string', 'number', 'int', 'boolean']
     if(simple_children.includes(def.element._zod.def.type)) {
         //@ts-ignore
@@ -84,12 +88,10 @@ function parse_array(def: z.core.$ZodArrayDef, prefix: string, loop_detector: Se
     return [];
 }
 
-function parse_object(def: z.core.$ZodObjectDef, prefix: string, loop_detector: Set<any>, mode: Mode): type_filters {
+function parse_object(def: z.core.$ZodObjectDef, prefix: string, loop_detector: Map<any, validator_group>, mode: Mode): type_filters {
     if(loop_detector.has(def)) {
         return [];
     }
-    loop_detector.add(def);
-
     
     let retval = [] as type_filters;
     for(let [key, value] of Object.entries(def.shape)){
