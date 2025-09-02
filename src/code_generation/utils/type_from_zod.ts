@@ -59,9 +59,8 @@ export function parse_zod(zod_definition: z.ZodType, indent_level: number, loop_
             return ['null']
         case "array":
             return parse_array(zod_definition._zod.def as z.core.$ZodArrayDef, indent_level, loop_detector, skip_once)
-        /*
         case "any":
-            return ["any"]*/
+            return ["any"]
         case "nullable":
             //@ts-expect-error
             return [`${parse_zod((zod_definition._zod.def as z.core.$ZodNullable).innerType as ZodType, indent_level, loop_detector, skip_once)} | null`]
