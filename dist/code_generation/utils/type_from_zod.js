@@ -25,6 +25,8 @@ export function type_from_zod(zod_definition, indent_level) {
             return parse_array(zod_definition._zod.def, indent_level);
         case "nullable":
             return [`${type_from_zod(zod_definition._zod.def.innerType, indent_level)} | null`];
+        case "union":
+            return parse_union(zod_definition._zod.def, indent_level);
         case "record":
             return parse_record(zod_definition._zod.def, indent_level);
         case "enum":
@@ -91,6 +93,17 @@ function parse_record(def, indent_level) {
     }
     retval.push(indent(indent_level, '}'));
     return retval;
+}
+function parse_union(def, indent_level) {
+    let results = def.options.map(ele => type_from_zod(ele, indent_level));
+    let out = [];
+    for (let q = 0; q < results.length; q++) {
+        out.push(...results[q]);
+        if (q !== results.length - 1) {
+            out[out.length - 1] = out[out.length - 1] + ' | ';
+        }
+    }
+    return out;
 }
 function parse_optional(def) {
     let type_definition = schema_entry_from_zod(def.innerType);

@@ -44,8 +44,10 @@ export function type_from_zod(zod_definition: z.ZodType, indent_level: number): 
         case "nullable":
             //@ts-expect-error
             return [`${type_from_zod((zod_definition._zod.def as z.core.$ZodNullable).innerType as ZodType, indent_level)} | null`]
+        case "union":
+            return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, indent_level);
         case "record":
-            return  parse_record(zod_definition._zod.def as z.core.$ZodRecordDef, indent_level);
+            return parse_record(zod_definition._zod.def as z.core.$ZodRecordDef, indent_level);
         case "enum":
             return parse_enum(zod_definition._zod.def as z.core.$ZodEnumDef)
         case "readonly":
@@ -124,6 +126,18 @@ function parse_record(def: z.core.$ZodRecordDef, indent_level: number): any {
 
     retval.push(indent(indent_level, '}'));
     return retval;
+}
+
+function parse_union(def: z.core.$ZodUnionDef, indent_level: number): any {
+     let results = def.options.map(ele => type_from_zod(ele as ZodType, indent_level));
+    let out = [];
+    for(let q = 0; q < results.length; q++) {
+        out.push(...results[q]);
+        if(q !== results.length - 1) {
+            out[out.length - 1] = out[out.length - 1] + ' | ';
+        }
+    }
+    return out;
 }
 
 function parse_optional(def: z.core.$ZodOptionalDef): any {

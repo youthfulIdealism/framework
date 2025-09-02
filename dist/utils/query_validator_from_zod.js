@@ -80,6 +80,9 @@ function parse_object(def, prefix, loop_detector, mode) {
 function parse_union(def, prefix, mode) {
     let simple_children = ['enum', 'string', 'number', 'int', 'boolean'];
     let filter_queue = def.options.slice().filter(ele => simple_children.includes(ele._zod.def.type));
+    if (filter_queue.length === 0) {
+        return [];
+    }
     let root = filter_queue.shift();
     for (let filter of filter_queue) {
         root = root.or(filter);

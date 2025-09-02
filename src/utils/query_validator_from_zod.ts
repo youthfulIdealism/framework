@@ -103,6 +103,7 @@ function parse_object(def: z.core.$ZodObjectDef, prefix: string, loop_detector: 
 function parse_union(def: z.core.$ZodUnionDef, prefix: string, mode: Mode): type_filters {
     let simple_children = ['enum', 'string', 'number', 'int', 'boolean']
     let filter_queue = def.options.slice().filter(ele => simple_children.includes(ele._zod.def.type));
+    if(filter_queue.length === 0){ return []; }
     let root = filter_queue.shift();
     for(let filter of  filter_queue){
         //@ts-expect-error
