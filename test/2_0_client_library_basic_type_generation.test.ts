@@ -193,6 +193,26 @@ describe('Client Library Generation: Basic Types', function () {
         )
     });
 
+    it(`should be able to generate a plain object containing union types wrapped in nullable`, async function () {
+        const validate_test_collection = z.object({
+            test: z.nullable(z.string().or(z.number())),
+        });
+
+        let test_collection = new F_Collection('test_collection', validate_test_collection);
+
+        let proto_registry = new F_Collection_Registry();
+        let registry = proto_registry.register(test_collection);
+
+        await generate_client_library('./test/tmp', registry);
+
+        assert.equal(
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(`export type test_collection = {
+                    "test": string | number | null
+                }`)
+        )
+    });
+
     it(`should be able to generate a plain object containing union of object types`, async function () {
         const validate_test_collection = z.object({
             test: z.object({
