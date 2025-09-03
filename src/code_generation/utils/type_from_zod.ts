@@ -63,8 +63,6 @@ export function parse_zod(zod_definition: z.ZodType, indent_level: number, loop_
             return ["any"]
         case "nullable":
             //@ts-expect-error
-            console.log(parse_zod((zod_definition._zod.def as z.core.$ZodNullable).innerType as ZodType, indent_level, loop_detector, skip_once))
-            //@ts-expect-error
             return [...parse_zod((zod_definition._zod.def as z.core.$ZodNullable).innerType as ZodType, indent_level, loop_detector, skip_once), ` | null`]
         case "union":
             return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, indent_level, loop_detector, skip_once);

@@ -35,7 +35,6 @@ export function parse_zod(zod_definition, indent_level, loop_detector, skip_once
         case "any":
             return ["any"];
         case "nullable":
-            console.log(parse_zod(zod_definition._zod.def.innerType, indent_level, loop_detector, skip_once));
             return [...parse_zod(zod_definition._zod.def.innerType, indent_level, loop_detector, skip_once), ` | null`];
         case "union":
             return parse_union(zod_definition._zod.def, indent_level, loop_detector, skip_once);
