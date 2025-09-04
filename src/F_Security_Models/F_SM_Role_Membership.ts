@@ -72,7 +72,7 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         // a cheap operation even though it makes an extra database query. Use the cache's first_fetch_then_refresh
         // method so that we aren't keeping out-of-date auth data in the cache.
         let role = await this.role_cache.first_fetch_then_refresh(role_membership[this.role_id_field], async () => {
-            let role = await this.role_collection.mongoose_model.findById(role_membership[this.role_id_field]);
+            let role = await this.role_collection.mongoose_model.findById(role_membership[this.role_id_field], {}, {lean: true});
             return role;
         })
         

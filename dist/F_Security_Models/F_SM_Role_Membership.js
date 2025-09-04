@@ -50,7 +50,7 @@ export class F_SM_Role_Membership extends F_Security_Model {
             return false;
         }
         let role = await this.role_cache.first_fetch_then_refresh(role_membership[this.role_id_field], async () => {
-            let role = await this.role_collection.mongoose_model.findById(role_membership[this.role_id_field]);
+            let role = await this.role_collection.mongoose_model.findById(role_membership[this.role_id_field], {}, { lean: true });
             return role;
         });
         if (!role) {
