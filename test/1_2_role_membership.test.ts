@@ -383,23 +383,12 @@ describe.skip('Security Model Role Membership', function () {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     it(`should authorize a basic GET operation on a document where the user has a T1 role membership`, async function () {
-        console.log('HERE')
-
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
-
-        console.log('DEBUGDAT')
-
-        console.log(await collection_project.mongoose_model.find({}));
-
-        console.log('PRECALL')
-
         let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
             headers: {
                 authorization: 'steve'
             }
         }).json();
-
-        console.log('POSTCALL')
 
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(steve_project)), results.data);
@@ -442,6 +431,20 @@ describe.skip('Security Model Role Membership', function () {
             }).json();
         },
         { message: 'Response code 403 (Forbidden)' })
+    });
+
+    it(`should authorize a basic GET operation on a layer collection`, async function () {
+        let { steve_institution } = await generate_test_setup();
+
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(steve_institution)), results.data);
     });
 
 

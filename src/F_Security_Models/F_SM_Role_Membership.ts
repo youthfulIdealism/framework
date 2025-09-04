@@ -47,7 +47,8 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
 
     async has_permission(req: Authenticated_Request, res: Response, find: {[key: string]: any}, operation: Operation): Promise<boolean> {
         let user_id = req.auth.user_id;
-        let layer_id = req.params[this.layer_collection_id];
+        // the only way the layer ID is undefined is if the layer is the document being accessed
+        let layer_id = req.params[this.layer_collection_id] ?? req.params.document_id;
 
         // return the role membership associated with the layer. This uses the cache heavily, so it should be
         // a cheap operation even though it makes an extra database query. Use the cache's first_fetch_then_refresh

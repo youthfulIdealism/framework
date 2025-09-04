@@ -25,7 +25,7 @@ export function compile(app, collection, api_prefix) {
                 let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
                 if (!permissive_security_model) {
                     res.status(403);
-                    res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                    res.json({ error: `You do not have permission to fetch documents from ${collection.collection_id}.` });
                     return;
                 }
                 let document;
@@ -81,7 +81,7 @@ export function compile(app, collection, api_prefix) {
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
             if (!permissive_security_model) {
                 res.status(403);
-                res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                res.json({ error: `You do not have permission to fetch documents from ${collection.collection_id}.` });
                 return;
             }
             let documents;
@@ -129,7 +129,7 @@ export function compile(app, collection, api_prefix) {
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
             if (!permissive_security_model) {
                 res.status(403);
-                res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                res.json({ error: `You do not have permission to fetch documents from ${collection.collection_id}.` });
                 return;
             }
             if (collection.mongoose_schema.updated_by?.type === String) {
@@ -194,7 +194,7 @@ export function compile(app, collection, api_prefix) {
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'create');
             if (!permissive_security_model) {
                 res.status(403);
-                res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                res.json({ error: `You do not have permission to fetch documents from ${collection.collection_id}.` });
                 return;
             }
             if (collection.mongoose_schema.updated_by?.type === String) {
@@ -279,7 +279,7 @@ export function compile(app, collection, api_prefix) {
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'delete');
             if (!permissive_security_model) {
                 res.status(403);
-                res.json({ error: `You do not have permission to fetch documents from ${req.params.document_type}.` });
+                res.json({ error: `You do not have permission to fetch documents from ${collection.collection_id}.` });
                 return;
             }
             let results;
