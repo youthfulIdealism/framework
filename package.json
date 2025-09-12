@@ -1,6 +1,6 @@
 {
   "name": "@liminalfunctions/framework",
-  "version": "1.0.22",
+  "version": "1.0.24",
   "main": "./dist/index.js",
   "type": "module",
   "scripts": {
@@ -35,8 +35,7 @@
     "rimraf": "^6.0.1",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",
-    "zod": "^4.0.17",
-    "mustache": "^4.2.0"
+    "zod": "^4.0.17"
   },
   "peerDependencies": {
     "ky": "^1.9.0",
@@ -45,5 +44,6 @@
     "zod": "^4.0.0"
   },
   "dependencies": {
+    "mustache": "^4.2.0"
   }
 }
