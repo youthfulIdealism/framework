@@ -10,10 +10,12 @@ import { Collection_{{built_collection}} } from "{{ built_collection_path }}"
 export class Collection_{{my_built_collection}} {
     path: string[]
     get_auth: () => Promise<any>
+    collection_id: string
 
     constructor(path: string[], get_auth: () => Promise<any>) {
         this.path = path;
         this.get_auth = get_auth;
+        this.collection_id = "{{collection_id}}";
     }
 
     
@@ -48,7 +50,12 @@ export class Collection_{{my_built_collection}} {
     document(document_id: string) {
         let path = this.path;
         let get_auth = this.get_auth;
+        let collection_id = this.collection_id;
         return {
+            path: [...path, document_id],
+            collection_id: collection_id,
+            document_id: document_id,
+            get_auth: get_auth,
             async get(): Promise<{{type_return}}>{
                 try {
                     let result = await ky.get([...path, document_id].join('/'), {
