@@ -78,8 +78,8 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         
         if(!role){ return false; }
         if(!role.permissions){ console.warn(`role collection ${this.role_collection.collection_id} was missing its permissions field`); return false; }
-        if(!role.permissions[this.collection.collection_id]){ console.warn(`role collection ${this.role_collection.collection_id} was missing its permissions.${this.collection.collection_id} field`); return false; }
-        return role.permissions[this.collection.collection_id].includes(operation_permission_map[operation]);
+        if(!role.permissions[this.collection.collection_name_plural]){ console.warn(`role collection ${this.role_collection.collection_id} was missing its permissions.${this.collection.collection_name_plural} field`); return false; }
+        return role.permissions[this.collection.collection_name_plural].includes(operation_permission_map[operation]);
     }
     
     async handle_empty_query_results(req: Request, res: Response, operation: Operation): Promise<Empty_Query_Possibilities> {

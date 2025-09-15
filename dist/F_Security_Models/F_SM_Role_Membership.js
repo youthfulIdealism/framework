@@ -60,11 +60,11 @@ export class F_SM_Role_Membership extends F_Security_Model {
             console.warn(`role collection ${this.role_collection.collection_id} was missing its permissions field`);
             return false;
         }
-        if (!role.permissions[this.collection.collection_id]) {
-            console.warn(`role collection ${this.role_collection.collection_id} was missing its permissions.${this.collection.collection_id} field`);
+        if (!role.permissions[this.collection.collection_name_plural]) {
+            console.warn(`role collection ${this.role_collection.collection_id} was missing its permissions.${this.collection.collection_name_plural} field`);
             return false;
         }
-        return role.permissions[this.collection.collection_id].includes(operation_permission_map[operation]);
+        return role.permissions[this.collection.collection_name_plural].includes(operation_permission_map[operation]);
     }
     async handle_empty_query_results(req, res, operation) {
         return { data: null };

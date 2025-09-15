@@ -18,7 +18,7 @@ import { Server } from "http";
 // IF YOU RUN THESE TESTS ON THEIR OWN, THEY WORK FINE
 // there's something janky going on with the mongodb or express
 // setup/teardown that's causing the mto fail.
-describe.skip('Security Model Role Membership', function () {
+describe.only('Security Model Role Membership', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;
@@ -48,10 +48,10 @@ describe.skip('Security Model Role Membership', function () {
         name: z.string(),
         institution_id: z_mongodb_id,
         permissions: z.object({
-            institution: z.array(z.enum(['read', 'create', 'update', 'delete'])),
-            client: z.array(z.enum(['read', 'create', 'update', 'delete'])),
-            project: z.array(z.enum(['read', 'create', 'update', 'delete'])),
-            role: z.array(z.enum(['read', 'create', 'update', 'delete'])),
+            institutions: z.array(z.enum(['read', 'create', 'update', 'delete'])),
+            clients: z.array(z.enum(['read', 'create', 'update', 'delete'])),
+            projects: z.array(z.enum(['read', 'create', 'update', 'delete'])),
+            roles: z.array(z.enum(['read', 'create', 'update', 'delete'])),
         })
     })
     let validate_institution_role_membership = z.object({
@@ -280,10 +280,10 @@ describe.skip('Security Model Role Membership', function () {
             name: 'steve full access',
             institution_id: steve_institution._id,
             permissions: {
-                institution: ['read', 'create', 'update', 'delete'],
-                client: ['read', 'create', 'update', 'delete'],
-                project: ['read', 'create', 'update', 'delete'],
-                role: ['read', 'create', 'update', 'delete'],
+                institutions: ['read', 'create', 'update', 'delete'],
+                clients: ['read', 'create', 'update', 'delete'],
+                projects: ['read', 'create', 'update', 'delete'],
+                roles: ['read', 'create', 'update', 'delete'],
             }
         });
 
@@ -291,10 +291,10 @@ describe.skip('Security Model Role Membership', function () {
             name: 'steve limited access',
             institution_id: steve_institution._id,
             permissions: {
-                institution: ['read'],
-                client: ['read'],
-                project: [],
-                role: ['read'],
+                institutions: ['read'],
+                clients: ['read'],
+                projects: [],
+                roles: ['read'],
             }
         });
 
@@ -302,10 +302,10 @@ describe.skip('Security Model Role Membership', function () {
             name: 'edwin full access',
             institution_id: edwin_institution._id,
             permissions: {
-                institution: ['read', 'create', 'update', 'delete'],
-                client: ['read', 'create', 'update', 'delete'],
-                project: ['read', 'create', 'update', 'delete'],
-                role: ['read', 'create', 'update', 'delete'],
+                institutions: ['read', 'create', 'update', 'delete'],
+                clients: ['read', 'create', 'update', 'delete'],
+                projects: ['read', 'create', 'update', 'delete'],
+                roles: ['read', 'create', 'update', 'delete'],
             }
         });
 
@@ -313,10 +313,10 @@ describe.skip('Security Model Role Membership', function () {
             name: 'edwin limited access',
             institution_id: edwin_institution._id,
             permissions: {
-                institution: ['read'],
-                client: ['read'],
-                project: [],
-                role: ['read'],
+                institutions: ['read'],
+                clients: ['read'],
+                projects: [],
+                roles: ['read'],
             }
         });
 
