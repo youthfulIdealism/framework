@@ -2,6 +2,7 @@ import { mongoose_from_zod, schema_from_zod } from "./utils/mongoose_from_zod.js
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
 export class F_Collection {
     collection_id;
+    collection_name_plural;
     validator;
     mongoose_schema;
     mongoose_model;
@@ -11,8 +12,9 @@ export class F_Collection {
     post_validator;
     is_compiled;
     access_layers;
-    constructor(collection_name, validator) {
+    constructor(collection_name, collection_name_plural, validator) {
         this.collection_id = collection_name;
+        this.collection_name_plural = collection_name_plural;
         this.validator = validator;
         this.mongoose_schema = schema_from_zod(validator);
         this.mongoose_model = mongoose_from_zod(collection_name, validator);

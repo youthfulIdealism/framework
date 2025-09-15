@@ -7,6 +7,7 @@ export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodObject>
 };
 export declare class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodObject> {
     collection_id: Collection_ID;
+    collection_name_plural: string;
     validator: ZodSchema;
     mongoose_schema: any;
     mongoose_model: Model<z.infer<ZodSchema>>;
@@ -16,6 +17,6 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     post_validator: z.ZodType;
     is_compiled: boolean;
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
-    constructor(collection_name: Collection_ID, validator: ZodSchema);
+    constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema);
     add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[], is_layer_owner?: boolean): void;
 }

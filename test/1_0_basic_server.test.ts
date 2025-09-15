@@ -57,13 +57,13 @@ describe('Basic Server', function () {
         // if we define these in mocha's describe() function, it runs before connecting to the database.
         // this causes the mongoose definitions to get attached to a database instance that is closed at
         // the end of the previous test, spawning a MongoNotConnectedError error.
-        institution = new F_Collection('institution', validate_institution);
+        institution = new F_Collection('institution', 'institutions', validate_institution);
         institution.add_layers([], [new F_SM_Open_Access(institution)]);
 
-        client = new F_Collection('client', validate_client);
+        client = new F_Collection('client', 'clients', validate_client);
         client.add_layers([institution.collection_id], [new F_SM_Open_Access(client)]);
 
-        project = new F_Collection('project', validate_project);
+        project = new F_Collection('project', 'projects', validate_project);
         project.add_layers([institution.collection_id, client.collection_id], [new F_SM_Open_Access(project)]);
 
         // build registry

@@ -40,7 +40,7 @@ describe('Client Library Generation: Basic Types', function () {
     it(`should be able to generate a plain object`, async function () {
         const validate_test_collection = z.object({});
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -58,7 +58,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.string(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -78,7 +78,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.number(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -98,7 +98,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.boolean(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -118,7 +118,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.date(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -138,7 +138,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z_mongodb_id,
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -158,7 +158,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.nullable(z.string()),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -178,7 +178,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.string().or(z.number()),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -198,7 +198,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.nullable(z.string().or(z.number())),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -222,7 +222,7 @@ describe('Client Library Generation: Basic Types', function () {
             })),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -242,7 +242,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.enum(["red", "green", "blue"]),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -262,7 +262,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.array(z.enum(["red", "green", "blue"])),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -283,7 +283,7 @@ describe('Client Library Generation: Basic Types', function () {
             }),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -311,7 +311,7 @@ describe('Client Library Generation: Basic Types', function () {
             }),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -342,7 +342,7 @@ describe('Client Library Generation: Basic Types', function () {
             field_date: z.array(z.date()),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -371,7 +371,7 @@ describe('Client Library Generation: Basic Types', function () {
             
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -403,7 +403,7 @@ describe('Client Library Generation: Basic Types', function () {
             )),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -428,7 +428,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.string().default('ezikiel snograss'),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -448,7 +448,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.string().optional(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -468,7 +468,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.record(z.string(), z.string())
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -491,7 +491,7 @@ describe('Client Library Generation: Basic Types', function () {
             }))
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -511,7 +511,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: z.record(z.string(), z.array(z.string()))
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -538,7 +538,7 @@ describe('Client Library Generation: Basic Types', function () {
             test: recursive
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);

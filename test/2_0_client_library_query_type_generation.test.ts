@@ -47,7 +47,7 @@ describe('Client Library Generation: Query Types', function () {
     it(`should be able to generate a query for a plain object`, async function () {
         const validate_test_collection = z.object({});
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -70,7 +70,7 @@ describe('Client Library Generation: Query Types', function () {
             test: z.string(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -97,7 +97,7 @@ describe('Client Library Generation: Query Types', function () {
             test: z.number(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -125,7 +125,7 @@ describe('Client Library Generation: Query Types', function () {
             test: z.boolean(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -149,7 +149,7 @@ describe('Client Library Generation: Query Types', function () {
             test: z.date(),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -175,7 +175,7 @@ describe('Client Library Generation: Query Types', function () {
             test: z_mongodb_id,
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -202,7 +202,7 @@ describe('Client Library Generation: Query Types', function () {
             test: z.enum(["red", "green", "blue"]),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -230,7 +230,7 @@ describe('Client Library Generation: Query Types', function () {
             }),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -261,7 +261,7 @@ describe('Client Library Generation: Query Types', function () {
             }),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -305,7 +305,7 @@ describe('Client Library Generation: Query Types', function () {
             field_boolean: z.array(z.boolean()),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);
@@ -331,7 +331,7 @@ describe('Client Library Generation: Query Types', function () {
             test: z.boolean().default(true),
         });
 
-        let test_collection = new F_Collection('test_collection', validate_test_collection);
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
         let proto_registry = new F_Collection_Registry();
         let registry = proto_registry.register(test_collection);

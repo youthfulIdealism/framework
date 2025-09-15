@@ -94,13 +94,13 @@ describe.skip('Security Model Role Membership', function () {
         let cache_institution_role_membership = new Cache(60);
         let cache_client_role_membership = new Cache(60);
 
-        collection_institution = new F_Collection('institution', validate_institution);
-        collection_client = new F_Collection('client', validate_client);
-        collection_project = new F_Collection('project', validate_project);
-        collection_user = new F_Collection('user', validate_user);
-        collection_role = new F_Collection('role', validate_role);
-        collection_institution_role_membership = new F_Collection('institution_role_membership', validate_institution_role_membership);
-        collection_client_role_membership = new F_Collection('client_role_membership', validate_client_role_membership);
+        collection_institution = new F_Collection('institution', 'institutions', validate_institution);
+        collection_client = new F_Collection('client', 'clients', validate_client);
+        collection_project = new F_Collection('project', 'projects', validate_project);
+        collection_user = new F_Collection('user', 'users', validate_user);
+        collection_role = new F_Collection('role', 'roles', validate_role);
+        collection_institution_role_membership = new F_Collection('institution_role_membership', 'institution_role_memberships', validate_institution_role_membership);
+        collection_client_role_membership = new F_Collection('client_role_membership', 'client_role_memberships', validate_client_role_membership);
 
         collection_institution.add_layers([], [new F_SM_Role_Membership(
             collection_institution, 

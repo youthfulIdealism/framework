@@ -11,11 +11,13 @@ export class Collection_{{my_built_collection}} {
     path: string[]
     get_auth: () => Promise<any>
     collection_id: string
+    collection_name_plural: string
 
     constructor(path: string[], get_auth: () => Promise<any>) {
         this.path = path;
         this.get_auth = get_auth;
         this.collection_id = "{{collection_id}}";
+        this.collection_name_plural = "{{collection_name_plural}}"
     }
 
     
@@ -51,10 +53,12 @@ export class Collection_{{my_built_collection}} {
         let path = this.path;
         let get_auth = this.get_auth;
         let collection_id = this.collection_id;
+        let collection_name_plural = this.collection_name_plural;
         return {
             path: [...path, document_id],
             collection_id: collection_id,
             document_id: document_id,
+            collection_name_plural: collection_name_plural,
             get_auth: get_auth,
             async get(): Promise<{{type_return}}>{
                 try {

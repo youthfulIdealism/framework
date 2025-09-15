@@ -77,16 +77,16 @@ describe('Client Library Generation: Library Generation', function () {
         await rimraf('./test/tmp');
         await mkdir('./test/tmp');
 
-        collection_institution = new F_Collection('institution', validate_institution);
+        collection_institution = new F_Collection('institution', 'institutions', validate_institution);
         collection_institution.add_layers([], [new F_SM_Open_Access(collection_institution)])
 
-        collection_client = new F_Collection('client', validate_client);
+        collection_client = new F_Collection('client', 'clients', validate_client);
         collection_client.add_layers(['institution'], [new F_SM_Open_Access(collection_client)])
 
-        collection_project = new F_Collection('project', validate_project);
+        collection_project = new F_Collection('project', 'projects', validate_project);
         collection_project.add_layers(['institution', 'client'], [new F_SM_Open_Access(collection_project)])
 
-        collection_brief_news_category = new F_Collection('brief_news_category', validate_brief_news_category);
+        collection_brief_news_category = new F_Collection('brief_news_category', 'brief_news_categories', validate_brief_news_category);
         collection_brief_news_category.add_layers(['institution', 'client'], [new F_SM_Open_Access(collection_brief_news_category)])
 
         let proto_registry = new F_Collection_Registry();

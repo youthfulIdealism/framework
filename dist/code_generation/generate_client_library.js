@@ -11,6 +11,7 @@ export async function generate_client_library(path, collection_registry, service
         let collection = col;
         let mustache_context = {
             collection_id: collection.collection_id,
+            collection_name_plural: collection.collection_name_plural,
             type_return: `${get_type_name(collection.collection_id)}`,
             path_type_return: `types/${get_type_name(collection.collection_id)}`,
             type_query: `${get_type_name(collection.collection_id)}_query`,

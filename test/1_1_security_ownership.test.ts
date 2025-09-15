@@ -48,10 +48,10 @@ describe('Security Model Ownership', function () {
         express_app.use(express.json());
         db_connection = await mongoose.connect('mongodb://127.0.0.1:27017/');
 
-        collection_user = new F_Collection('user', validate_user);
+        collection_user = new F_Collection('user', 'users', validate_user);
         collection_user.add_layers([], [new F_SM_Open_Access(collection_user)]);
 
-        collection_user_display = new F_Collection('user_display', validate_user_display);
+        collection_user_display = new F_Collection('user_display', 'user_displays', validate_user_display);
         collection_user_display.add_layers([], [new F_SM_Ownership(collection_user_display)]);
 
         let proto_registry = new F_Collection_Registry();
