@@ -169,7 +169,7 @@ export function compile(app, collection, api_prefix) {
             }
             let results;
             try {
-                results = await collection.mongoose_model.findOneAndUpdate(find, validated_request_body, { returnDocument: 'after', lean: true });
+                results = await collection.mongoose_update(find, validated_request_body);
             }
             catch (err) {
                 res.status(500);
@@ -245,7 +245,7 @@ export function compile(app, collection, api_prefix) {
             }
             let results;
             try {
-                results = await collection.mongoose_model.create(validated_request_body);
+                results = await collection.mongoose_create(validated_request_body);
             }
             catch (err) {
                 res.status(500);
