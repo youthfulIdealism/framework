@@ -97,9 +97,6 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                 for(let hook of this.create_hooks){
                     await hook(session, created_document);
                 }
-
-                // commit the changes
-                session.endSession();
             });
         } else {// if we don't have any post create hooks, run the create operation normally
             created_document_data = await this.mongoose_model.create(data);
@@ -136,9 +133,6 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                     //@ts-expect-error
                     await hook(session, updated_document);
                 }
-
-                // commit the changes
-                session.endSession();
             });
         } else {// if we don't have any post update hooks, run the update operation normally
             update_document_data = await this.mongoose_model.findOneAndUpdate(find, data, {returnDocument: 'after', lean: true})

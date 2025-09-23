@@ -64,7 +64,6 @@ export class F_Collection {
                 for (let hook of this.create_hooks) {
                     await hook(session, created_document);
                 }
-                session.endSession();
             });
         }
         else {
@@ -90,7 +89,6 @@ export class F_Collection {
                 for (let hook of this.update_hooks) {
                     await hook(session, updated_document);
                 }
-                session.endSession();
             });
         }
         else {
