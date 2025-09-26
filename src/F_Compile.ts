@@ -86,9 +86,6 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         app.get(get_multiple_path, async (req: Request, res: Response) => {
             let validated_query_args: { [key: string]: any } ;
             try {
-                console.log('CALLED')
-                console.log(req.query)
-                console.log(convert_null(req.query))
                 validated_query_args = collection.query_validator_server.parse(convert_null(req.query));
             } catch(err){
                 if(err instanceof z.ZodError){
