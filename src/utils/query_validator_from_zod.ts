@@ -225,21 +225,21 @@ function parse_date(prefix: string, mode: Mode): type_filters {
 
 
 function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
-    let array_parser = mode === 'client' ? z.array(z_mongodb_id) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
+    let array_parser = mode === 'client' ? z.array(z_mongodb_id.nullable()) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
         {
             path: prefix,
-            filter: z_mongodb_id.optional(),
+            filter: z_mongodb_id.nullable().optional(),
             sortable: true,
         },
         {
             path: prefix + '_gt',
-            filter: z_mongodb_id.optional(),
+            filter: z_mongodb_id.nullable().optional(),
             sortable: false,
         },
         {
             path: prefix + '_lt',
-            filter: z_mongodb_id.optional(),
+            filter: z_mongodb_id.nullable().optional(),
             sortable: false,
         },
         {
