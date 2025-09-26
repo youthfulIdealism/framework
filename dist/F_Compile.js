@@ -11,7 +11,6 @@ export function compile(app, collection, api_prefix) {
             `${collection.collection_id}/:document_id`
         ].join('/');
         app.get(get_one_path, async (req, res, next) => {
-            console.log('CALLED');
             try {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
@@ -59,6 +58,9 @@ export function compile(app, collection, api_prefix) {
         app.get(get_multiple_path, async (req, res) => {
             let validated_query_args;
             try {
+                console.log('CALLED');
+                console.log(req.query);
+                console.log(convert_null(req.query));
                 validated_query_args = collection.query_validator_server.parse(convert_null(req.query));
             }
             catch (err) {
