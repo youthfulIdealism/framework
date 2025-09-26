@@ -23,6 +23,15 @@ let query_meta_map = {
     //'projection': true,
 }
 
+export function convert_null(query_object: any){
+    for(let [key, value] of Object.entries(query_object)){
+        if(value === 'null'){
+            query_object[key] = null;
+        }
+    }
+    return query_object;
+}
+
 export function query_object_to_mongodb_query(query_object: any){
     let retval = {} as any;
 

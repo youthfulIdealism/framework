@@ -11,6 +11,14 @@ let query_meta_map = {
     'sort': true,
     'sort_order': true,
 };
+export function convert_null(query_object) {
+    for (let [key, value] of Object.entries(query_object)) {
+        if (value === 'null') {
+            query_object[key] = null;
+        }
+    }
+    return query_object;
+}
 export function query_object_to_mongodb_query(query_object) {
     let retval = {};
     for (let [key, value] of Object.entries(query_object)) {

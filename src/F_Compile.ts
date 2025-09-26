@@ -4,7 +4,7 @@ import { isValidObjectId } from "mongoose";
 
 import { F_Collection } from "./F_Collection.js";
 import { F_Security_Model, Authenticated_Request } from "./F_Security_Models/F_Security_Model.js";
-import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
+import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 import { z_mongodb_id } from "./utils/mongoose_from_zod.js";
 
 /*process.on('unhandledRejection', (reason, promise) => {
@@ -87,7 +87,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         app.get(get_multiple_path, async (req: Request, res: Response) => {
             let validated_query_args: { [key: string]: any } ;
             try {
-                validated_query_args = collection.query_validator_server.parse(req.query);
+                validated_query_args = collection.query_validator_server.parse(convert_null(req.query));
             } catch(err){
                 if(err instanceof z.ZodError){
                     res.status(400);

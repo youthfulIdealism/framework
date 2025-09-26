@@ -1,7 +1,7 @@
 import * as z from "zod/v4";
 import { isValidObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
-import { query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
+import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 export function compile(app, collection, api_prefix) {
     for (let access_layers of collection.access_layers) {
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
@@ -59,7 +59,7 @@ export function compile(app, collection, api_prefix) {
         app.get(get_multiple_path, async (req, res) => {
             let validated_query_args;
             try {
-                validated_query_args = collection.query_validator_server.parse(req.query);
+                validated_query_args = collection.query_validator_server.parse(convert_null(req.query));
             }
             catch (err) {
                 if (err instanceof z.ZodError) {
