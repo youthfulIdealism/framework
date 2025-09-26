@@ -48,15 +48,16 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
     async has_permission(req: Authenticated_Request, res: Response, find: {[key: string]: any}, operation: Operation): Promise<boolean> {
         let user_id = req.auth.user_id;
         // the only way the layer ID is undefined is if the layer is the document being accessed
-        let layer_id = req.params[this.layer_collection_id] ?? req.params.document_id;
+        // eg the institution id or the client id
+        let layer_document_id = req.params[this.layer_collection_id] ?? req.params.document_id;
 
         // return the role membership associated with the layer. This uses the cache heavily, so it should be
         // a cheap operation even though it makes an extra database query. Use the cache's first_fetch_then_refresh
         // method so that we aren't keeping out-of-date auth data in the cache.
-        let role_membership = await this.role_membership_cache.first_fetch_then_refresh(`${user_id}-${layer_id}`, async () => {
+        let role_membership = await this.role_membership_cache.first_fetch_then_refresh(`${user_id}-${layer_document_id}`, async () => {
             let role_memberships = await this.role_membership_collection.mongoose_model.find({ 
                 [this.user_id_field]: user_id,
-                [`${this.layer_collection_id}_id`]: new mongoose.Types.ObjectId(layer_id)
+                [`${this.layer_collection_id}_id`]: new mongoose.Types.ObjectId(layer_document_id)
             }, {}, {lean: true})
 
             if(role_memberships.length > 1){

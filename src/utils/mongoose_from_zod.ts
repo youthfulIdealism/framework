@@ -7,6 +7,7 @@ import { find_loops, validator_group } from './zod_loop_seperator.js'
 //export const mongodb_id = () => z_mongodb_id;
 const underlying_mongodb_id_validator = z.string().length(24);
 const underlying_mongodb_id_validator_optional = underlying_mongodb_id_validator.optional();
+const underlying_mongodb_id_validator_nullable = underlying_mongodb_id_validator.nullable();
 
 export const z_mongodb_id = z.custom<string>((val) => {
     if(!val){ return false; }
@@ -23,6 +24,18 @@ export const z_mongodb_id = z.custom<string>((val) => {
 
 export const z_mongodb_id_optional = z.custom<string>((val) => {
     let parsed = underlying_mongodb_id_validator_optional.safeParse(val);
+    if (!parsed.success) {
+        return false;
+    } else {
+        return true;
+    }
+}).meta({
+    "type": "string",
+    "format": "string",
+}).meta({framework_override_type: 'mongodb_id'});
+
+export const z_mongodb_id_nullable = z.custom<string>((val) => {
+    let parsed = underlying_mongodb_id_validator_nullable.safeParse(val);
     if (!parsed.success) {
         return false;
     } else {

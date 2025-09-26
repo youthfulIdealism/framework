@@ -31,11 +31,11 @@ export class F_SM_Role_Membership extends F_Security_Model {
     }
     async has_permission(req, res, find, operation) {
         let user_id = req.auth.user_id;
-        let layer_id = req.params[this.layer_collection_id] ?? req.params.document_id;
-        let role_membership = await this.role_membership_cache.first_fetch_then_refresh(`${user_id}-${layer_id}`, async () => {
+        let layer_document_id = req.params[this.layer_collection_id] ?? req.params.document_id;
+        let role_membership = await this.role_membership_cache.first_fetch_then_refresh(`${user_id}-${layer_document_id}`, async () => {
             let role_memberships = await this.role_membership_collection.mongoose_model.find({
                 [this.user_id_field]: user_id,
-                [`${this.layer_collection_id}_id`]: new mongoose.Types.ObjectId(layer_id)
+                [`${this.layer_collection_id}_id`]: new mongoose.Types.ObjectId(layer_document_id)
             }, {}, { lean: true });
             if (role_memberships.length > 1) {
                 console.warn(`in F_SM_Role_Membership, more than one role membership for user ${user_id} at layer ${this.layer_collection_id} found.`);
