@@ -4,7 +4,7 @@ import mongoose, { Collection, Model, ObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
 
-export type CollectionType<Col extends F_Collection<ID, Val>, ID extends string, Val extends z.ZodObject> = z.output<Col['validator']>;
+export type CollectionType<Col extends F_Collection<string, Validator>, Validator extends z.ZodObject> = z.output<Col['validator']>;
 
 export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodObject> = {
     layers: string[],
