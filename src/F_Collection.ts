@@ -27,8 +27,10 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
     create_hooks: ((session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>)[];
     update_hooks: ((session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>)[];
+    delete_hooks: ((session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>)[];
     post_create_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
     post_update_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
+    post_delete_hooks: ((deleted_document: z.output<ZodSchema>) => Promise<void>)[];
 
     constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema){
         this.collection_id = collection_name;
@@ -47,11 +49,21 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         this.is_compiled = false;
         this.create_hooks = [];
         this.update_hooks = [];
+        this.delete_hooks = [];
         this.post_create_hooks = [];
         this.post_update_hooks = [];
+        this.post_delete_hooks = [];
     }
 
-    add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[], is_layer_owner = false){
+    /**
+     * adds a logical point of access and the security models that define it. For example, given a
+     * user who has several boxes, and each box has several items, the layers might look like:
+     * 
+     * collection_user.add_layers([], [new SecurityModelOfSomeKind()]); // users can be accessed through /api/user
+     * collection_box.add_layers(['user'], [new SecurityModelOfSomeKind()]); // users can be accessed through /api/user/<user_id>/box
+     * collection_item.add_layers(['user', 'box'], [new SecurityModelOfSomeKind()]); // users can be accessed through /api/user/<user_id>/box/<box_id>/item
+     */
+    add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[]){
         if(this.is_compiled){ throw new Error(`Manipulating a model post-compilation doesn't work.`); }
         this.access_layers.push({
             layers: layers,
@@ -63,7 +75,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * Adds code that runs in a transaction when the document is being created. If you want side-effect code
      * that doesn't DIRECTLY pertain to the database create operation, use the post-create hook instead.
      */
-    add_create_hook(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>): void {
+    on_create(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>): void {
         this.create_hooks.push(hook);
     }
 
@@ -71,20 +83,51 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * Adds code that runs in a transaction when the document is being updated. If you want side-effect code
      * that doesn't DIRECTLY pertain to the database update operation, use the post-update hook instead.
      */
-    add_update_hook(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void {
+    on_update(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void {
         this.update_hooks.push(hook);
     }
 
-    add_post_create_hook(hook: (created_document: z.output<ZodSchema>) => Promise<void>): void {
+    /**
+     * Adds code that runs in a transaction when the document is being deleted. If you want side-effect code
+     * that doesn't DIRECTLY pertain to the database delete operation, use the post-delete hook instead.
+     */
+    on_delete(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void {
+        this.delete_hooks.push(hook);
+    }
+
+    /**
+     * Adds code that runs after a document is created. If this code fails, no error is thrown--a message is merely
+     * printed to the console. This means that the code needs to contain any error-handlers within itself.
+     */
+    after_create(hook: (created_document: z.output<ZodSchema>) => Promise<void>): void {
         this.post_create_hooks.push(hook);
     }
 
-    add_post_update_hook(hook: (updated_document: z.output<ZodSchema>) => Promise<void>): void {
+    /**
+     * Adds code that runs after a document is updated. If this code fails, no error is thrown--a message is merely
+     * printed to the console. This means that the code needs to contain any error-handlers within itself.
+     */
+    after_update(hook: (updated_document: z.output<ZodSchema>) => Promise<void>): void {
         this.post_update_hooks.push(hook);
     }
 
-    // TODO: write tests for this
-    async mongoose_create(data: z.output<ZodSchema>): Promise<z.output<ZodSchema>> {
+    /**
+     * Adds code that runs after a document is deleted. If this code fails, no error is thrown--a message is merely
+     * printed to the console. This means that the code needs to contain any error-handlers within itself.
+     */
+    after_delete(hook: (deleted_document: z.output<ZodSchema>) => Promise<void>): void {
+        this.post_delete_hooks.push(hook);
+    }
+
+    /**
+     * //TODO: Write tests for this
+     * Runs both a create operation and any side-effects added by the on_create method within a mongodb transaction.
+     * Then, performs any side-effects added by the after_create method.
+     * 
+     * If there are no side-effects specified by the on_create method, runs a normal non-transaction create to avoid
+     * the performance impacts of a transaction.
+     */
+    async perform_create_and_side_effects(data: z.output<ZodSchema>): Promise<z.output<ZodSchema>> {
         let created_document_data;
 
         // if we have any create hooks, run the create operation in a transaction
@@ -109,7 +152,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
             try {
                 await hook(created_document_data);
             } catch(err) {
-                console.error(`Error in ${this.collection_id} post_create_hook:`)
+                console.error(`Error in ${this.collection_id} after_create:`)
                 console.error(err);
             }
             
@@ -118,8 +161,15 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         return created_document_data;
     }
 
-    // TODO: write tests for this
-    async mongoose_update(find: any, data: z.output<ZodSchema>): Promise<z.output<ZodSchema>> {
+    /**
+     * //TODO: Write tests for this
+     * Runs both a update operation and any side-effects added by the on_update method within a mongodb transaction.
+     * Then, performs any side-effects added by the after_update method.
+     * 
+     * If there are no side-effects specified by the on_update method, runs a normal non-transaction update to avoid
+     * the performance impacts of a transaction.
+     */
+    async perform_update_and_side_effects(find: any, data: z.output<ZodSchema>): Promise<z.output<ZodSchema>> {
         let update_document_data;
 
         // if we have any update hooks, run the update operation in a transaction
@@ -146,12 +196,56 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                 //@ts-expect-error
                 await hook(update_document_data);
             } catch(err) {
-                console.error(`Error in ${this.collection_id} post_update_hook:`)
+                console.error(`Error in ${this.collection_id} after_update:`)
                 console.error(err);
             }
         }
 
         //@ts-expect-error
         return update_document_data;
+    }
+
+    /**
+     * //TODO: Write tests for this
+     * Runs both a delete operation and any side-effects added by the on_delete method within a mongodb transaction.
+     * Then, performs any side-effects added by the after_delete method.
+     * 
+     * If there are no side-effects specified by the on_delete method, runs a normal non-transaction delete to avoid
+     * the performance impacts of a transaction.
+     */
+    async perform_delete_and_side_effects(find: any): Promise<z.output<ZodSchema>> {
+        let deleted_document_data;
+
+        // if we have any update hooks, run the update operation in a transaction
+        if(this.update_hooks.length > 0){
+            await mongoose.connection.transaction(async (session) => {
+                // update the document
+                let deleted_document = await this.mongoose_model.findOneAndDelete(find, {returnDocument: 'after', session: session, lean: true})
+                deleted_document_data = deleted_document;
+
+                // run each hook one-by-one because running them in parallell is verboten
+                // https://mongoosejs.com/docs/transactions.html
+                for(let hook of this.delete_hooks){
+                    //@ts-expect-error
+                    await hook(session, deleted_document);
+                }
+            });
+        } else {// if we don't have any post update hooks, run the update operation normally
+            deleted_document_data = await this.mongoose_model.findOneAndDelete(find, {returnDocument: 'after', lean: true})
+        }
+
+        // run the post-update hooks, which should not make DB changes.
+        for(let hook of this.post_delete_hooks) {
+            try {
+                //@ts-expect-error
+                await hook(deleted_document_data);
+            } catch(err) {
+                console.error(`Error in ${this.collection_id} after_delete:`)
+                console.error(err);
+            }
+        }
+
+        //@ts-expect-error
+        return deleted_document_data;
     }
 }

@@ -168,7 +168,7 @@ export function compile(app, collection, api_prefix) {
             }
             let results;
             try {
-                results = await collection.mongoose_update(find, validated_request_body);
+                results = await collection.perform_update_and_side_effects(find, validated_request_body);
             }
             catch (err) {
                 res.status(500);
@@ -244,7 +244,7 @@ export function compile(app, collection, api_prefix) {
             }
             let results;
             try {
-                results = await collection.mongoose_create(validated_request_body);
+                results = await collection.perform_create_and_side_effects(validated_request_body);
             }
             catch (err) {
                 res.status(500);
@@ -283,7 +283,7 @@ export function compile(app, collection, api_prefix) {
             }
             let results;
             try {
-                results = await collection.mongoose_model.findOneAndDelete(find, { lean: true });
+                results = await collection.perform_delete_and_side_effects(find);
             }
             catch (err) {
                 res.status(500);

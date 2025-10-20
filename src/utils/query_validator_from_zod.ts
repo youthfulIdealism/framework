@@ -1,6 +1,6 @@
 import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
-import { z_mongodb_id } from "./mongoose_from_zod.js";
+import { z_mongodb_id, z_mongodb_id_nullable, z_mongodb_id_optional } from "./mongoose_from_zod.js";
 import { find_loops, validator_group } from './zod_loop_seperator.js'
 
 type type_filters = {
@@ -15,7 +15,7 @@ export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode
 
     let retval = {
         limit: z.coerce.number().int().optional(),
-        cursor: z_mongodb_id.optional(),
+        cursor: z_mongodb_id_optional,
         sort_order: z.enum([/*'asc', 'desc', */'ascending', 'descending']).optional()
     } as $ZodLooseShape;
 
@@ -225,21 +225,21 @@ function parse_date(prefix: string, mode: Mode): type_filters {
 
 
 function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
-    let array_parser = mode === 'client' ? z.array(z_mongodb_id.nullable()) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
+    let array_parser = mode === 'client' ? z.array(z_mongodb_id_nullable) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
         {
             path: prefix,
-            filter: z_mongodb_id.nullable().optional(),
+            filter: z_mongodb_id_nullable.optional(),
             sortable: true,
         },
         {
             path: prefix + '_gt',
-            filter: z_mongodb_id.nullable().optional(),
+            filter: z_mongodb_id_nullable.optional(),
             sortable: false,
         },
         {
             path: prefix + '_lt',
-            filter: z_mongodb_id.nullable().optional(),
+            filter: z_mongodb_id_nullable.optional(),
             sortable: false,
         },
         {

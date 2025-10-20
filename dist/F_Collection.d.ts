@@ -20,14 +20,19 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
     create_hooks: ((session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>)[];
     update_hooks: ((session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>)[];
+    delete_hooks: ((session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>)[];
     post_create_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
     post_update_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
+    post_delete_hooks: ((deleted_document: z.output<ZodSchema>) => Promise<void>)[];
     constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema);
-    add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[], is_layer_owner?: boolean): void;
-    add_create_hook(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>): void;
-    add_update_hook(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void;
-    add_post_create_hook(hook: (created_document: z.output<ZodSchema>) => Promise<void>): void;
-    add_post_update_hook(hook: (updated_document: z.output<ZodSchema>) => Promise<void>): void;
-    mongoose_create(data: z.output<ZodSchema>): Promise<z.output<ZodSchema>>;
-    mongoose_update(find: any, data: z.output<ZodSchema>): Promise<z.output<ZodSchema>>;
+    add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[]): void;
+    on_create(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>): void;
+    on_update(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void;
+    on_delete(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void;
+    after_create(hook: (created_document: z.output<ZodSchema>) => Promise<void>): void;
+    after_update(hook: (updated_document: z.output<ZodSchema>) => Promise<void>): void;
+    after_delete(hook: (deleted_document: z.output<ZodSchema>) => Promise<void>): void;
+    perform_create_and_side_effects(data: z.output<ZodSchema>): Promise<z.output<ZodSchema>>;
+    perform_update_and_side_effects(find: any, data: z.output<ZodSchema>): Promise<z.output<ZodSchema>>;
+    perform_delete_and_side_effects(find: any): Promise<z.output<ZodSchema>>;
 }
