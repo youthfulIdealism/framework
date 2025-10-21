@@ -26,13 +26,13 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     post_delete_hooks: ((deleted_document: z.output<ZodSchema>) => Promise<void>)[];
     constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema);
     add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[]): void;
-    on_create(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>): void;
-    on_update(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void;
-    on_delete(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void;
-    after_create(hook: (created_document: z.output<ZodSchema>) => Promise<void>): void;
-    after_update(hook: (updated_document: z.output<ZodSchema>) => Promise<void>): void;
-    after_delete(hook: (deleted_document: z.output<ZodSchema>) => Promise<void>): void;
-    perform_create_and_side_effects(data: z.output<ZodSchema>): Promise<z.output<ZodSchema>>;
-    perform_update_and_side_effects(find: any, data: z.output<ZodSchema>): Promise<z.output<ZodSchema>>;
-    perform_delete_and_side_effects(find: any): Promise<z.output<ZodSchema>>;
+    on_create(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<this['post_validator']>) => Promise<void>): void;
+    on_update(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<this['post_validator']>) => Promise<void>): void;
+    on_delete(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<this['post_validator']>) => Promise<void>): void;
+    after_create(hook: (created_document: z.output<this['post_validator']>) => Promise<void>): void;
+    after_update(hook: (updated_document: z.output<this['post_validator']>) => Promise<void>): void;
+    after_delete(hook: (deleted_document: z.output<this['post_validator']>) => Promise<void>): void;
+    perform_create_and_side_effects(data: z.output<this['post_validator']>): Promise<z.output<this['post_validator']>>;
+    perform_update_and_side_effects(find: any, data: z.output<this['post_validator']>): Promise<z.output<this['post_validator']>>;
+    perform_delete_and_side_effects(find: any): Promise<z.output<this['post_validator']>>;
 }

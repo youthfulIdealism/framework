@@ -1,6 +1,6 @@
 {
   "name": "@liminalfunctions/framework",
-  "version": "1.0.38",
+  "version": "1.0.39",
   "main": "./dist/index.js",
   "type": "module",
   "scripts": {
@@ -24,13 +24,10 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@openapitools/openapi-generator-cli": "^2.22.0",
     "@types/express": "^5.0.0",
     "@types/mocha": "^10.0.10",
     "@types/mustache": "^4.2.6",
     "@types/node": "^22.10.7",
-    "copyfiles": "^2.4.1",
-    "got": "^14.4.6",
     "mocha": "^11.1.0",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.3",
@@ -38,12 +35,13 @@
     "zod": "^4.0.17"
   },
   "peerDependencies": {
-    "ky": "^1.9.0",
     "express": "^5.1.0",
+    "ky": "^1.9.0",
     "mongoose": "^8.17.0",
     "zod": "^4.0.0"
   },
   "dependencies": {
+    "copyfiles": "^2.4.1",
     "mustache": "^4.2.0"
   }
 }
