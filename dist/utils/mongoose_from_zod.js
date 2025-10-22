@@ -30,7 +30,7 @@ export const z_mongodb_id_optional = z.custom((val) => {
 }).meta({
     "type": "string",
     "format": "string",
-}).meta({ framework_override_type: 'mongodb_id' });
+}).meta({ framework_override_type: 'mongodb_id', optional: true });
 export const z_mongodb_id_nullable = z.custom((val) => {
     let parsed = underlying_mongodb_id_validator_nullable.safeParse(val);
     if (!parsed.success) {
@@ -42,7 +42,7 @@ export const z_mongodb_id_nullable = z.custom((val) => {
 }).meta({
     "type": "string",
     "format": "string",
-}).meta({ framework_override_type: 'mongodb_id' });
+}).meta({ framework_override_type: 'mongodb_id', nullable: true });
 export function mongoose_from_zod(schema_name, zod_definition) {
     let mongoose_schema = schema_from_zod(zod_definition);
     return mongoose.model(schema_name, new Schema(mongoose_schema, { typeKey: 'mongoose_type' }));
@@ -121,7 +121,7 @@ export function schema_entry_from_zod(zod_definition, loop_detector) {
             }
             let { framework_override_type } = zod_definition.meta();
             if (framework_override_type === 'mongodb_id') {
-                result = parse_mongodb_id(zod_definition._zod.def);
+                result = parse_mongodb_id(zod_definition._zod.def, zod_definition.meta());
             }
             else {
                 throw new Error(`could not find custom parser for ${framework_override_type} in the magic value dictionary`);
@@ -191,7 +191,7 @@ function parse_optional(def, loop_detector) {
     type_definition.required = false;
     return type_definition;
 }
-function parse_mongodb_id(def) {
-    return { mongoose_type: Schema.Types.ObjectId };
+function parse_mongodb_id(def, meta) {
+    return { mongoose_type: Schema.Types.ObjectId, required: meta.optional || meta.nullable };
 }
 //# sourceMappingURL=mongoose_from_zod.js.map

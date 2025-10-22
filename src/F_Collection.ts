@@ -11,6 +11,9 @@ export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodObject>
     security_models: F_Security_Model<Collection_ID, ZodSchema>[]
 }
 
+type Partial_Mask = {_id: true};
+type ZodPartial_Return_Type<T extends (arg: Partial_Mask) => any> = T extends (arg: Partial_Mask) => infer R ? R : any;
+
 export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodObject> {
     collection_id: Collection_ID;
     collection_name_plural: string;
@@ -20,8 +23,10 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
     
     query_validator_server: z.ZodType;
     query_validator_client: z.ZodType;
-    put_validator: z.ZodType;
-    post_validator: z.ZodType;
+    put_validator: ReturnType<ZodSchema['partial']>;
+    // TODO: Come back and find a way to select the particular partial I want
+    // instead of partialing the whole object.
+    post_validator: ZodPartial_Return_Type<ZodSchema['partial']>;
     is_compiled: boolean;
 
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
@@ -43,8 +48,13 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         this.query_validator_server = query_validator_from_zod(validator, 'server');
         this.query_validator_client = query_validator_from_zod(validator, 'client');
         // TODO: we can make this more closely match the mongoDB PUT operation and allow updates to eg array.3.element fields
+        
+        // TODO: find a more elegant way to do this so that the types don't have a cow
+        //@ts-ignore
         this.put_validator = validator.partial();
-        this.post_validator = Object.hasOwn(this.validator._zod.def.shape, '_id') ? validator.partial({_id: true}) : validator;
+        // @ts-ignore
+        this.post_validator = Object.hasOwn(this.validator._zod.def.shape, '_id') ? validator.partial({ _id: true }) : validator;
+
         this.access_layers = [];
         this.is_compiled = false;
         this.create_hooks = [];
@@ -75,7 +85,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * Adds code that runs in a transaction when the document is being created. If you want side-effect code
      * that doesn't DIRECTLY pertain to the database create operation, use the post-create hook instead.
      */
-    on_create(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<this['post_validator']>) => Promise<void>): void {
+    on_create(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>): void {
         this.create_hooks.push(hook);
     }
 
@@ -83,7 +93,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * Adds code that runs in a transaction when the document is being updated. If you want side-effect code
      * that doesn't DIRECTLY pertain to the database update operation, use the post-update hook instead.
      */
-    on_update(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<this['post_validator']>) => Promise<void>): void {
+    on_update(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void {
         this.update_hooks.push(hook);
     }
 
@@ -91,7 +101,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * Adds code that runs in a transaction when the document is being deleted. If you want side-effect code
      * that doesn't DIRECTLY pertain to the database delete operation, use the post-delete hook instead.
      */
-    on_delete(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<this['post_validator']>) => Promise<void>): void {
+    on_delete(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void {
         this.delete_hooks.push(hook);
     }
 
@@ -99,7 +109,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * Adds code that runs after a document is created. If this code fails, no error is thrown--a message is merely
      * printed to the console. This means that the code needs to contain any error-handlers within itself.
      */
-    after_create(hook: (created_document: z.output<this['post_validator']>) => Promise<void>): void {
+    after_create(hook: (created_document: z.output<ZodSchema>) => Promise<void>): void {
         this.post_create_hooks.push(hook);
     }
 
@@ -107,7 +117,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * Adds code that runs after a document is updated. If this code fails, no error is thrown--a message is merely
      * printed to the console. This means that the code needs to contain any error-handlers within itself.
      */
-    after_update(hook: (updated_document: z.output<this['post_validator']>) => Promise<void>): void {
+    after_update(hook: (updated_document: z.output<ZodSchema>) => Promise<void>): void {
         this.post_update_hooks.push(hook);
     }
 
@@ -115,7 +125,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * Adds code that runs after a document is deleted. If this code fails, no error is thrown--a message is merely
      * printed to the console. This means that the code needs to contain any error-handlers within itself.
      */
-    after_delete(hook: (deleted_document: z.output<this['post_validator']>) => Promise<void>): void {
+    after_delete(hook: (deleted_document: z.output<ZodSchema>) => Promise<void>): void {
         this.post_delete_hooks.push(hook);
     }
 
@@ -127,7 +137,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * If there are no side-effects specified by the on_create method, runs a normal non-transaction create to avoid
      * the performance impacts of a transaction.
      */
-    async perform_create_and_side_effects(data: z.output<this['post_validator']>): Promise<z.output<this['post_validator']>> {
+    async perform_create_and_side_effects(data: z.output<this['post_validator']>): Promise<z.output<ZodSchema>> {
         let created_document_data;
 
         // if we have any create hooks, run the create operation in a transaction
@@ -169,7 +179,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * If there are no side-effects specified by the on_update method, runs a normal non-transaction update to avoid
      * the performance impacts of a transaction.
      */
-    async perform_update_and_side_effects(find: any, data: z.output<this['post_validator']>): Promise<z.output<this['post_validator']>> {
+    async perform_update_and_side_effects(find: any, data: z.output<this['put_validator']>): Promise<z.output<ZodSchema>> {
         let update_document_data;
 
         // if we have any update hooks, run the update operation in a transaction
@@ -213,7 +223,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * If there are no side-effects specified by the on_delete method, runs a normal non-transaction delete to avoid
      * the performance impacts of a transaction.
      */
-    async perform_delete_and_side_effects(find: any): Promise<z.output<this['post_validator']>> {
+    async perform_delete_and_side_effects(find: any): Promise<z.output<ZodSchema>> {
         let deleted_document_data;
 
         // if we have any update hooks, run the update operation in a transaction

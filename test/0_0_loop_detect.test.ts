@@ -8,7 +8,6 @@ import { required } from "zod/mini";
 process.env.DEBUG = 'express:*'
 
 describe('Mongoose from Zod', function () {
-
     it('should detect no loops in an empty object', function () {
         let zodSchema = z.object({ })
         let loops = find_loops(zodSchema);

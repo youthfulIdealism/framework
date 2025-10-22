@@ -2,6 +2,7 @@ import { z } from "zod/v4"
 import mongoose, { Schema } from "mongoose";
 
 import { find_loops, validator_group } from './zod_loop_seperator.js'
+import { required } from "zod/mini";
 
 //export const z_mongodb_id = z.string().length(24).describe('F_Mongodb_ID');
 //export const mongodb_id = () => z_mongodb_id;
@@ -32,7 +33,7 @@ export const z_mongodb_id_optional = z.custom<string>((val) => {
 }).meta({
     "type": "string",
     "format": "string",
-}).meta({framework_override_type: 'mongodb_id'});
+}).meta({framework_override_type: 'mongodb_id', optional: true});
 
 export const z_mongodb_id_nullable = z.custom<string>((val) => {
     let parsed = underlying_mongodb_id_validator_nullable.safeParse(val);
@@ -44,7 +45,7 @@ export const z_mongodb_id_nullable = z.custom<string>((val) => {
 }).meta({
     "type": "string",
     "format": "string",
-}).meta({framework_override_type: 'mongodb_id'});
+}).meta({framework_override_type: 'mongodb_id', nullable: true});
 
 export function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType) {
     let mongoose_schema = schema_from_zod(zod_definition);
@@ -130,7 +131,7 @@ export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: 
             let { framework_override_type } = zod_definition.meta();
 
             if(framework_override_type === 'mongodb_id'){
-                result = parse_mongodb_id(zod_definition._zod.def as z.core.$ZodCustomDef)
+                result = parse_mongodb_id(zod_definition._zod.def as z.core.$ZodCustomDef, zod_definition.meta() as {framework_override_type: 'mongodb_id'})
             } else {
                 throw new Error(`could not find custom parser for ${framework_override_type} in the magic value dictionary`)
             }
@@ -218,6 +219,6 @@ function parse_optional(def: z.core.$ZodOptionalDef, loop_detector: Map<any, val
     return type_definition;
 }
 
-function parse_mongodb_id(def: z.core.$ZodCustomDef): any {
-    return { mongoose_type: Schema.Types.ObjectId };
+function parse_mongodb_id(def: z.core.$ZodCustomDef, meta: { framework_override_type: 'mongodb_id', optional?: boolean, nullable?: boolean}): any {
+    return { mongoose_type: Schema.Types.ObjectId, required: meta.optional || meta.nullable };
 }

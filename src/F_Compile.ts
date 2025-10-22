@@ -201,7 +201,6 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             // if you're accessing the document from /x/:x/y/:y, then you can't change x or y. Note that this does mean if you can access
             // the document from /x/:x, then you'd be able to change y.
             for(let layer of access_layers.layers){
-                //@ts-expect-error
                 if(validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]){
                     res.status(403);
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
@@ -297,7 +296,6 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             // if you're accessing the document from /x/:x/y/:y, then you can't change x or y. Note that this does mean if you can access
             // the document from /x/:x, then you'd be able to change y.
             for(let layer of access_layers.layers){
-                //@ts-expect-error
                 if(validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]){
                     res.status(403);
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });

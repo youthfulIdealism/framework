@@ -32,7 +32,8 @@
     "rimraf": "^6.0.1",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",
-    "zod": "^4.0.17"
+    "zod": "^4.0.17",
+    "got": "^14.6.0"
   },
   "peerDependencies": {
     "express": "^5.1.0",
