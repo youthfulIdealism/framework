@@ -126,7 +126,6 @@ export function schema_entry_from_zod(zod_definition, loop_detector) {
             else {
                 throw new Error(`could not find custom parser for ${framework_override_type} in the magic value dictionary`);
             }
-            result.required = !zod_definition.safeParse(undefined).success;
             return result;
         default:
             throw new Error("Cannot process zod type: " + zod_definition._zod.def.type);

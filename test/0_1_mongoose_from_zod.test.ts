@@ -181,13 +181,13 @@ describe('Mongoose from Zod', function () {
     it(`should correctly handle nullable mongodb IDs`, function () {
         let zodSchema = z.object({ test_value: z_mongodb_id_nullable})
         let mongooseSchema = schema_from_zod(zodSchema)
-        assert.deepEqual({ test_value: {mongoose_type: String, required: false} }, mongooseSchema)
+        assert.deepEqual({ test_value: {mongoose_type: Schema.Types.ObjectId, required: false} }, mongooseSchema)
     });
 
     it(`should correctly handle optional mongodb IDs`, function () {
         let zodSchema = z.object({ test_value: z_mongodb_id_optional })
         let mongooseSchema = schema_from_zod(zodSchema)
-        assert.deepEqual({ test_value: {mongoose_type: String, required: false} }, mongooseSchema)
+        assert.deepEqual({ test_value: {mongoose_type: Schema.Types.ObjectId, required: false} }, mongooseSchema)
     });
 
     /*
