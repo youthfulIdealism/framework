@@ -1,7 +1,7 @@
 import assert from "assert";
 import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
-import { schema_from_zod, z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
+import { schema_from_zod, z_mongodb_id, z_mongodb_id_nullable, z_mongodb_id_optional } from '../dist/utils/mongoose_from_zod.js';
 import { Schema } from 'mongoose'
 import { required } from "zod/mini";
 
@@ -175,8 +175,25 @@ describe('Mongoose from Zod', function () {
     }
 
     /*
+        special ID handling
+    */
+
+    it(`should correctly handle nullable mongodb IDs`, function () {
+        let zodSchema = z.object({ test_value: z_mongodb_id_nullable})
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({ test_value: {mongoose_type: String, required: false} }, mongooseSchema)
+    });
+
+    it(`should correctly handle optional mongodb IDs`, function () {
+        let zodSchema = z.object({ test_value: z_mongodb_id_optional })
+        let mongooseSchema = schema_from_zod(zodSchema)
+        assert.deepEqual({ test_value: {mongoose_type: String, required: false} }, mongooseSchema)
+    });
+
+    /*
         enum conversions
     */
+
 
     it(`should convert enums to mongoose type`, function () {
         let zodSchema = z.object({ test_value: z.enum(['chunky', 'funky', 'monkey']) })

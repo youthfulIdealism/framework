@@ -220,5 +220,5 @@ function parse_optional(def: z.core.$ZodOptionalDef, loop_detector: Map<any, val
 }
 
 function parse_mongodb_id(def: z.core.$ZodCustomDef, meta: { framework_override_type: 'mongodb_id', optional?: boolean, nullable?: boolean}): any {
-    return { mongoose_type: Schema.Types.ObjectId, required: meta.optional || meta.nullable };
+    return { mongoose_type: Schema.Types.ObjectId, required: !(meta.optional || meta.nullable) };
 }

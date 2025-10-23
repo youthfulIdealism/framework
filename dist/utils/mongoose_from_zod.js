@@ -192,6 +192,6 @@ function parse_optional(def, loop_detector) {
     return type_definition;
 }
 function parse_mongodb_id(def, meta) {
-    return { mongoose_type: Schema.Types.ObjectId, required: meta.optional || meta.nullable };
+    return { mongoose_type: Schema.Types.ObjectId, required: !(meta.optional || meta.nullable) };
 }
 //# sourceMappingURL=mongoose_from_zod.js.map
