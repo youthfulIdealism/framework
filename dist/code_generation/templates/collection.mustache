@@ -54,64 +54,80 @@ export class Collection_{{my_built_collection}} {
         let get_auth = this.get_auth;
         let collection_id = this.collection_id;
         let collection_name_plural = this.collection_name_plural;
-        return {
-            path: [...path, document_id],
-            collection_id: collection_id,
-            document_id: document_id,
-            collection_name_plural: collection_name_plural,
-            get_auth: get_auth,
-            async get(): Promise<{{type_return}}>{
-                try {
-                    let result = await ky.get([...path, document_id].join('/'), {
-                        headers: {
-                            authorization: await get_auth()
-                        },
-                    }).json() as Response<{{type_return}}>;
-                    return result.data;
-                } catch(err){
-                    return Promise.reject(err)
-                }
-            },
+        return new Document(path, collection_id, document_id, collection_name_plural, get_auth);
+    }
+}
 
-            async put(update: {{type_put}}): Promise<{{type_return}}>{
-                try {
-                    let result = await ky.put([...path, document_id].join('/'), {
-                        headers: {
-                            authorization: await get_auth()
-                        },
-                        json: update
-                    }).json() as Response<{{type_return}}>;
-                    return result.data;
-                } catch(err){
-                    return Promise.reject(err)
-                }
-            },
-            
-            async remove(): Promise<{{type_return}}>{
-                try {
-                    let result = await ky.delete([...path, document_id].join('/'), {
-                        headers: {
-                            authorization: await get_auth()
-                        },
-                    }).json() as Response<{{type_return}}>;
-                    return result.data;
-                } catch(err){
-                    return Promise.reject(err)
-                }
-            },
 
-            {{#has_subcollections}}
-            collection(collection_id: {{child_collection_id_types}}) {
-                switch(collection_id) {
-                    {{#child_collections}}
-                    case "{{collection_id}}":
-                        return new Collection_{{built_collection}}([...path, document_id, "{{collection_id}}"], get_auth);
-                    {{/child_collections}}
-                    default:
-                        throw new Error(`Api does not have the collection ${collection_id}`)
-                }
-            }
-            {{/has_subcollections}}
+
+class Document {
+    path: string[];
+    collection_id: string;
+    document_id: string;
+    collection_name_plural: string;
+    get_auth: () => Promise<any>;
+
+    constructor(path: string[], collection_id: string, document_id: string, collection_name_plural: string, get_auth: () => Promise<any>) {
+        this.path = path;
+        this.collection_id = collection_id;
+        this.document_id = document_id;
+        this.collection_name_plural = collection_name_plural;
+        this.get_auth = get_auth;
+    }
+
+    async get(): Promise<{{type_return}}>{
+        try {
+            let result = await ky.get([...this.path, this.document_id].join('/'), {
+                headers: {
+                    authorization: await this.get_auth()
+                },
+            }).json() as Response<{{type_return}}>;
+            return result.data;
+        } catch(err){
+            return Promise.reject(err)
         }
     }
+
+    async put(update: {{type_put}}): Promise<{{type_return}}>{
+        try {
+            let result = await ky.put([...this.path, this.document_id].join('/'), {
+                headers: {
+                    authorization: await this.get_auth()
+                },
+                json: update
+            }).json() as Response<{{type_return}}>;
+            return result.data;
+        } catch(err){
+            return Promise.reject(err)
+        }
+    }
+    
+    async remove(): Promise<{{type_return}}>{
+        try {
+            let result = await ky.delete([...this.path, this.document_id].join('/'), {
+                headers: {
+                    authorization: await this.get_auth()
+                },
+            }).json() as Response<{{type_return}}>;
+            return result.data;
+        } catch(err){
+            return Promise.reject(err)
+        }
+    }
+
+    {{#has_subcollections}}
+    {{#child_collections}}
+    collection(collection_id: "{{collection_id}}"): Collection_{{built_collection}};
+    {{/child_collections}}
+    collection(collection_id: string) {
+        switch(collection_id) {
+            {{#child_collections}}
+            case "{{collection_id}}":
+                return new Collection_{{built_collection}}([...this.path, this.document_id, "{{collection_id}}"], this.get_auth);
+            {{/child_collections}}
+            default:
+                throw new Error(`Api does not have the collection ${collection_id}`)
+        }
+    }
+    {{/has_subcollections}}
 }

@@ -7,18 +7,29 @@ import { Collection_{{built_collection}} } from "{{ built_collection_path }}"
 
 
 export function api(base_url: string, get_auth: () => Promise<any>) {
-    return {
-        collection(collection_id: {{child_collection_id_types}}) {
-            switch(collection_id) {
-                {{#child_collections}}
-                case "{{collection_id}}":
-                    return new Collection_{{built_collection}}([base_url, "{{collection_id}}"], get_auth);
-                {{/child_collections}}
-                default:
-                    throw new Error(`Api does not have the collection ${collection_id}`)
-            }
+    return new Api(base_url, get_auth)
+}
+
+class Api {
+    base_url: string;
+    get_auth: () => Promise<any>
+
+    constructor(base_url: string, get_auth: () => Promise<any>) {
+        this.base_url = base_url;
+        this.get_auth = get_auth
+    }
+
+    {{#child_collections}}
+    collection(collection_id: "{{collection_id}}"): Collection_{{built_collection}};
+    {{/child_collections}}
+    collection(collection_id: string) {
+        switch(collection_id) {
+            {{#child_collections}}
+            case "{{collection_id}}":
+                return new Collection_{{built_collection}}([this.base_url, "{{collection_id}}"], this.get_auth);
+            {{/child_collections}}
+            default:
+                throw new Error(`Api does not have the collection ${collection_id}`)
         }
     }
 }
-
-
