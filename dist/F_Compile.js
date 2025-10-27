@@ -5,6 +5,9 @@ import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_q
 export function compile(app, collection, api_prefix, collection_registry) {
     for (let access_layers of collection.access_layers) {
         for (let layer of access_layers.layers) {
+            if (layer === collection.collection_id) {
+                throw new Error(`Error compiling collection ${collection.collection_id}: a collection cannot be a member of it's own layer. Remove "${collection.collection_id}" from the collection's layers.`);
+            }
             if (!collection_registry.collections[layer]) {
                 throw new Error(`Error compiling collection ${collection.collection_id}: collection registry does not have a collection with the ID "${layer}". Each layer must be a valid collection ID.`);
             }

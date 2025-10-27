@@ -45,7 +45,9 @@ describe('Client Library Generation: Query Types', function () {
     })
 
     it(`should be able to generate a query for a plain object`, async function () {
-        const validate_test_collection = z.object({});
+        const validate_test_collection = z.object({
+            _id: z_mongodb_id,
+        });
 
         let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
@@ -60,13 +62,18 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
-                    "sort"?: ("")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
+                    "sort"?: ("_id")
                 }`)
         )
     });
 
     it(`should be able to generate a plain object containing a string`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.string(),
         });
 
@@ -83,17 +90,22 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
                     "test"?: string
                     "test_gt"?: string
                     "test_lt"?: string
                     "test_in"?: string[]
-                    "sort"?: ("test")
+                    "sort"?: ("_id" | "test")
                 }`)
         )
     });
 
     it(`should be able to generate a plain object containing a number`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.number(),
         });
 
@@ -110,18 +122,23 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
                     "test"?: number
                     "test_gt"?: number
                     "test_gte"?: number
                     "test_lt"?: number
                     "test_lte"?: number
-                    "sort"?: ("test")
+                    "sort"?: ("_id" | "test")
                 }`)
         )
     });
 
     it(`should be able to generate a plain object containing a boolean`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.boolean(),
         });
 
@@ -138,14 +155,19 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
                     "test"?: boolean
-                    "sort"?: ("test")
+                    "sort"?: ("_id" | "test")
                 }`)
         )
     });
 
     it(`should be able to generate a plain object containing a date`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.date(),
         });
 
@@ -162,43 +184,21 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
                     "test"?: Date
                     "test_gt"?: Date
                     "test_lt"?: Date
-                    "sort"?: ("test")
-                }`)
-        )
-    });
-
-    it(`should be able to generate a plain object containing an objectID`, async function () {
-        const validate_test_collection = z.object({
-            test: z_mongodb_id,
-        });
-
-        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
-
-        let proto_registry = new F_Collection_Registry();
-        let registry = proto_registry.register(test_collection);
-
-        await generate_client_library('./test/tmp', registry);
-
-        assert.equal(
-            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
-            remove_whitespace(`export type test_collection_query = {
-                    "limit"?: number
-                    "cursor"?: string
-                    "sort_order"?: ("ascending" | "descending")
-                    "test"?: string
-                    "test_gt"?: string
-                    "test_lt"?: string
-                    "test_in"?: string[]
-                    "sort"?: ("test")
+                    "sort"?: ("_id" | "test")
                 }`)
         )
     });
 
     it(`should be able to generate an enum`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.enum(["red", "green", "blue"]),
         });
 
@@ -215,9 +215,13 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
                     "test"?: ("red" | "green" | "blue")
                     "test_in"?: ("red" | "green" | "blue")[]
-                    "sort"?: ("test")
+                    "sort"?: ("_id" | "test")
                 }`)
         )
     });
@@ -226,6 +230,7 @@ describe('Client Library Generation: Query Types', function () {
 
     it(`should be able to generate a plain nested object`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.object({
             }),
         });
@@ -243,13 +248,18 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
-                    "sort"?: ("")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
+                    "sort"?: ("_id")
                 }`)
         )
     });
 
     it(`should be able to generate a plain nested with basic fields`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.object({
                 field_string: z.string(),
                 field_number: z.number(),
@@ -275,6 +285,11 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
 
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
+
                     "test.field_string"?: string
                     "test.field_string_gt"?: string
                     "test.field_string_lt"?: string
@@ -293,13 +308,14 @@ describe('Client Library Generation: Query Types', function () {
                     "test.field_date_lt"?: Date
 
                     "test.test_2.field_doublenested"?: boolean
-                    "sort"?: ("test.field_string" | "test.field_number" | "test.field_boolean" | "test.field_date" | "test.test_2.field_doublenested")
+                    "sort"?: ("_id" | "test.field_string" | "test.field_number" | "test.field_boolean" | "test.field_date" | "test.test_2.field_doublenested")
                 }`)
         )
     });
 
     it(`should be able to generate arrays of primitive fields`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             field_string: z.array(z.string()),
             field_number: z.array(z.number()),
             field_boolean: z.array(z.boolean()),
@@ -318,16 +334,21 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
                     "field_string"?: string
                     "field_number"?: number
                     "field_boolean"?: boolean
-                    "sort"?: ("field_string" | "field_number" | "field_boolean")
+                    "sort"?: ("_id" | "field_string" | "field_number" | "field_boolean")
                 }`)
         )
     });
 
     it(`should be able to generate a plain object containing a primitive with a default`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.boolean().default(true),
         });
 
@@ -344,8 +365,12 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: string[]
                     "test"?: boolean
-                    "sort"?: ("test")
+                    "sort"?: ("_id" | "test")
                 }`)
         )
     });

@@ -23,12 +23,22 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         next();
     })*/
 
-    // verify that each layer has a corresponding collection
+    
     for(let access_layers of collection.access_layers){
         for(let layer of access_layers.layers){
+            // verify that the collection is not in its own layers
+            if(layer === collection.collection_id){
+                throw new Error(`Error compiling collection ${collection.collection_id}: a collection cannot be a member of it's own layer. Remove "${collection.collection_id}" from the collection's layers.`)
+            }
+
+            // verify that each layer has a corresponding collection
             if(!collection_registry.collections[layer]){ 
                 throw new Error(`Error compiling collection ${collection.collection_id}: collection registry does not have a collection with the ID "${layer}". Each layer must be a valid collection ID.`)
             }
+
+            /*if(!Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                throw new Error(`Error compiling collection ${collection.collection_id}: collection does not have a field "${layer}_id. Either remove ${layer} from the collection's layers, or add a field ${layer}_id`)
+            }*/
         }
     }
     

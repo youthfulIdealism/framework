@@ -48,6 +48,13 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         this.query_validator_server = query_validator_from_zod(validator, 'server');
         this.query_validator_client = query_validator_from_zod(validator, 'client');
         // TODO: we can make this more closely match the mongoDB PUT operation and allow updates to eg array.3.element fields
+
+        if(!Object.hasOwn(this.validator._zod.def.shape, '_id')){
+            throw new Error(`_id is a required field, because each collection is a mongoDB object.`)
+        }
+        if(this.validator._zod.def.shape._id.meta()?.framework_override_type !== 'mongodb_id'){
+            throw new Error(`_id must be a mongoDB ID. Use the z_mongodb_id special field.`)
+        }
         
         // TODO: find a more elegant way to do this so that the types don't have a cow
         //@ts-ignore

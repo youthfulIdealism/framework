@@ -27,6 +27,12 @@ export class F_Collection {
         this.mongoose_model = mongoose_from_zod(collection_name, validator);
         this.query_validator_server = query_validator_from_zod(validator, 'server');
         this.query_validator_client = query_validator_from_zod(validator, 'client');
+        if (!Object.hasOwn(this.validator._zod.def.shape, '_id')) {
+            throw new Error(`_id is a required field, because each collection is a mongoDB object.`);
+        }
+        if (this.validator._zod.def.shape._id.meta()?.framework_override_type !== 'mongodb_id') {
+            throw new Error(`_id must be a mongoDB ID. Use the z_mongodb_id special field.`);
+        }
         this.put_validator = validator.partial();
         this.post_validator = Object.hasOwn(this.validator._zod.def.shape, '_id') ? validator.partial({ _id: true }) : validator;
         this.access_layers = [];

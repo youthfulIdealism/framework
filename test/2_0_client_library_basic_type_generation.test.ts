@@ -38,7 +38,9 @@ describe('Client Library Generation: Basic Types', function () {
     })
 
     it(`should be able to generate a plain object`, async function () {
-        const validate_test_collection = z.object({});
+        const validate_test_collection = z.object({
+            _id: z_mongodb_id
+        });
 
         let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
 
@@ -49,12 +51,13 @@ describe('Client Library Generation: Basic Types', function () {
 
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
-            remove_whitespace(`export type test_collection = {}`)
+            remove_whitespace(`export type test_collection = {"_id": string}`)
         )
     });
 
     it(`should be able to generate a plain object containing a string`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.string(),
         });
 
@@ -68,6 +71,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": string
                 }`)
         )
@@ -75,6 +79,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing a number`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.number(),
         });
 
@@ -88,6 +93,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": number
                 }`)
         )
@@ -95,6 +101,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing a boolean`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.boolean(),
         });
 
@@ -108,6 +115,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": boolean
                 }`)
         )
@@ -115,6 +123,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing a date`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.date(),
         });
 
@@ -128,6 +137,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": Date
                 }`)
         )
@@ -135,6 +145,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing an objectID`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z_mongodb_id,
         });
 
@@ -148,6 +159,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": string
                 }`)
         )
@@ -155,6 +167,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing a nullable string`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.nullable(z.string()),
         });
 
@@ -168,6 +181,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": string | null
                 }`)
         )
@@ -175,6 +189,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing union types`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.string().or(z.number()),
         });
 
@@ -188,6 +203,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": string | number
                 }`)
         )
@@ -195,6 +211,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing union types wrapped in nullable`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.nullable(z.string().or(z.number())),
         });
 
@@ -208,6 +225,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": string | number | null
                 }`)
         )
@@ -215,6 +233,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing union of object types`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.object({
                 sub: z.string()
             }).or(z.object({
@@ -232,6 +251,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": {"sub": string} | {"sub2": number}
                 }`)
         )
@@ -239,6 +259,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate an enum`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.enum(["red", "green", "blue"]),
         });
 
@@ -252,6 +273,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": ("red" | "green" | "blue")
                 }`)
         )
@@ -259,6 +281,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate an array of enum`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.array(z.enum(["red", "green", "blue"])),
         });
 
@@ -272,6 +295,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": ("red" | "green" | "blue")[]
                 }`)
         )
@@ -279,6 +303,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain nested object`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.object({
             }),
         });
@@ -293,6 +318,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": {}
                 }`)
         )
@@ -300,6 +326,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain nested with basic fields`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.object({
                 field_string: z.string(),
                 field_number: z.number(),
@@ -321,6 +348,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": {
                         "field_string": string
                         "field_number": number
@@ -336,6 +364,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate arrays of primitive fields`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             field_string: z.array(z.string()),
             field_number: z.array(z.number()),
             field_boolean: z.array(z.boolean()),
@@ -352,6 +381,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "field_string": string[]
                     "field_number": number[]
                     "field_boolean": boolean[]
@@ -362,6 +392,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate arrays of objects containing primitive fields`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             field_array: z.array(z.object({
                 field_string: z.array(z.string()),
                 field_number: z.array(z.number()),
@@ -381,6 +412,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                "_id": string
                 "field_array": {
                         "field_string": string[]
                         "field_number": number[]
@@ -393,6 +425,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate nested arrays`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             field_array: z.array(
                 z.array(z.object({
                     field_string: z.array(z.string()),
@@ -413,6 +446,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                "_id": string
                 "field_array": {
                         "field_string": string[]
                         "field_number": number[]
@@ -425,6 +459,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing a primitive with a default`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.string().default('ezikiel snograss'),
         });
 
@@ -438,6 +473,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test"?: string
                 }`)
         )
@@ -445,6 +481,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing an optional primitive`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.string().optional(),
         });
 
@@ -458,6 +495,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test"?: string
                 }`)
         )
@@ -465,6 +503,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing a record`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.record(z.string(), z.string())
         });
 
@@ -478,6 +517,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": {[key: string]: string}
                 }`)
         )
@@ -486,6 +526,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing an object record`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.record(z.string(), z.object({
                 test_2: z.string()
             }))
@@ -501,6 +542,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": {[key: string]: { "test_2": string }}
                 }`)
         )
@@ -508,6 +550,7 @@ describe('Client Library Generation: Basic Types', function () {
 
     it(`should be able to generate a plain object containing an array record`, async function () {
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: z.record(z.string(), z.array(z.string()))
         });
 
@@ -521,6 +564,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": {[key: string]: string[]}
                 }`)
         )
@@ -535,6 +579,7 @@ describe('Client Library Generation: Basic Types', function () {
         }).meta({id: 'test_recursive_object'})
 
         const validate_test_collection = z.object({
+            _id: z_mongodb_id,
             test: recursive
         });
 
@@ -548,6 +593,7 @@ describe('Client Library Generation: Basic Types', function () {
         assert.equal(
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
+                    "_id": string
                     "test": type_test_recursive_object
                 }
                 type type_test_recursive_object = {
