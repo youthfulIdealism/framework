@@ -11,6 +11,13 @@ export function compile(app, collection, api_prefix, collection_registry) {
             if (!collection_registry.collections[layer]) {
                 throw new Error(`Error compiling collection ${collection.collection_id}: collection registry does not have a collection with the ID "${layer}". Each layer must be a valid collection ID.`);
             }
+            if (!Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                throw new Error(`Error compiling collection ${collection.collection_id}: collection does not have a field "${layer}_id. Either remove ${layer} from the collection's layers, or add a field ${layer}_id`);
+            }
+            let layer_id_is_mongodb_id = collection.validator._zod.def.shape[`${layer}_id`].meta()?.framework_override_type === 'mongodb_id';
+            if (!layer_id_is_mongodb_id) {
+                throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_id must be a mongodb ID. use the z_mongodb_id, z_mongodb_id_nullable, or z_mongodb_id_optional special fields.`);
+            }
         }
     }
     for (let access_layers of collection.access_layers) {
