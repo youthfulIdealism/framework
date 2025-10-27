@@ -11,7 +11,7 @@ export class F_Collection_Registry {
     }
     compile(app, api_prefix) {
         for (let collection of Object.values(this.collections)) {
-            compile(app, collection, api_prefix);
+            compile(app, collection, api_prefix, this);
         }
     }
 }

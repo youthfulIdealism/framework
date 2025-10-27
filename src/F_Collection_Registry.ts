@@ -23,7 +23,7 @@ export class F_Collection_Registry<Collections = {}> {
 
     compile(app: Router, api_prefix: string) {
         for(let collection of Object.values(this.collections)){
-            compile(app, collection, api_prefix)
+            compile(app, collection, api_prefix, this)
         }
     }
 }

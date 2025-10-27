@@ -2,7 +2,14 @@ import * as z from "zod/v4";
 import { isValidObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
-export function compile(app, collection, api_prefix) {
+export function compile(app, collection, api_prefix, collection_registry) {
+    for (let access_layers of collection.access_layers) {
+        for (let layer of access_layers.layers) {
+            if (!collection_registry.collections[layer]) {
+                throw new Error(`Error compiling collection ${collection.collection_id}: collection registry does not have a collection with the ID "${layer}". Each layer must be a valid collection ID.`);
+            }
+        }
+    }
     for (let access_layers of collection.access_layers) {
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
         let get_one_path = [
