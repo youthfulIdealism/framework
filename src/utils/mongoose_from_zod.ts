@@ -2,13 +2,15 @@ import { z } from "zod/v4"
 import mongoose, { Schema } from "mongoose";
 
 import { find_loops, validator_group } from './zod_loop_seperator.js'
-import { required } from "zod/mini";
+import { complex_query_map, query_meta_map } from "./query_object_to_mongodb_query.js";
 
-//export const z_mongodb_id = z.string().length(24).describe('F_Mongodb_ID');
-//export const mongodb_id = () => z_mongodb_id;
 const underlying_mongodb_id_validator = z.string().length(24);
 const underlying_mongodb_id_validator_optional = underlying_mongodb_id_validator.optional();
 const underlying_mongodb_id_validator_nullable = underlying_mongodb_id_validator.nullable();
+
+const forbidden_prefixes = ['$'];
+const forbidden_keys = [...Object.keys(query_meta_map)]
+const forbidden_suffixes = [...Object.keys(complex_query_map)]
 
 export const z_mongodb_id = z.custom<string>((val) => {
     if(!val){ return false; }
@@ -149,6 +151,23 @@ function parse_object(def: z.core.$ZodObjectDef, loop_detector: Map<any, validat
 
     let retval = {} as any;
     for(let [key, value] of Object.entries(def.shape)){
+        for(let forbidden_key of forbidden_keys){
+            if(key.toLowerCase() === forbidden_key){
+                throw new Error(`"${forbidden_key}" is a forbidden field name because it's used in query parameters. Please check your validators and replace this key with something else.`)
+            }
+        }
+
+        for(let forbidden_prefix of forbidden_prefixes){
+            if(key.toLowerCase().startsWith(forbidden_prefix)){
+                throw new Error(`"${key}" is not a valid field name because it begins with "${forbidden_prefix}". Please check your validators and replace this key with something else.`)
+            }
+        }
+
+        for(let forbidden_suffix of forbidden_suffixes){
+            if(key.toLowerCase().endsWith(forbidden_suffix)){
+                throw new Error(`"${key}" is not a valid field name because it ends with "${forbidden_suffix}". Please check your validators and replace this key with something else.`)
+            }
+        }
         //@ts-ignore
         retval[key] = schema_entry_from_zod(value, loop_detector);
     }

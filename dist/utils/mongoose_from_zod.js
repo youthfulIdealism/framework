@@ -1,9 +1,13 @@
 import { z } from "zod/v4";
 import mongoose, { Schema } from "mongoose";
 import { find_loops } from './zod_loop_seperator.js';
+import { complex_query_map, query_meta_map } from "./query_object_to_mongodb_query.js";
 const underlying_mongodb_id_validator = z.string().length(24);
 const underlying_mongodb_id_validator_optional = underlying_mongodb_id_validator.optional();
 const underlying_mongodb_id_validator_nullable = underlying_mongodb_id_validator.nullable();
+const forbidden_prefixes = ['$'];
+const forbidden_keys = [...Object.keys(query_meta_map)];
+const forbidden_suffixes = [...Object.keys(complex_query_map)];
 export const z_mongodb_id = z.custom((val) => {
     if (!val) {
         return false;
@@ -137,6 +141,21 @@ function parse_object(def, loop_detector) {
     }
     let retval = {};
     for (let [key, value] of Object.entries(def.shape)) {
+        for (let forbidden_key of forbidden_keys) {
+            if (key.toLowerCase() === forbidden_key) {
+                throw new Error(`"${forbidden_key}" is a forbidden field name because it's used in query parameters. Please check your validators and replace this key with something else.`);
+            }
+        }
+        for (let forbidden_prefix of forbidden_prefixes) {
+            if (key.toLowerCase().startsWith(forbidden_prefix)) {
+                throw new Error(`"${key}" is not a valid field name because it begins with "${forbidden_prefix}". Please check your validators and replace this key with something else.`);
+            }
+        }
+        for (let forbidden_suffix of forbidden_suffixes) {
+            if (key.toLowerCase().endsWith(forbidden_suffix)) {
+                throw new Error(`"${key}" is not a valid field name because it ends with "${forbidden_suffix}". Please check your validators and replace this key with something else.`);
+            }
+        }
         retval[key] = schema_entry_from_zod(value, loop_detector);
     }
     return { mongoose_type: retval, required: true };

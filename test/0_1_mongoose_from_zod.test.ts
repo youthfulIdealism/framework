@@ -277,4 +277,41 @@ describe('Mongoose from Zod', function () {
             c: { mongoose_type: { name: { mongoose_type: String, required: true } }, required: true },
         }, mongooseSchema)
     })
+
+    /*
+        forbidden keys
+    */
+    it(`should error if a key starts with $`, function () {
+        let zodSchema = z.object({
+            $where: z.string()
+        })
+
+        assert.throws(() => {
+            let mongooseSchema = schema_from_zod(zodSchema);
+        })
+    });
+
+    for(let key of ['limit', 'cursor', 'sort', 'sort_order']){
+        it(`should error if a key is ${key}`, function () {
+            let zodSchema = z.object({
+                [key]: z.string()
+            })
+
+            assert.throws(() => {
+                let mongooseSchema = schema_from_zod(zodSchema);
+            })
+        });
+    }
+
+    for(let key of ['_gt', '_lt', '_gte', '_lte', '_in']){
+        it(`should error if a key ends with ${key}`, function () {
+            let zodSchema = z.object({
+                [`id${key}`]: z.string()
+            })
+
+            assert.throws(() => {
+                let mongooseSchema = schema_from_zod(zodSchema);
+            })
+        });
+    }
 });

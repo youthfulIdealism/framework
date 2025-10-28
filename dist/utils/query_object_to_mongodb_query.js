@@ -1,11 +1,11 @@
-let complex_query_map = {
+export let complex_query_map = {
     '_gt': '$gt',
     '_lt': '$lt',
     '_gte': '$gte',
     '_lte': '$lte',
     '_in': '$in'
 };
-let query_meta_map = {
+export let query_meta_map = {
     'limit': true,
     'cursor': true,
     'sort': true,
