@@ -51,12 +51,14 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
     for(let access_layers of collection.access_layers){
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
         
-
         let get_one_path = [
             api_prefix,
             ...base_layers_path_components,
             `${collection.collection_id}/:document_id`
         ].join('/')
+
+        
+
 
         //console.log(get_one_path);
 

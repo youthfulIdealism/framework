@@ -2,7 +2,12 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { type_from_zod } from "./utils/type_from_zod.js";
 import mustache from 'mustache';
 import { existsSync } from "node:fs";
-export async function generate_client_library(path, collection_registry, service_name = 'default-service') {
+import { fileURLToPath } from 'url';
+import { normalize, join } from 'path';
+function build_path(...args) {
+    return normalize(join(...args));
+}
+export async function generate_client_library(output_path, collection_registry, service_name = 'default-service') {
     let api_builder = {
         mustache_context: {},
         children: {}
@@ -33,25 +38,25 @@ export async function generate_client_library(path, collection_registry, service
         let collection_post_type_definition_builder = [];
         let collection_type_post = type_from_zod(collection.post_validator);
         collection_post_type_definition_builder.push(`export type ${mustache_context.type_post} = ${collection_type_post[0]}`, ...collection_type_post.slice(1));
-        if (!existsSync([path, 'src'].join('/'))) {
-            await mkdir([path, 'src'].join('/'));
+        if (!existsSync(build_path(output_path, 'src'))) {
+            await mkdir(build_path(output_path, 'src'));
         }
-        if (!existsSync([path, 'dist'].join('/'))) {
-            await mkdir([path, 'dist'].join('/'));
+        if (!existsSync(build_path(output_path, 'dist'))) {
+            await mkdir(build_path(output_path, 'dist'));
         }
-        if (!existsSync([path, 'src', 'types'].join('/'))) {
-            await mkdir([path, 'src', 'types'].join('/'));
+        if (!existsSync(build_path(output_path, 'src', 'types'))) {
+            await mkdir(build_path(output_path, 'src', 'types'));
         }
-        if (!existsSync([path, 'src', 'utils'].join('/'))) {
-            await mkdir([path, 'src', 'utils'].join('/'));
+        if (!existsSync(build_path(output_path, 'src', 'utils'))) {
+            await mkdir(build_path(output_path, 'src', 'utils'));
         }
-        await writeFile([path, 'src', 'utils', 'utils.ts'].join('/'), await readFile(import.meta.resolve('./templates/utils.ts.mustache').slice(8), { encoding: 'utf-8' }));
-        await writeFile([path, 'tsconfig.json'].join('/'), await readFile(import.meta.resolve('./templates/tsconfig.json.mustache').slice(8), { encoding: 'utf-8' }));
-        await writeFile([path, '.gitignore'].join('/'), await readFile(import.meta.resolve('./templates/.gitignore.mustache').slice(8), { encoding: 'utf-8' }));
-        await writeFile([path, 'src', mustache_context.path_type_return + '.ts'].join('/'), collection_type_definition_builder.join('\n'));
-        await writeFile([path, 'src', mustache_context.path_type_query + '.ts'].join('/'), collection_query_type_definition_builder.join('\n'));
-        await writeFile([path, 'src', mustache_context.path_type_put + '.ts'].join('/'), collection_put_type_definition_builder.join('\n'));
-        await writeFile([path, 'src', mustache_context.path_type_post + '.ts'].join('/'), collection_post_type_definition_builder.join('\n'));
+        await writeFile(build_path(output_path, 'src', 'utils', 'utils.ts'), await readFile(fileURLToPath(import.meta.resolve('./templates/utils.ts.mustache')), { encoding: 'utf-8' }));
+        await writeFile(build_path(output_path, 'tsconfig.json'), await readFile(fileURLToPath(import.meta.resolve('./templates/tsconfig.json.mustache')), { encoding: 'utf-8' }));
+        await writeFile(build_path(output_path, '.gitignore'), await readFile(fileURLToPath(import.meta.resolve('./templates/.gitignore.mustache')), { encoding: 'utf-8' }));
+        await writeFile(build_path(output_path, 'src', mustache_context.path_type_return + '.ts'), collection_type_definition_builder.join('\n'));
+        await writeFile(build_path(output_path, 'src', mustache_context.path_type_query + '.ts'), collection_query_type_definition_builder.join('\n'));
+        await writeFile(build_path(output_path, 'src', mustache_context.path_type_put + '.ts'), collection_put_type_definition_builder.join('\n'));
+        await writeFile(build_path(output_path, 'src', mustache_context.path_type_post + '.ts'), collection_post_type_definition_builder.join('\n'));
         for (let access_layer of collection.access_layers) {
             let builder = get_builder(api_builder, access_layer.layers, collection, mustache_context);
         }
@@ -102,11 +107,11 @@ export async function generate_client_library(path, collection_registry, service
         server_name: service_name
     });
     mustache.escape = original_escape;
-    await writeFile([path, 'src', './index.ts'].join('/'), rendered_index);
+    await writeFile([output_path, 'src', './index.ts'].join('/'), rendered_index);
     for (let manipulator of rendered_collection_manipulators) {
-        await writeFile([path, 'src', manipulator.builder.mustache_context.my_built_collection_path + '.ts'].join('/'), manipulator.text);
+        await writeFile([output_path, 'src', manipulator.builder.mustache_context.my_built_collection_path + '.ts'].join('/'), manipulator.text);
     }
-    await writeFile([path, './package.json'].join('/'), rendered_package_json);
+    await writeFile([output_path, './package.json'].join('/'), rendered_package_json);
 }
 export function get_type_name(collection_id, suffix) {
     return suffix ? `${collection_id}_${suffix}`.replace(/[^(a-zA-Z0-9\_)]/g, '_') : collection_id.replace(/[^(a-zA-Z0-9\_)]/g, '_');
