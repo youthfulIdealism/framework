@@ -103,7 +103,12 @@ export function compile(app, collection, api_prefix, collection_registry) {
             let documents;
             try {
                 let query = collection.mongoose_model.find(find, undefined, { 'lean': true });
-                let fetch = query_object_to_mongodb_limits(query, collection.query_validator_server);
+                if (validated_query_args.sort && validated_query_args.cursor) {
+                    res.status(400);
+                    res.json({ error: 'you cannot use both a cursor and a sort.' });
+                    return;
+                }
+                let fetch = query_object_to_mongodb_limits(query, validated_query_args);
                 documents = await fetch;
             }
             catch (err) {

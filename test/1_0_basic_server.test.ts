@@ -256,6 +256,181 @@ describe('Basic Server', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(test_projects)), results.data);
     });
 
+    it(`should be able to perform a GET multiple operation with a limit`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?limit=2`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions)).slice(0, 2), results.data);
+    });
+
+    it(`should be able to perform a GET multiple operation with a cursor`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?cursor=${test_institutions[2]._id}`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions)).slice(3), results.data);
+    });
+
+    it(`should be able to perform a GET multiple operation with a sort`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?sort=name`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions)).sort((a, b) => a.name.localeCompare(b.name)), results.data);
+    });
+
+    it(`should be able to perform a GET multiple operation with a sort and sort order`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?sort=name&sort_order=descending`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions)).sort((a, b) => b.name.localeCompare(a.name)), results.data);
+    });
+
+    it(`should be able to perform a GET multiple operation with a cursor and sort order descending`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?cursor=${test_institutions[2]._id}&sort_order=descending`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions.slice().reverse().slice(3))), results.data);
+    });
+
+    it(`should be able to perform a GET multiple operation with a cursor and sort order ascending`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?cursor=${test_institutions[2]._id}&sort_order=ascending`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions.slice(3))), results.data);
+    });
+
+    it(`should break if you try to use both sort and cursor`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        assert.rejects(async () => {
+            return await got.get(`http://localhost:${port}/api/institution?sort=name&cursor=${test_institutions[2]._id}`).json();
+        })
+    });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
      /////////////////////////////////////////////////////////////    PUT        ////////////////////////////////////////////////////////////////////////////////////

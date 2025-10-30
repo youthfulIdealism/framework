@@ -61,10 +61,10 @@ export async function generate_client_library(output_path, collection_registry, 
             let builder = get_builder(api_builder, access_layer.layers, collection, mustache_context);
         }
     }
-    let mustache_main = await readFile(import.meta.resolve('./templates/main.mustache').slice(8), { encoding: 'utf-8' });
-    let mustache_types = await readFile(import.meta.resolve('./templates/types.mustache').slice(8), { encoding: 'utf-8' });
-    let mustache_collection = await readFile(import.meta.resolve('./templates/collection.mustache').slice(8), { encoding: 'utf-8' });
-    let mustache_package = await readFile(import.meta.resolve('./templates/package.json.mustache').slice(8), { encoding: 'utf-8' });
+    let mustache_main = await readFile(fileURLToPath(import.meta.resolve('./templates/main.mustache')), { encoding: 'utf-8' });
+    let mustache_types = await readFile(fileURLToPath(import.meta.resolve('./templates/types.mustache')), { encoding: 'utf-8' });
+    let mustache_collection = await readFile(fileURLToPath(import.meta.resolve('./templates/collection.mustache')), { encoding: 'utf-8' });
+    let mustache_package = await readFile(fileURLToPath(import.meta.resolve('./templates/package.json.mustache')), { encoding: 'utf-8' });
     let builder_leaves = [];
     let queue = [api_builder];
     while (queue.length > 0) {

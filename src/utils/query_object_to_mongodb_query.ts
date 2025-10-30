@@ -55,26 +55,26 @@ export function query_object_to_mongodb_limits(query: QueryWithHelpers<any, any>
     if (query_object.sort) {
         let sort = {} as any;
         sort[query_object.sort] = query_object.sort_order ? query_object.sort_order : 'ascending';
-        query.sort(sort)
+        query = query.sort(sort)
     }
 
     if (query_object.sort_order && !query_object.sort) {
-        query.sort({ '_id': query_object.sort_order })
+        query = query.sort({ '_id': query_object.sort_order })
     }
 
     if (query_object.limit) {
-        query.limit(Math.min(Number.parseInt(query_object.limit), max_limit));
+        query = query.limit(Math.min(Number.parseInt(query_object.limit), max_limit));
     } else {
-        query.limit(max_limit);
+        query = query.limit(max_limit);
     }
 
     if (query_object.cursor) {
-        if (query_object.sort === '_id' && query_object.sort_order === 'descending') {
-            query.sort({ '_id': 'descending' });
-            query.lt('_id', query_object.cursor);
+        if ((query_object.sort === '_id' || query_object.sort === undefined)  && query_object.sort_order === 'descending') {
+            query = query.sort({ '_id': 'descending' });
+            query = query.lt('_id', query_object.cursor);
         } else {
-            query.sort({ '_id': 'ascending' });
-            query.gt('_id', query_object.cursor);
+            query = query.sort({ '_id': 'ascending' });
+            query = query.gt('_id', query_object.cursor);
         }
     }
 

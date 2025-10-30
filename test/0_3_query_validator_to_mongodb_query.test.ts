@@ -22,22 +22,26 @@ describe('query validator to mongodb query', function () {
 
         sort(sort){
             this.meta.sort = sort;
+            return this;
         }
 
         limit(limit){
             this.meta.limit = limit;
+            return this;
         }
 
         gt(path, value){
             this.filter[path] = {
                 $gt: value
             }
+            return this;
         }
 
         lt(path, value){
             this.filter[path] = {
                 $lt: value
             }
+            return this;
         }
     }
 
