@@ -37,12 +37,12 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
     post_update_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
     post_delete_hooks: ((deleted_document: z.output<ZodSchema>) => Promise<void>)[];
 
-    constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema){
+    constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema, database: typeof mongoose = mongoose){
         this.collection_id = collection_name;
         this.collection_name_plural = collection_name_plural;
         this.validator = validator;
         this.mongoose_schema = schema_from_zod(validator);
-        this.mongoose_model = mongoose_from_zod(collection_name, validator);
+        this.mongoose_model = mongoose_from_zod(collection_name, validator, database);
         // TODO: validate that the model doesn't use any fields that have special meaning in the query validator; for example: [param]_gt, [param]_in, sort,
         //@ts-ignore
         this.query_validator_server = query_validator_from_zod(validator, 'server');

@@ -3,19 +3,6 @@ import mongoose, { Schema } from "mongoose";
 import { indent } from "./tab_indent.js";
 import { find_loops, validator_group } from '../../utils/zod_loop_seperator.js'
 
-
-/*export function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType) {
-    let mongoose_schema = schema_from_zod(zod_definition);
-    return mongoose.model<T>(schema_name, mongoose_schema);
-}*/
-
-/*export function schema_from_zod(zod_definition: z.core.$ZodType): any {
-    let mongoose_schema = schema_entry_from_zod(zod_definition as z.ZodType);
-    delete mongoose_schema.type.required;
-    delete mongoose_schema.type._id;
-    return mongoose_schema.type;
-}*/
-
 export function type_from_zod(zod_definition: z.ZodType){
     let loops = find_loops(zod_definition as z.ZodType);
     let results = parse_zod(zod_definition, 0, loops);

@@ -19,12 +19,12 @@ export class F_Collection {
     post_create_hooks;
     post_update_hooks;
     post_delete_hooks;
-    constructor(collection_name, collection_name_plural, validator) {
+    constructor(collection_name, collection_name_plural, validator, database = mongoose) {
         this.collection_id = collection_name;
         this.collection_name_plural = collection_name_plural;
         this.validator = validator;
         this.mongoose_schema = schema_from_zod(validator);
-        this.mongoose_model = mongoose_from_zod(collection_name, validator);
+        this.mongoose_model = mongoose_from_zod(collection_name, validator, database);
         this.query_validator_server = query_validator_from_zod(validator, 'server');
         this.query_validator_client = query_validator_from_zod(validator, 'client');
         if (!Object.hasOwn(this.validator._zod.def.shape, '_id')) {

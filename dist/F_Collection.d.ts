@@ -28,7 +28,7 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     post_create_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
     post_update_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
     post_delete_hooks: ((deleted_document: z.output<ZodSchema>) => Promise<void>)[];
-    constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema);
+    constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema, database?: typeof mongoose);
     add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[]): void;
     on_create(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>): void;
     on_update(hook: (session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>): void;
