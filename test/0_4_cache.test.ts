@@ -120,7 +120,7 @@ describe('Cache', function () {
         const key = 'best_animal'
         const value = { 'test': 'flamingo' }
         
-        assert.rejects(async() => {
+        await assert.rejects(async() => {
             await cache.first_get_then_fetch(key, async () => { throw new Error('bad data here bro') })
         }, {message: 'bad data here bro'})
     });

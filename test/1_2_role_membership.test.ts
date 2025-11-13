@@ -410,7 +410,7 @@ describe.skip('Security Model Role Membership', function () {
     it(`should reject a basic GET operation on a document where the user has a role membership without permission`, async function () {
         let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project/${edna_project._id}`, {
                 headers: {
                     authorization: 'steve'
@@ -423,7 +423,7 @@ describe.skip('Security Model Role Membership', function () {
     it(`should reject a basic GET operation on a document where the user has no role membership`, async function () {
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
                 headers: {
                     authorization: 'edwin'
@@ -508,7 +508,7 @@ describe.skip('Security Model Role Membership', function () {
             }))
         }
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project`, {
                 headers: {
                     authorization: 'steve'
@@ -530,7 +530,7 @@ describe.skip('Security Model Role Membership', function () {
             }))
         }
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project`, {
                 headers: {
                     authorization: 'edwin'
@@ -587,7 +587,7 @@ describe.skip('Security Model Role Membership', function () {
     it(`should reject a basic PUT operation on a document where the user has a role membership without permission`, async function () {
         let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project/${edna_project._id}`, {
                 headers: {
                     authorization: 'steve'
@@ -603,7 +603,7 @@ describe.skip('Security Model Role Membership', function () {
     it(`should reject a basic PUT operation on a document where the user has no role membership`, async function () {
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.put(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
                 headers: {
                     authorization: 'edwin'
@@ -659,7 +659,7 @@ describe.skip('Security Model Role Membership', function () {
     it(`should reject a basic POST operation on a document where the user has a role membership without permission`, async function () {
         let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project`, {
                 headers: {
                     authorization: 'steve'
@@ -677,7 +677,7 @@ describe.skip('Security Model Role Membership', function () {
     it(`should reject a basic POST operation on a document where the user has no role membership`, async function () {
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.post(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project`, {
                 headers: {
                     authorization: 'edwin'
@@ -730,7 +730,7 @@ describe.skip('Security Model Role Membership', function () {
     it(`should reject a basic DELETE operation on a document where the user has a role membership without permission`, async function () {
         let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.delete(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project/${edna_project._id}`, {
                 headers: {
                     authorization: 'steve'
@@ -743,7 +743,7 @@ describe.skip('Security Model Role Membership', function () {
     it(`should reject a basic DELETE operation on a document where the user has no role membership`, async function () {
         let { steve_institution, steve_client, steve_project } = await generate_test_setup();
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.delete(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
                 headers: {
                     authorization: 'edwin'

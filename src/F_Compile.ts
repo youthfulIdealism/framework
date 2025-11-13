@@ -7,6 +7,7 @@ import { F_Security_Model, Authenticated_Request } from "./F_Security_Models/F_S
 import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 import { z_mongodb_id } from "./utils/mongoose_from_zod.js";
 import { F_Collection_Registry } from "./F_Collection_Registry.js";
+import { detect_malicious_keys } from "./utils/malicious_keys.js";
 
 /*process.on('unhandledRejection', (reason, promise) => {
     console.log(`CAUGHT UNHANDLED REJECTION`)
@@ -236,6 +237,14 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
             }
 
+            try {
+                detect_malicious_keys(validated_request_body);
+            } catch(err){
+                res.status(403);
+                res.json({ error: `Found an unacceptable JSON key in the request body.` });
+                return;
+            }
+
             // if you're accessing the document from /x/:x/y/:y, then you can't change x or y. Note that this does mean if you can access
             // the document from /x/:x, then you'd be able to change y.
             for(let layer of access_layers.layers){
@@ -329,6 +338,14 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                     res.json({ error: `there was a novel error` });
                     return;
                 }
+            }
+
+            try {
+                detect_malicious_keys(validated_request_body);
+            } catch(err){
+                res.status(403);
+                res.json({ error: `Found an unacceptable JSON key in the request body.` });
+                return;
             }
 
             // if you're accessing the document from /x/:x/y/:y, then you can't change x or y. Note that this does mean if you can access

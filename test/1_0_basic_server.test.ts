@@ -28,6 +28,7 @@ describe('Basic Server', function () {
     const validate_institution = z.object({
         _id: z_mongodb_id,
         name: z.string(),
+        meta: z.any().optional()
     });
     const validate_client = z.object({
         _id: z_mongodb_id,
@@ -427,8 +428,33 @@ describe('Basic Server', function () {
             test_institutions.push(test_institution);
         }
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             return await got.get(`http://localhost:${port}/api/institution?sort=name&cursor=${test_institutions[2]._id}`).json();
+        })
+    });
+
+    it(`should reject GET multiple operations with malicious keys in the query`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        await assert.rejects(async () => {
+            let results = await got.get(`http://localhost:${port}/api/institution?$where=5`);
         })
     });
 
@@ -524,7 +550,7 @@ describe('Basic Server', function () {
             name: `Spandex Reincarnation`
         })
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project/${test_project._id}`, {
                 json: {
                     name: `Leather Pants Transubstantiation`,
@@ -533,7 +559,26 @@ describe('Basic Server', function () {
                 },
             }).json();
         }, {
-            message: 'HTTPError: Response code 403 (Forbidden)'
+            message: 'Response code 403 (Forbidden)'
+        });
+    });
+
+    it(`should reject a PUT operation with a malicious key in the body`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        await assert.rejects(async () => {
+            let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}`, {
+                json: {
+                    name: 'Leather Pants Co',
+                    meta: {
+                        $sum: { test: true}
+                    }
+                },
+            }).json();
+        }, {
+            message: 'Response code 403 (Forbidden)'
         });
     });
 
@@ -607,7 +652,7 @@ describe('Basic Server', function () {
             name: `Anna's Latex Emporium`
         })
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.post(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project`, {
                 json: {
                     name: `Leather Pants Transubstantiation`,
@@ -616,9 +661,25 @@ describe('Basic Server', function () {
                 },
             }).json();
         }, {
-            message: 'HTTPError: Response code 403 (Forbidden)'
+            message: 'Response code 403 (Forbidden)'
         });
     });
+
+    it(`should reject a POST operation with malicious keys in the body`, async function () {
+        await assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution`, {
+                json: {
+                    name: 'Leather Pants Co',
+                    meta: {
+                        $sum: {test: true}
+                    }
+                },
+            }).json();
+        }, {
+            message: 'Response code 403 (Forbidden)'
+        });
+    });
+            
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
      /////////////////////////////////////////////////////////////    DELETE        /////////////////////////////////////////////////////////////////////////////////

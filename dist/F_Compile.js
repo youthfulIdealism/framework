@@ -2,6 +2,7 @@ import * as z from "zod/v4";
 import { isValidObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
+import { detect_malicious_keys } from "./utils/malicious_keys.js";
 export function compile(app, collection, api_prefix, collection_registry) {
     for (let access_layers of collection.access_layers) {
         for (let layer of access_layers.layers) {
@@ -181,6 +182,14 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     return;
                 }
             }
+            try {
+                detect_malicious_keys(validated_request_body);
+            }
+            catch (err) {
+                res.status(403);
+                res.json({ error: `Found an unacceptable JSON key in the request body.` });
+                return;
+            }
             for (let layer of access_layers.layers) {
                 if (validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]) {
                     res.status(403);
@@ -256,6 +265,14 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     res.json({ error: `there was a novel error` });
                     return;
                 }
+            }
+            try {
+                detect_malicious_keys(validated_request_body);
+            }
+            catch (err) {
+                res.status(403);
+                res.json({ error: `Found an unacceptable JSON key in the request body.` });
+                return;
             }
             for (let layer of access_layers.layers) {
                 if (validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]) {

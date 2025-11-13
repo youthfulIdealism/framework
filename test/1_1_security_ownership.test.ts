@@ -131,14 +131,14 @@ describe('Security Model Ownership', function () {
             auth_id: 'sharon'
         });
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.get(`http://localhost:${port}/api/user_display/${user_display.id}`, {
                 headers: {
                     authorization: 'sharon'
                 }
             }).json();
         }, {
-            message: 'HTTPError: Response code 403 (Forbidden)'
+            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -190,14 +190,14 @@ describe('Security Model Ownership', function () {
         }
         
         //@ts-ignore
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.get(`http://localhost:${port}/api/user_display?user_id=${user._id}`, {
                 headers: {
                     authorization: 'sharon'
                 }
             }).json();
         }, {
-            message: 'HTTPError: Response code 403 (Forbidden)'
+            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -232,7 +232,7 @@ describe('Security Model Ownership', function () {
             auth_id: 'sharon'
         });
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.put(`http://localhost:${port}/api/user_display/${user_display.id}`, {
                 headers: {
                     authorization: 'sharon'
@@ -242,7 +242,7 @@ describe('Security Model Ownership', function () {
                 }
             }).json();
         }, {
-            message: 'HTTPError: Response code 403 (Forbidden)'
+            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -276,7 +276,7 @@ describe('Security Model Ownership', function () {
             auth_id: 'sharon'
         });
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.post(`http://localhost:${port}/api/user_display`, {
                 headers: {
                     authorization: 'sharon'
@@ -288,7 +288,7 @@ describe('Security Model Ownership', function () {
                 }
             }).json();
         }, {
-            message: 'HTTPError: Response code 403 (Forbidden)'
+            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -320,14 +320,14 @@ describe('Security Model Ownership', function () {
             auth_id: 'sharon'
         });
 
-        assert.rejects(async () => {
+        await assert.rejects(async () => {
             let results = await got.delete(`http://localhost:${port}/api/user_display/${user_display.id}`, {
                 headers: {
                     authorization: 'sharon'
                 }
             }).json();
         }, {
-            message: 'HTTPError: Response code 403 (Forbidden)'
+            message: 'Response code 403 (Forbidden)'
         })
     });
 });
