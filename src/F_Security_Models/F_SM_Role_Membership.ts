@@ -15,14 +15,14 @@ let operation_permission_map = {
 export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extends z.ZodObject> extends F_Security_Model<Collection_ID, ZodSchema> {
     user_id_field: string;
     role_id_field: string;
-    layer_collection_id: string;
+    layer_collection_id?: string;
     role_membership_collection: F_Collection<string, any>;
     role_membership_cache: Cache<any>;
     role_collection: F_Collection<string, any>;
     role_cache: Cache<any>;
 
     constructor(collection: F_Collection<Collection_ID, ZodSchema>,
-        layer_collection: F_Collection<string, any>,
+        layer_collection: F_Collection<string, any> | undefined,
         role_membership_collection: F_Collection<string, any>,
         role_collection: F_Collection<string, any>,
         role_membership_cache?: Cache<any>,
@@ -34,7 +34,7 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         this.needs_auth_user = true;
         this.user_id_field = user_id_field;
         this.role_id_field = role_id_field;
-        this.layer_collection_id = layer_collection.collection_id;
+        this.layer_collection_id = layer_collection?.collection_id;
         this.role_membership_collection = role_membership_collection;
         this.role_membership_cache = role_membership_cache ?? new Cache(60);
         this.role_collection = role_collection;
@@ -49,16 +49,20 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         let user_id = req.auth.user_id;
         // the only way the layer ID is undefined is if the layer is the document being accessed
         // eg the institution id or the client id
-        let layer_document_id = req.params[this.layer_collection_id] ?? req.params.document_id;
+        let layer_document_id = this.layer_collection_id ? (req.params[this.layer_collection_id] ?? req.params.document_id) : undefined;
+        let cache_key = this.layer_collection_id ? `${user_id}-${layer_document_id}` : user_id;
 
         // return the role membership associated with the layer. This uses the cache heavily, so it should be
         // a cheap operation even though it makes an extra database query. Use the cache's first_fetch_then_refresh
         // method so that we aren't keeping out-of-date auth data in the cache.
-        let role_membership = await this.role_membership_cache.first_fetch_then_refresh(`${user_id}-${layer_document_id}`, async () => {
-            let role_memberships = await this.role_membership_collection.mongoose_model.find({ 
+        let role_membership = await this.role_membership_cache.first_fetch_then_refresh(cache_key, async () => {
+            let find: {[key: string]: any} = { 
                 [this.user_id_field]: user_id,
-                [`${this.layer_collection_id}_id`]: new mongoose.Types.ObjectId(layer_document_id)
-            }, {}, {lean: true})
+            };
+            if(this.layer_collection_id){
+                find[`${this.layer_collection_id}_id`] = new mongoose.Types.ObjectId(layer_document_id)
+            }
+            let role_memberships = await this.role_membership_collection.mongoose_model.find(find, {}, {lean: true})
 
             if(role_memberships.length > 1){
                 console.warn(`in F_SM_Role_Membership, more than one role membership for user ${user_id} at layer ${this.layer_collection_id} found.`)

@@ -6,12 +6,12 @@ import { Authenticated_Request, Empty_Query_Possibilities, F_Security_Model, Ope
 export declare class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extends z.ZodObject> extends F_Security_Model<Collection_ID, ZodSchema> {
     user_id_field: string;
     role_id_field: string;
-    layer_collection_id: string;
+    layer_collection_id?: string;
     role_membership_collection: F_Collection<string, any>;
     role_membership_cache: Cache<any>;
     role_collection: F_Collection<string, any>;
     role_cache: Cache<any>;
-    constructor(collection: F_Collection<Collection_ID, ZodSchema>, layer_collection: F_Collection<string, any>, role_membership_collection: F_Collection<string, any>, role_collection: F_Collection<string, any>, role_membership_cache?: Cache<any>, role_cache?: Cache<any>, user_id_field?: string, role_id_field?: string);
+    constructor(collection: F_Collection<Collection_ID, ZodSchema>, layer_collection: F_Collection<string, any> | undefined, role_membership_collection: F_Collection<string, any>, role_collection: F_Collection<string, any>, role_membership_cache?: Cache<any>, role_cache?: Cache<any>, user_id_field?: string, role_id_field?: string);
     has_permission(req: Authenticated_Request, res: Response, find: {
         [key: string]: any;
     }, operation: Operation): Promise<boolean>;

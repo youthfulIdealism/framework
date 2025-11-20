@@ -20,7 +20,7 @@ export class F_SM_Role_Membership extends F_Security_Model {
         this.needs_auth_user = true;
         this.user_id_field = user_id_field;
         this.role_id_field = role_id_field;
-        this.layer_collection_id = layer_collection.collection_id;
+        this.layer_collection_id = layer_collection?.collection_id;
         this.role_membership_collection = role_membership_collection;
         this.role_membership_cache = role_membership_cache ?? new Cache(60);
         this.role_collection = role_collection;
@@ -31,12 +31,16 @@ export class F_SM_Role_Membership extends F_Security_Model {
     }
     async has_permission(req, res, find, operation) {
         let user_id = req.auth.user_id;
-        let layer_document_id = req.params[this.layer_collection_id] ?? req.params.document_id;
-        let role_membership = await this.role_membership_cache.first_fetch_then_refresh(`${user_id}-${layer_document_id}`, async () => {
-            let role_memberships = await this.role_membership_collection.mongoose_model.find({
+        let layer_document_id = this.layer_collection_id ? (req.params[this.layer_collection_id] ?? req.params.document_id) : undefined;
+        let cache_key = this.layer_collection_id ? `${user_id}-${layer_document_id}` : user_id;
+        let role_membership = await this.role_membership_cache.first_fetch_then_refresh(cache_key, async () => {
+            let find = {
                 [this.user_id_field]: user_id,
-                [`${this.layer_collection_id}_id`]: new mongoose.Types.ObjectId(layer_document_id)
-            }, {}, { lean: true });
+            };
+            if (this.layer_collection_id) {
+                find[`${this.layer_collection_id}_id`] = new mongoose.Types.ObjectId(layer_document_id);
+            }
+            let role_memberships = await this.role_membership_collection.mongoose_model.find(find, {}, { lean: true });
             if (role_memberships.length > 1) {
                 console.warn(`in F_SM_Role_Membership, more than one role membership for user ${user_id} at layer ${this.layer_collection_id} found.`);
             }

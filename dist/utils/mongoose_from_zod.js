@@ -49,7 +49,7 @@ export const z_mongodb_id_nullable = z.custom((val) => {
 }).meta({ framework_override_type: 'mongodb_id', nullable: true });
 export function mongoose_from_zod(schema_name, zod_definition, database = mongoose) {
     let mongoose_schema = schema_from_zod(zod_definition);
-    return database.model(schema_name, new Schema(mongoose_schema, { typeKey: 'mongoose_type' }));
+    return database.model(schema_name, new Schema(mongoose_schema, { typeKey: 'mongoose_type', minimize: false }));
 }
 export function schema_from_zod(zod_definition) {
     let loops = find_loops(zod_definition);
