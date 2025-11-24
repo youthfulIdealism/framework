@@ -144,6 +144,11 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 res.json({ error: `${req.params.document_id} is not a valid document ID.` });
                 return;
             }
+            if (req.body._id && req.body._id !== req.params.document_id) {
+                res.status(400);
+                res.json({ error: `mismatch between document ID and request body _id` });
+                return;
+            }
             let find = { '_id': req.params.document_id };
             for (let layer of access_layers.layers) {
                 find[`${layer}_id`] = req.params[layer];

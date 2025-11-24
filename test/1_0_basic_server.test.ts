@@ -563,6 +563,40 @@ describe('Basic Server', function () {
         });
     });
 
+    it(`should reject a PUT operation that changes the document id`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        })
+
+        let test_project = await project.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_id: test_client._id,
+            name: `Spandex Reincarnation`
+        })
+
+        let test_project_2 = await project.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_id: test_client._id,
+            name: `Olfactory Hurricane`
+        })
+
+        await assert.rejects(async () => {
+            let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project/${test_project._id}`, {
+                json: {
+                    _id: test_project_2._id,
+                    name: `Leather Pants Transubstantiation`,
+                },
+            }).json();
+        }, {
+            message: 'Response code 400 (Bad Request)'
+        });
+    });
+
     it(`should reject a PUT operation with a malicious key in the body`, async function () {
         let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'

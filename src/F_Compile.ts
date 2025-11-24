@@ -193,6 +193,12 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 return;
             }
 
+            if(req.body._id && req.body._id !== req.params.document_id){
+                res.status(400);
+                res.json({ error: `mismatch between document ID and request body _id` });
+                return;
+            }
+
             let find = { '_id': req.params.document_id } as { [key: string]: any } ;
             for(let layer of access_layers.layers){
                 find[`${layer}_id`] = req.params[layer];
@@ -254,19 +260,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                     return;
                 }
             }
-
-            /*let { error: pre_save_error } = await req.schema.handle_pre_save(req, value);
-            if (pre_save_error) {
-                res.status(400);
-                res.json({ error: pre_save_error.message });
-                return;
-            }*/
             
             
             let results;
             try {
                 results = await collection.perform_update_and_side_effects(find, validated_request_body);
-                //results = await collection.mongoose_model.findOneAndUpdate(find, validated_request_body, { returnDocument: 'after', lean: true });
             } catch(err){
                 res.status(500);
                 res.json({ error: `there was a novel error` });
@@ -358,17 +356,9 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
             }
 
-            /*let { error: pre_save_error } = await req.schema.handle_pre_save(req, validated_request_body);
-            if (pre_save_error) {
-                res.status(400);
-                res.json({ error: pre_save_error.message });
-                return;
-            }*/
-
             let results;
             try {
                 results = await collection.perform_create_and_side_effects(validated_request_body);
-                //results = await collection.mongoose_model.create(validated_request_body);
             } catch(err){
                 res.status(500);
                 res.json({ error: `there was a novel error` });
