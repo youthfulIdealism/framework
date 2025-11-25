@@ -3,6 +3,7 @@ import { mongoose_from_zod, schema_from_zod } from "./utils/mongoose_from_zod.js
 import mongoose, { Collection, Model, ObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
+import { array_children_from_zod } from "./utils/array_children_from_zod.js";
 
 export type CollectionType<Col extends F_Collection<string, Validator>, Validator extends z.ZodObject> = z.output<Col['validator']>;
 
@@ -29,6 +30,8 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
     post_validator: ZodPartial_Return_Type<ZodSchema['partial']>;
     is_compiled: boolean;
 
+    array_children_map: Map<string, z.ZodType>;
+
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
     create_hooks: ((session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>)[];
     update_hooks: ((session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>)[];
@@ -43,8 +46,6 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         this.validator = validator;
         this.mongoose_schema = schema_from_zod(validator);
         this.mongoose_model = mongoose_from_zod(collection_name, validator, database);
-        // TODO: validate that the model doesn't use any fields that have special meaning in the query validator; for example: [param]_gt, [param]_in, sort,
-        //@ts-ignore
         this.query_validator_server = query_validator_from_zod(validator, 'server');
         this.query_validator_client = query_validator_from_zod(validator, 'client');
         // TODO: we can make this more closely match the mongoDB PUT operation and allow updates to eg array.3.element fields
@@ -55,6 +56,9 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         if(this.validator._zod.def.shape._id.meta()?.framework_override_type !== 'mongodb_id'){
             throw new Error(`_id must be a mongoDB ID. Use the z_mongodb_id special field.`)
         }
+
+        this.array_children_map = array_children_from_zod(validator);
+
         
         // TODO: find a more elegant way to do this so that the types don't have a cow
         //@ts-ignore

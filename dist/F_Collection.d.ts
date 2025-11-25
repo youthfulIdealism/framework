@@ -21,6 +21,7 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     put_validator: ReturnType<ZodSchema['partial']>;
     post_validator: ZodPartial_Return_Type<ZodSchema['partial']>;
     is_compiled: boolean;
+    array_children_map: Map<string, z.ZodType>;
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
     create_hooks: ((session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>)[];
     update_hooks: ((session: mongoose.mongo.ClientSession, updated_document: z.output<ZodSchema>) => Promise<void>)[];

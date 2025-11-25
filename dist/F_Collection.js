@@ -1,6 +1,7 @@
 import { mongoose_from_zod, schema_from_zod } from "./utils/mongoose_from_zod.js";
 import mongoose from "mongoose";
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
+import { array_children_from_zod } from "./utils/array_children_from_zod.js";
 export class F_Collection {
     collection_id;
     collection_name_plural;
@@ -12,6 +13,7 @@ export class F_Collection {
     put_validator;
     post_validator;
     is_compiled;
+    array_children_map;
     access_layers;
     create_hooks;
     update_hooks;
@@ -33,6 +35,7 @@ export class F_Collection {
         if (this.validator._zod.def.shape._id.meta()?.framework_override_type !== 'mongodb_id') {
             throw new Error(`_id must be a mongoDB ID. Use the z_mongodb_id special field.`);
         }
+        this.array_children_map = array_children_from_zod(validator);
         this.put_validator = validator.partial();
         this.post_validator = Object.hasOwn(this.validator._zod.def.shape, '_id') ? validator.partial({ _id: true }) : validator;
         this.access_layers = [];
