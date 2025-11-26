@@ -158,6 +158,12 @@ function parse_object(def, loop_detector) {
         }
         retval[key] = schema_entry_from_zod(value, loop_detector);
     }
+    if (!retval._id) {
+        retval._id = false;
+    }
+    else {
+        delete retval._id;
+    }
     return { mongoose_type: retval, required: true };
 }
 function parse_array(def, loop_detector) {

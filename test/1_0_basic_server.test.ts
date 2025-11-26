@@ -1,7 +1,7 @@
 
 import assert from "assert";
 
-import { z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
+import { z_mongodb_id, z_mongodb_id_optional } from '../dist/utils/mongoose_from_zod.js';
 import { F_Collection } from '../dist/f_collection.js';
 import { F_Collection_Registry } from '../dist/F_Collection_Registry.js'
 import { F_SM_Open_Access } from '../dist/F_Security_Models/F_SM_Open_Access.js'
@@ -41,10 +41,20 @@ describe('Basic Server', function () {
         client_id: z_mongodb_id,
         name: z.string(),
     });
+    const validate_list_container = z.object({
+        _id: z_mongodb_id,
+        container: z.object({
+            list: z.array(z.object({
+                _id: z_mongodb_id_optional,
+                value: z.string()
+            }))
+        })
+    });
 
     let institution: F_Collection<'institution', typeof validate_institution>;
     let client: F_Collection<'client', typeof validate_client>;
     let project: F_Collection<'project', typeof validate_project>;
+    let list_container: F_Collection<'list_container', typeof validate_list_container>;
 
     let registry: F_Collection_Registry;
     
@@ -67,9 +77,12 @@ describe('Basic Server', function () {
         project = new F_Collection('project', 'projects', validate_project);
         project.add_layers([institution.collection_id, client.collection_id], [new F_SM_Open_Access(project)]);
 
+        list_container = new F_Collection('list_container', 'list_containers', validate_list_container);
+        list_container.add_layers([], [new F_SM_Open_Access(list_container)]);
+
         // build registry
         let proto_registry = new F_Collection_Registry();
-        registry = proto_registry.register(institution).register(client).register(project);
+        registry = proto_registry.register(institution).register(client).register(project).register(list_container);
         registry.compile(express_app, '/api');
 
         server = express_app.listen(port);
@@ -803,4 +816,62 @@ describe('Basic Server', function () {
         assert.deepEqual(null, results.data);
         assert.deepEqual(JSON.parse(JSON.stringify(await project.mongoose_model.findById(test_project._id))), JSON.parse(JSON.stringify(test_project)));
     });
+
+    it(`should allow entries to be added to list containers`, async function () {
+        let test_list_container = await list_container.mongoose_model.create({
+            container: {
+                list: []
+            }
+        });
+
+        let results = await got.post(`http://localhost:${port}/api/list_container/${test_list_container._id}/container.list`, {
+            json: {
+                value: 'test value'
+            }
+        }).json();
+        
+        //@ts-ignore
+        assert.deepEqual('test value', results.data.container.list[0].value);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await list_container.mongoose_model.findById(test_list_container._id))), JSON.parse(JSON.stringify(results.data)));
+    });
+
+    it(`should allow container entries to be updated`, async function () {
+        let test_list_container = await list_container.mongoose_model.create({
+            container: {
+                list: [{
+                    value: 'original value'
+                }]
+            }
+        });
+
+        let results = await got.put(`http://localhost:${port}/api/list_container/${test_list_container._id}/container.list/${test_list_container.container.list[0]._id}`, {
+            json: {
+                value: 'updated value'
+            }
+        }).json();
+        
+        //@ts-ignore
+        assert.deepEqual('updated value', results.data.container.list[0].value);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await list_container.mongoose_model.findById(test_list_container._id))), JSON.parse(JSON.stringify(results.data)));
+    });
+
+    it(`should allow container entries to be deleted`, async function () {
+        let test_list_container = await list_container.mongoose_model.create({
+            container: {
+                list: [{
+                    value: 'original value'
+                }]
+            }
+        });
+
+        let results = await got.delete(`http://localhost:${port}/api/list_container/${test_list_container._id}/container.list/${test_list_container.container.list[0]._id}`).json();
+        
+        //@ts-ignore
+        assert.deepEqual(0, results.data.container.list.length);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await list_container.mongoose_model.findById(test_list_container._id))), JSON.parse(JSON.stringify(results.data)));
+    });
+    
 });

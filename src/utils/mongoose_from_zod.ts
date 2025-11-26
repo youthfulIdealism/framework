@@ -171,6 +171,10 @@ function parse_object(def: z.core.$ZodObjectDef, loop_detector: Map<any, validat
         //@ts-ignore
         retval[key] = schema_entry_from_zod(value, loop_detector);
     }
+
+    // handle the edge cases arouund mongoose's auto-IDs
+    if(!retval._id){ retval._id = false; }
+    else { delete retval._id; }
     return {mongoose_type: retval, required: true};
 }
 

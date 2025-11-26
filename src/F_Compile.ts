@@ -418,5 +418,285 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             }
             // await req.schema.fire_api_event('delete', req, results);
         });
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////    operate on array children    /////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        for(let [array_child_path, array_child_validator] of collection.array_children_map.entries()){
+
+            let array_child_post_path = [
+                api_prefix,
+                ...base_layers_path_components,
+                `${collection.collection_id}/:document_id`,
+                array_child_path
+            ].join('/');
+
+            app.post(array_child_post_path, async (req, res) => {
+                if (!isValidObjectId(req.params.document_id)) {
+                    res.status(400);
+                    res.json({ error: `${req.params.document_id} is not a valid document ID.` });
+                    return;
+                }
+
+                let find = { '_id': req.params.document_id } as { [key: string]: any } ;
+                for(let layer of access_layers.layers){
+                    find[`${layer}_id`] = req.params[layer];
+                }
+
+                // I'd like to have a validator here. I think it might need to be a map or record validator?
+                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'update');
+                if (!permissive_security_model) {
+                    res.status(403);
+                    res.json({ error: `You do not have permission to update documents from ${collection.collection_id}.` });
+                    return;
+                }
+
+                let metadata_updater: any = {};
+                if(collection.mongoose_schema.updated_by?.type === String) {
+                    // if the security schema required the user to be logged in, then req.auth.user_id will not be null
+                    if((req as Authenticated_Request).auth?.user_id){
+                        metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
+                    } else {
+                        metadata_updater.updated_by = null;
+                    }
+                }
+
+                if(collection.mongoose_schema.updated_at?.type === Date) {
+                    metadata_updater.updated_at = new Date();
+                }
+
+                let validated_request_body;
+                try {
+                    validated_request_body = await array_child_validator.parse(req.body);
+                } catch(err){
+                    if(err instanceof z.ZodError){
+                        res.status(400);
+                        res.json({ error: err.issues });
+                        return;
+                    } else {
+                        console.error(err);
+                        res.status(500);
+                        res.json({ error: `there was a novel error` });
+                        return;
+                    }
+                }
+
+                try {
+                    detect_malicious_keys(validated_request_body);
+                } catch(err){
+                    res.status(403);
+                    res.json({ error: `Found an unacceptable JSON key in the request body.` });
+                    return;
+                }
+
+                let results;
+                try {
+                    //array_child_path
+                    results = await collection.perform_update_and_side_effects(find, {
+                        $push: {
+                            [array_child_path]: validated_request_body,
+                        },
+                        ...metadata_updater
+                    });
+                } catch(err){
+                    res.status(500);
+                    res.json({ error: `there was a novel error` });
+                    console.error(err);
+                    return;
+                }
+
+                if (!results) {
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    res.json(sendable);
+                } else {
+                    res.json({ data: results });
+                }
+                //await req.schema.fire_api_event('update', req, results);
+            });
+
+            
+
+            let array_child_put_path = [
+                api_prefix,
+                ...base_layers_path_components,
+                `${collection.collection_id}/:document_id`,
+                array_child_path,
+                ':array_item_id'
+            ].join('/')
+
+            app.put(array_child_put_path, async (req, res) => {
+                if (!isValidObjectId(req.params.document_id)) {
+                    res.status(400);
+                    res.json({ error: `${req.params.document_id} is not a valid document ID.` });
+                    return;
+                }
+
+                if (!isValidObjectId(req.params.array_item_id)) {
+                    res.status(400);
+                    res.json({ error: `${req.params.array_item_id} is not a valid document ID.` });
+                    return;
+                }
+
+                if(req.body._id && req.body._id !== req.params.array_item_id){
+                    res.status(400);
+                    res.json({ error: `cannot update element _id.` });
+                    return;
+                }
+
+                let find = { '_id': req.params.document_id } as { [key: string]: any } ;
+                for(let layer of access_layers.layers){
+                    find[`${layer}_id`] = req.params[layer];
+                }
+                find[`${array_child_path}._id`] = req.params.array_item_id;
+
+                // I'd like to have a validator here. I think it might need to be a map or record validator?
+                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'update');
+                if (!permissive_security_model) {
+                    res.status(403);
+                    res.json({ error: `You do not have permission to update documents from ${collection.collection_id}.` });
+                    return;
+                }
+
+                let metadata_updater: any = {};
+                if(collection.mongoose_schema.updated_by?.type === String) {
+                    // if the security schema required the user to be logged in, then req.auth.user_id will not be null
+                    if((req as Authenticated_Request).auth?.user_id){
+                        metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
+                    } else {
+                        metadata_updater.updated_by = null;
+                    }
+                }
+
+                if(collection.mongoose_schema.updated_at?.type === Date) {
+                    metadata_updater.updated_at = new Date();
+                }
+
+                let validated_request_body;
+                try {
+                    validated_request_body = await array_child_validator.parse(req.body);
+                } catch(err){
+                    if(err instanceof z.ZodError){
+                        res.status(400);
+                        res.json({ error: err.issues });
+                        return;
+                    } else {
+                        console.error(err);
+                        res.status(500);
+                        res.json({ error: `there was a novel error` });
+                        return;
+                    }
+                }
+
+                try {
+                    detect_malicious_keys(validated_request_body);
+                } catch(err){
+                    res.status(403);
+                    res.json({ error: `Found an unacceptable JSON key in the request body.` });
+                    return;
+                }
+
+                let results;
+                try {
+                    //array_child_path
+                    results = await collection.perform_update_and_side_effects(find, {
+                        $set: {
+                            [`${array_child_path}.$`]: validated_request_body,
+                        },
+                        ...metadata_updater
+                    });
+                } catch(err){
+                    res.status(500);
+                    res.json({ error: `there was a novel error` });
+                    console.error(err);
+                    return;
+                }
+
+                if (!results) {
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    res.json(sendable);
+                } else {
+                    res.json({ data: results });
+                }
+                //await req.schema.fire_api_event('update', req, results);
+            });
+
+            let array_child_delete_path = [
+                api_prefix,
+                ...base_layers_path_components,
+                `${collection.collection_id}/:document_id`,
+                array_child_path,
+                ':array_item_id'
+            ].join('/')
+
+            app.delete(array_child_put_path, async (req, res) => {
+                if (!isValidObjectId(req.params.document_id)) {
+                    res.status(400);
+                    res.json({ error: `${req.params.document_id} is not a valid document ID.` });
+                    return;
+                }
+
+                if (!isValidObjectId(req.params.array_item_id)) {
+                    res.status(400);
+                    res.json({ error: `${req.params.array_item_id} is not a valid document ID.` });
+                    return;
+                }
+
+                let find = { '_id': req.params.document_id } as { [key: string]: any } ;
+                for(let layer of access_layers.layers){
+                    find[`${layer}_id`] = req.params[layer];
+                }
+
+                // I'd like to have a validator here. I think it might need to be a map or record validator?
+                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'update');
+                if (!permissive_security_model) {
+                    res.status(403);
+                    res.json({ error: `You do not have permission to update documents from ${collection.collection_id}.` });
+                    return;
+                }
+
+                let metadata_updater: any = {};
+                if(collection.mongoose_schema.updated_by?.type === String) {
+                    // if the security schema required the user to be logged in, then req.auth.user_id will not be null
+                    if((req as Authenticated_Request).auth?.user_id){
+                        metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
+                    } else {
+                        metadata_updater.updated_by = null;
+                    }
+                }
+
+                if(collection.mongoose_schema.updated_at?.type === Date) {
+                    metadata_updater.updated_at = new Date();
+                }
+                let results;
+                try {
+                    //array_child_path
+                    results = await collection.perform_update_and_side_effects(find, {
+                        $pull: {
+                            [array_child_path]: {_id: req.params.array_item_id},
+                        },
+                        ...metadata_updater
+                    });
+                } catch(err){
+                    res.status(500);
+                    res.json({ error: `there was a novel error` });
+                    console.error(err);
+                    return;
+                }
+
+                if (!results) {
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    res.json(sendable);
+                } else {
+                    res.json({ data: results });
+                }
+                //await req.schema.fire_api_event('update', req, results);
+            });
+        }
+
+
+
+
+
     }
 }

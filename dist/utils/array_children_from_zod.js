@@ -3,7 +3,7 @@ export function array_children_from_zod(zod_definition, loop_detector, built_map
     let loops = loop_detector ?? find_loops(zod_definition);
     let results = built_map ?? new Map();
     for (let [key, value] of Object.entries(zod_definition.shape)) {
-        if (loops.has(value)) {
+        if (loops.has(value._zod.def)) {
             continue;
         }
         let real_value = distill_zod(value);

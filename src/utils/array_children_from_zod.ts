@@ -6,7 +6,7 @@ export function array_children_from_zod(zod_definition: z.ZodObject, loop_detect
     let results = built_map ?? new Map<string, z.ZodObject>();
 
     for(let [key, value] of Object.entries(zod_definition.shape)){
-        if(loops.has(value)){ continue; }
+        if(loops.has(value._zod.def)){ continue; }
         let real_value = distill_zod(value);
         switch (real_value._zod.def.type) {
             case "object":
