@@ -31,6 +31,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
     is_compiled: boolean;
 
     array_children_map: Map<string, z.ZodType>;
+    array_children_post_map: Map<string, z.ZodType>;
 
     access_layers: F_Layer<Collection_ID, ZodSchema>[];
     create_hooks: ((session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>)[];
@@ -59,12 +60,18 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
 
         this.array_children_map = array_children_from_zod(validator);
 
-        
         // TODO: find a more elegant way to do this so that the types don't have a cow
         //@ts-ignore
         this.put_validator = validator.partial();
         // @ts-ignore
         this.post_validator = Object.hasOwn(this.validator._zod.def.shape, '_id') ? validator.partial({ _id: true }) : validator;
+
+        this.array_children_post_map = new Map<string, z.ZodType>();
+        Array.from(this.array_children_map.entries()).forEach((keyval: [string, z.ZodType]) => {
+            let [key, value] = keyval;
+            // @ts-ignore
+            this.array_children_post_map.set(key, value.partial({ _id: true }));
+        })
 
         this.access_layers = [];
         this.is_compiled = false;

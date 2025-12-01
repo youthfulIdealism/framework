@@ -14,6 +14,7 @@ export class F_Collection {
     post_validator;
     is_compiled;
     array_children_map;
+    array_children_post_map;
     access_layers;
     create_hooks;
     update_hooks;
@@ -38,6 +39,11 @@ export class F_Collection {
         this.array_children_map = array_children_from_zod(validator);
         this.put_validator = validator.partial();
         this.post_validator = Object.hasOwn(this.validator._zod.def.shape, '_id') ? validator.partial({ _id: true }) : validator;
+        this.array_children_post_map = new Map();
+        Array.from(this.array_children_map.entries()).forEach((keyval) => {
+            let [key, value] = keyval;
+            this.array_children_post_map.set(key, value.partial({ _id: true }));
+        });
         this.access_layers = [];
         this.is_compiled = false;
         this.create_hooks = [];

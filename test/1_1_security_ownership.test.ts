@@ -16,7 +16,7 @@ import { Server } from "http";
 
 
 
-describe('Security Model Ownership', function () {
+describe.only('Security Model Ownership', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;
@@ -30,7 +30,12 @@ describe('Security Model Ownership', function () {
         _id: z_mongodb_id,
         user_id: z_mongodb_id,
         name: z.string(),
-        email: z.string()
+        email: z.string(),
+        nicknames: z.array(z.object({
+            _id: z_mongodb_id,
+            server_key: z.string(),
+            name: z.string()
+        }))
     })
 
     // set up schema: user
@@ -99,7 +104,8 @@ describe('Security Model Ownership', function () {
         let user_display = await collection_user_display.mongoose_model.create({
             user_id: user._id,
             name: 'steve',
-            email: 'steve@example.com'
+            email: 'steve@example.com',
+            nicknames: [],
         })
 
         return { user, user_display}
@@ -157,7 +163,8 @@ describe('Security Model Ownership', function () {
             user_displays.push(await collection_user_display.mongoose_model.create({
                 user_id: user._id,
                 name: 'steve',
-                email: 'steve@example.com'
+                email: 'steve@example.com',
+                nicknames: [],
             }))
         }
 
@@ -185,7 +192,8 @@ describe('Security Model Ownership', function () {
             user_displays.push(await collection_user_display.mongoose_model.create({
                 user_id: user._id,
                 name: 'steve',
-                email: 'steve@example.com'
+                email: 'steve@example.com',
+                nicknames: [],
             }))
         }
         
@@ -261,7 +269,8 @@ describe('Security Model Ownership', function () {
             json: {
                 user_id: user._id,
                 name: 'grogfurd',
-                email: 'grogfurd@example.com'
+                email: 'grogfurd@example.com',
+                nicknames: [],
             }
         }).json();
 
@@ -284,7 +293,8 @@ describe('Security Model Ownership', function () {
                 json: {
                     user_id: user._id,
                     name: 'grogfurd',
-                    email: 'grogfurd@example.com'
+                    email: 'grogfurd@example.com',
+                    nicknames: []
                 }
             }).json();
         }, {
@@ -325,6 +335,176 @@ describe('Security Model Ownership', function () {
                 headers: {
                     authorization: 'sharon'
                 }
+            }).json();
+        }, {
+            message: 'Response code 403 (Forbidden)'
+        })
+    });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    ARRAY OPERATIONS     //////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    it(`should authorize a POST operation on a child array`, async function () {
+        let { user, user_display } = await generate_user_and_display();
+
+        let results = await got.post(`http://localhost:${port}/api/user_display/${user_display._id}/nicknames`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                server_key: 'best_server',
+                name: 'steve the mighty'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.mongoose_model.findById(user_display._id))), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify((await collection_user_display.mongoose_model.findById(user_display._id)))).nicknames.length, 1);
+    });
+
+    it(`should reject a POST operation on a child array authenticated to the wrong user`, async function () {
+        let { user, user_display } = await generate_user_and_display();
+
+        let user_2 = await collection_user.mongoose_model.create({
+            auth_id: 'sharon'
+        });
+
+        await assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/user_display/${user_display._id}/nicknames`, {
+                headers: {
+                    authorization: 'sharon'
+                },
+                json: {
+                    server_key: 'best_server',
+                    name: 'steve the mighty'
+                }
+            }).json();
+        }, {
+            message: 'Response code 403 (Forbidden)'
+        })
+    });
+
+    it(`should authorize a PUT operation on a child array`, async function () {
+        let { user, user_display } = await generate_user_and_display();
+        await collection_user_display.mongoose_model.findByIdAndUpdate(user_display._id, {
+            $push: {
+                nicknames: {
+                    server_key: 'best_server',
+                    name: 'steve the mighty'
+                }
+            }
+        });
+        //@ts-ignore
+        user_display = await collection_user_display.mongoose_model.findById(user_display._id);
+
+        let nickname_id = user_display.nicknames[0]._id + '';
+
+        let results = await got.put(`http://localhost:${port}/api/user_display/${user_display._id}/nicknames/${nickname_id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                _id: nickname_id,
+                server_key: 'best_server',
+                name: 'ubersteve'
+            }
+        }).json();
+        
+        //@ts-ignore
+        assert.deepEqual('ubersteve', results.data.nicknames[0].name);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.mongoose_model.findById(user_display._id))), JSON.parse(JSON.stringify(results.data)));
+    });
+
+    it(`should reject a PUT operation on a child array authenticated to the wrong user`, async function () {
+        let { user, user_display } = await generate_user_and_display();
+        await collection_user_display.mongoose_model.findByIdAndUpdate(user_display._id, {
+            $push: {
+                nicknames: {
+                    server_key: 'best_server',
+                    name: 'steve the mighty'
+                }
+            }
+        });
+
+        let user_2 = await collection_user.mongoose_model.create({
+            auth_id: 'sharon'
+        });
+
+
+        //@ts-ignore
+        user_display = await collection_user_display.mongoose_model.findById(user_display._id);
+
+        let nickname_id = user_display.nicknames[0]._id + '';
+
+        await assert.rejects(async () => {
+            let results = await got.put(`http://localhost:${port}/api/user_display/${user_display._id}/nicknames/${nickname_id}`, {
+                headers: {
+                    authorization: 'sharon'
+                },
+                json: {
+                    _id: nickname_id,
+                    server_key: 'best_server',
+                    name: 'ubersteve'
+                }
+            }).json();
+        }, {
+            message: 'Response code 403 (Forbidden)'
+        })
+    });
+
+    it(`should authorize a DELETE operation on a child array`, async function () {
+        let { user, user_display } = await generate_user_and_display();
+        await collection_user_display.mongoose_model.findByIdAndUpdate(user_display._id, {
+            $push: {
+                nicknames: {
+                    server_key: 'best_server',
+                    name: 'steve the mighty'
+                }
+            }
+        });
+        //@ts-ignore
+        user_display = await collection_user_display.mongoose_model.findById(user_display._id);
+        let nickname_id = user_display.nicknames[0]._id + '';
+
+        let results = await got.delete(`http://localhost:${port}/api/user_display/${user_display._id}/nicknames/${nickname_id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+        }).json();
+        
+        //@ts-ignore
+        assert.deepEqual(0, results.data.nicknames.length);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_user_display.mongoose_model.findById(user_display._id))), JSON.parse(JSON.stringify(results.data)));
+    });
+
+    it(`should reject a DELETE operation authenticated to the wrong user`, async function () {
+        let { user, user_display } = await generate_user_and_display();
+
+        let user_2 = await collection_user.mongoose_model.create({
+            auth_id: 'sharon'
+        });
+
+        await collection_user_display.mongoose_model.findByIdAndUpdate(user_display._id, {
+            $push: {
+                nicknames: {
+                    server_key: 'best_server',
+                    name: 'steve the mighty'
+                }
+            }
+        });
+        //@ts-ignore
+        user_display = await collection_user_display.mongoose_model.findById(user_display._id);
+        let nickname_id = user_display.nicknames[0]._id + '';
+        
+        await assert.rejects(async () => {
+            let results = await got.delete(`http://localhost:${port}/api/user_display/${user_display._id}/nicknames/${nickname_id}`, {
+                headers: {
+                    authorization: 'sharon'
+                },
             }).json();
         }, {
             message: 'Response code 403 (Forbidden)'

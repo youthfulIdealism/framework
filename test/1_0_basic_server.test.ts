@@ -817,7 +817,7 @@ describe('Basic Server', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(await project.mongoose_model.findById(test_project._id))), JSON.parse(JSON.stringify(test_project)));
     });
 
-    it(`should allow entries to be added to list containers`, async function () {
+    it(`should allow entries to be added to object arrays`, async function () {
         let test_list_container = await list_container.mongoose_model.create({
             container: {
                 list: []
@@ -836,7 +836,7 @@ describe('Basic Server', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(await list_container.mongoose_model.findById(test_list_container._id))), JSON.parse(JSON.stringify(results.data)));
     });
 
-    it(`should allow container entries to be updated`, async function () {
+    it(`should allow object array entries to be updated`, async function () {
         let test_list_container = await list_container.mongoose_model.create({
             container: {
                 list: [{
@@ -857,7 +857,7 @@ describe('Basic Server', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(await list_container.mongoose_model.findById(test_list_container._id))), JSON.parse(JSON.stringify(results.data)));
     });
 
-    it(`should allow container entries to be deleted`, async function () {
+    it(`should allow object array entries to be deleted`, async function () {
         let test_list_container = await list_container.mongoose_model.create({
             container: {
                 list: [{

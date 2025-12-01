@@ -344,6 +344,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
             }
         });
         for (let [array_child_path, array_child_validator] of collection.array_children_map.entries()) {
+            let post_validator = collection.array_children_post_map.get(array_child_path);
             let array_child_post_path = [
                 api_prefix,
                 ...base_layers_path_components,
@@ -360,7 +361,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 for (let layer of access_layers.layers) {
                     find[`${layer}_id`] = req.params[layer];
                 }
-                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'update');
+                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
                 if (!permissive_security_model) {
                     res.status(403);
                     res.json({ error: `You do not have permission to update documents from ${collection.collection_id}.` });
@@ -380,7 +381,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 }
                 let validated_request_body;
                 try {
-                    validated_request_body = await array_child_validator.parse(req.body);
+                    validated_request_body = await post_validator.parse(req.body);
                 }
                 catch (err) {
                     if (err instanceof z.ZodError) {
@@ -454,7 +455,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     find[`${layer}_id`] = req.params[layer];
                 }
                 find[`${array_child_path}._id`] = req.params.array_item_id;
-                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'update');
+                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
                 if (!permissive_security_model) {
                     res.status(403);
                     res.json({ error: `You do not have permission to update documents from ${collection.collection_id}.` });
@@ -527,7 +528,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 array_child_path,
                 ':array_item_id'
             ].join('/');
-            app.delete(array_child_put_path, async (req, res) => {
+            app.delete(array_child_delete_path, async (req, res) => {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
                     res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -542,7 +543,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 for (let layer of access_layers.layers) {
                     find[`${layer}_id`] = req.params[layer];
                 }
-                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'update');
+                let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
                 if (!permissive_security_model) {
                     res.status(403);
                     res.json({ error: `You do not have permission to update documents from ${collection.collection_id}.` });
