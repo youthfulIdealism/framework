@@ -16,7 +16,10 @@ export function array_children_from_zod(zod_definition: z.ZodObject, loop_detect
                 //@ts-ignore
                 let element = distill_zod((real_value as z.ZodArray).element);
                 if(element._zod.def.type === 'object') {
-                    results.set(prefix.length > 0 ? `${prefix}.${key}` : key,  element as z.ZodObject);
+                    let objdef = element._zod.def as z.core.$ZodObjectDef;
+                    if(objdef.shape._id){
+                        results.set(prefix.length > 0 ? `${prefix}.${key}` : key,  element as z.ZodObject);
+                    }
                 }
                 break;
             default:

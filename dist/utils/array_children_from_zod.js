@@ -14,7 +14,10 @@ export function array_children_from_zod(zod_definition, loop_detector, built_map
             case "array":
                 let element = distill_zod(real_value.element);
                 if (element._zod.def.type === 'object') {
-                    results.set(prefix.length > 0 ? `${prefix}.${key}` : key, element);
+                    let objdef = element._zod.def;
+                    if (objdef.shape._id) {
+                        results.set(prefix.length > 0 ? `${prefix}.${key}` : key, element);
+                    }
                 }
                 break;
             default:

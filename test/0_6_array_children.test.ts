@@ -2,8 +2,9 @@ import assert from "assert";
 import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
 import { array_children_from_zod } from '../dist/utils/array_children_from_zod.js';
-import { Schema } from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 import { required } from "zod/mini";
+import { z_mongodb_id } from "../dist/utils/mongoose_from_zod.js";
 
 process.env.DEBUG = 'express:*'
 
@@ -17,6 +18,7 @@ describe('Mongoose from Zod', function () {
     it('should detect an array child if one exists', function () {
         let zodSchema = z.object({ 
             val: z.array(z.object({
+                _id: z_mongodb_id,
                 test: z.string()
             }))
         })
@@ -28,9 +30,11 @@ describe('Mongoose from Zod', function () {
 
         let zodSchema = z.object({ 
             val: z.array(z.object({
+                _id: z_mongodb_id,
                 test: z.string()
             })),
             other_val: z.array(z.object({
+                _id: z_mongodb_id,
                 test: z.string()
             }))
         })
@@ -41,6 +45,7 @@ describe('Mongoose from Zod', function () {
     it('should detect array children within nullable', function () {
         let zodSchema = z.object({ 
             val: z.nullable(z.array(z.object({
+                _id: z_mongodb_id,
                 test: z.string()
             })))
         })
@@ -51,6 +56,7 @@ describe('Mongoose from Zod', function () {
     it('should detect array children within optional', function () {
         let zodSchema = z.object({ 
             val: z.optional(z.array(z.object({
+                _id: z_mongodb_id,
                 test: z.string()
             })))
         })
@@ -62,6 +68,7 @@ describe('Mongoose from Zod', function () {
         let zodSchema = z.object({ 
             alpha: z.object({
                 val: z.array(z.object({
+                    _id: z_mongodb_id,
                     test: z.string()
                 }))
             })
@@ -74,12 +81,14 @@ describe('Mongoose from Zod', function () {
         let zodSchema = z.object({ 
             alpha: z.object({
                 val: z.array(z.object({
+                    _id: z_mongodb_id,
                     test: z.string()
                 }))
             }),
             latex: z.array(z.object({
-                    test: z.string()
-                }))
+                _id: z_mongodb_id,
+                test: z.string()
+            }))
         })
         let array_children = array_children_from_zod(zodSchema);
         assert.equal(Array.from(array_children.keys()).includes('alpha.val'), true);
@@ -89,10 +98,30 @@ describe('Mongoose from Zod', function () {
     it('should return the validator for a child', function () {
         let zodSchema = z.object({ 
             val: z.array(z.object({
+                _id: z_mongodb_id,
                 test: z.string()
             }))
         })
         let array_children = array_children_from_zod(zodSchema);
-        assert.deepEqual(array_children.get('val')?.parse({test: 'testval'}), {test: 'testval'})
+        let objectid = new mongoose.Types.ObjectId()
+        assert.deepEqual(array_children.get('val')?.parse({_id: '' + objectid, test: 'testval'}), {_id: '' + objectid, test: 'testval'})
+    });
+
+    
+    it('should only detect array children that have an _id field', function () {
+        let zodSchema = z.object({ 
+            alpha: z.object({
+                val: z.array(z.object({
+                    _id: z_mongodb_id,
+                    test: z.string()
+                }))
+            }),
+            latex: z.array(z.object({
+                test: z.string()
+            }))
+        })
+        let array_children = array_children_from_zod(zodSchema);
+        assert.equal(Array.from(array_children.keys()).includes('alpha.val'), true);
+        assert.equal(Array.from(array_children.keys()).includes('latex'), false);
     });
 });
