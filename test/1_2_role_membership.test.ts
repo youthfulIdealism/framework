@@ -8,7 +8,7 @@ import { F_SM_Open_Access } from '../dist/F_Security_Models/F_SM_Open_Access.js'
 import { F_SM_Role_Membership } from '../dist/F_Security_Models/F_SM_Role_Membership.js'
 import { F_Security_Model } from '../dist/F_Security_Models/F_Security_Model.js'
 import { Cache } from '../dist/utils/cache.js'
-import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
+import { z, ZodAny, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
 import got from 'got'
 import express, { Express, Request, Response, NextFunction } from 'express'
@@ -38,6 +38,10 @@ describe.skip('Security Model Role Membership', function () {
         institution_id: z_mongodb_id,
         client_id: z_mongodb_id,
         name: z.string(),
+        steps: z.array(z.object({
+            _id: z_mongodb_id,
+            name: z.string()
+        }))
     });
     let validate_user = z.object({
         _id: z_mongodb_id,
@@ -255,25 +259,29 @@ describe.skip('Security Model Role Membership', function () {
         let steve_project = await collection_project.mongoose_model.create({
             institution_id: steve_institution._id,
             client_id: steve_client,
-            name: 'steve project'
+            name: 'steve project',
+            steps: [],
         })
 
         let joe_project = await collection_project.mongoose_model.create({
             institution_id: steve_institution._id,
             client_id: joe_client,
-            name: 'joe project'
+            name: 'joe project',
+            steps: [],
         })
 
         let nathan_project = await collection_project.mongoose_model.create({
             institution_id: edwin_institution._id,
             client_id: nathan_client,
-            name: 'nathan project'
+            name: 'nathan project',
+            steps: [],
         })
 
         let edna_project = await collection_project.mongoose_model.create({
             institution_id: edwin_institution._id,
             client_id: edna_client,
-            name: 'edna project'
+            name: 'edna project',
+            steps: [],
         })
 
         let access_role_steve_institution_grants_project = await collection_role.mongoose_model.create({
@@ -460,7 +468,8 @@ describe.skip('Security Model Role Membership', function () {
             projects.push(await collection_project.mongoose_model.create({
                 institution_id: steve_institution._id,
                 client_id: steve_client,
-                name: `additional project ${q}`
+                name: `additional project ${q}`,
+                steps: [],
             }))
         }
 
@@ -482,7 +491,8 @@ describe.skip('Security Model Role Membership', function () {
             projects.push(await collection_project.mongoose_model.create({
                 institution_id: edwin_institution._id,
                 client_id: nathan_client,
-                name: `additional project ${q}`
+                name: `additional project ${q}`,
+                steps: [],
             }))
         }
 
@@ -504,7 +514,8 @@ describe.skip('Security Model Role Membership', function () {
             projects.push(await collection_project.mongoose_model.create({
                 institution_id: edwin_institution._id,
                 client_id: edna_client,
-                name: `additional project ${q}`
+                name: `additional project ${q}`,
+                steps: [],
             }))
         }
 
@@ -526,7 +537,8 @@ describe.skip('Security Model Role Membership', function () {
             projects.push(await collection_project.mongoose_model.create({
                 institution_id: steve_institution._id,
                 client_id: steve_client,
-                name: `additional project ${q}`
+                name: `additional project ${q}`,
+                steps: [],
             }))
         }
 
@@ -631,6 +643,7 @@ describe.skip('Security Model Role Membership', function () {
                 name: 'Flammable Project',
                 institution_id: steve_institution._id,
                 client_id: steve_client._id,
+                steps: [],
             }
         }).json();
 
@@ -649,6 +662,7 @@ describe.skip('Security Model Role Membership', function () {
                 name: 'Flammable Project',
                 institution_id: edwin_institution._id,
                 client_id: nathan_client._id,
+                steps: [],
             }
         }).json();
 
@@ -668,6 +682,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Flammable Project',
                     institution_id: edwin_institution._id,
                     client_id: edna_client._id,
+                    steps: [],
                 }
             }).json();
         },
@@ -747,6 +762,311 @@ describe.skip('Security Model Role Membership', function () {
             let results = await got.delete(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}`, {
                 headers: {
                     authorization: 'edwin'
+                }
+            }).json();
+        },
+        { message: 'Response code 403 (Forbidden)' })
+    });
+
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    ARRAY OPERATIONS     //////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    it(`should authorize a basic POST operation on a document's array children where the user has a T1 role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        let results = await got.post(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}/steps`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'Fancy Step'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(steve_project._id))), results.data);
+        assert.equal((await collection_project.mongoose_model.findById(steve_project._id))?.steps.length, 1)
+    });
+
+    it(`should authorize a basic PUT operation on a document's array children where the user has a T1 role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        //@ts-ignore
+        steve_project = await collection_project.mongoose_model.findByIdAndUpdate(steve_project._id, {
+            $push: {
+                steps: {
+                    name: 'Fancy Step'
+                }
+            }
+        }, {new: true}).lean();
+        let step_id = steve_project.steps[0]._id;
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}/steps/${step_id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                _id: step_id,
+                name: 'Somber Step'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(steve_project._id))), results.data);
+        assert.equal((await collection_project.mongoose_model.findById(steve_project._id))?.steps[0].name, 'Somber Step')
+    });
+
+    it(`should authorize a basic DELETE operation on a document's array children where the user has a T1 role membership`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        //@ts-ignore
+        steve_project = await collection_project.mongoose_model.findByIdAndUpdate(steve_project._id, {
+            $push: {
+                steps: {
+                    name: 'Fancy Step'
+                }
+            }
+        }, {new: true}).lean();
+        let step_id = steve_project.steps[0]._id;
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}/steps/${step_id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(steve_project._id))), results.data);
+        assert.equal((await collection_project.mongoose_model.findById(steve_project._id))?.steps.length, 0)
+    });
+
+    it(`should authorize a basic POST operation on a document's array children where the user has a T2 role membership`, async function () {
+        let { edwin_institution, nathan_client, nathan_project } = await generate_test_setup();
+
+        let results = await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project/${nathan_project._id}/steps`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'Fancy Step'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(nathan_project._id))), results.data);
+        assert.equal((await collection_project.mongoose_model.findById(nathan_project._id))?.steps.length, 1)
+    });
+
+    it(`should authorize a basic PUT operation on a document's array children where the user has a T2 role membership`, async function () {
+        let { edwin_institution, nathan_client, nathan_project } = await generate_test_setup();
+
+        //@ts-ignore
+        nathan_project = await collection_project.mongoose_model.findByIdAndUpdate(nathan_project._id, {
+            $push: {
+                steps: {
+                    name: 'Fancy Step'
+                }
+            }
+        }, {new: true}).lean();
+        let step_id = nathan_project.steps[0]._id;
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project/${nathan_project._id}/steps/${step_id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                _id: step_id,
+                name: 'Somber Step'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(nathan_project._id))), results.data);
+        assert.equal((await collection_project.mongoose_model.findById(nathan_project._id))?.steps[0].name, 'Somber Step')
+    });
+
+    it(`should authorize a basic DELETE operation on a document's array children where the user has a T2 role membership`, async function () {
+        let { edwin_institution, nathan_client, nathan_project } = await generate_test_setup();
+
+        //@ts-ignore
+        nathan_project = await collection_project.mongoose_model.findByIdAndUpdate(nathan_project._id, {
+            $push: {
+                steps: {
+                    name: 'Fancy Step'
+                }
+            }
+        }, {new: true}).lean();
+        let step_id = nathan_project.steps[0]._id;
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project/${nathan_project._id}/steps/${step_id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(nathan_project._id))), results.data);
+        assert.equal((await collection_project.mongoose_model.findById(nathan_project._id))?.steps.length, 0)
+    });
+
+    it(`should reject a basic POST operation on a document's array children where the user has a role membership without permission`, async function () {
+        let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
+
+        await assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project/${edna_project._id}/steps`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    name: 'Fancy Step'
+                }
+            }).json();
+        },
+        { message: 'Response code 403 (Forbidden)' })
+    });
+
+    it(`should reject a basic PUT operation on a document's array children where the user has a role membership without permission`, async function () {
+        let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
+
+        //@ts-ignore
+        edna_project = await collection_project.mongoose_model.findByIdAndUpdate(edna_project._id, {
+            $push: {
+                steps: {
+                    name: 'Fancy Step'
+                }
+            }
+        }, {new: true}).lean();
+        let step_id = edna_project.steps[0]._id;
+
+        await assert.rejects(async () => {
+            let results = await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project/${edna_project._id}/steps/${step_id}`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    _id: step_id,
+                    name: 'Somber Step'
+                }
+            }).json();
+        },
+        { message: 'Response code 403 (Forbidden)' })
+    });
+
+    it(`should reject a basic DELETE operation on a document's array children where the user has a role membership without permission`, async function () {
+        let { edwin_institution, edna_client, edna_project } = await generate_test_setup();
+
+        //@ts-ignore
+        edna_project = await collection_project.mongoose_model.findByIdAndUpdate(edna_project._id, {
+            $push: {
+                steps: {
+                    name: 'Fancy Step'
+                }
+            }
+        }, {new: true}).lean();
+        let step_id = edna_project.steps[0]._id;
+
+        await assert.rejects(async () => {
+            let results = await got.delete(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/project/${edna_project._id}/steps/${step_id}`, {
+                headers: {
+                    authorization: 'steve'
+                }
+            }).json();
+        },
+        { message: 'Response code 403 (Forbidden)' })
+    });
+
+    it(`should reject a basic POST operation on a document's array children where the user has POST permission but not PUT permission`, async function () {
+        let { steve_institution, steve_client, steve_project } = await generate_test_setup();
+
+        let user_barnabus = await collection_user.mongoose_model.create({
+            auth_id: 'barnabus'
+        });
+
+        let access_role_steve_institution_grants_project_no_update = await collection_role.mongoose_model.create({
+            name: 'steve full access',
+            institution_id: steve_institution._id,
+            permissions: {
+                institutions: ['read', 'create', 'update', 'delete'],
+                clients: ['read', 'create', 'update', 'delete'],
+                projects: ['read', 'create', 'delete'],
+                roles: ['read', 'create', 'update', 'delete'],
+            }
+        });
+
+        let barnabus_institution_role_membership = await collection_institution_role_membership.mongoose_model.create({
+            role_id: access_role_steve_institution_grants_project_no_update._id,
+            user_id: user_barnabus._id,
+            institution_id: steve_institution._id,
+        })
+
+        await assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}/steps`, {
+                headers: {
+                    authorization: 'barnabus'
+                },
+                json: {
+                    name: 'Fancy Step'
+                }
+            }).json();
+        },
+        { message: 'Response code 403 (Forbidden)' })
+    });
+
+    it(`should reject a basic DELETE operation on a document's array children where the user has DELETE permission but not PUT permission`, async function () {
+        let { steve_institution, steve_client, steve_project, steve_steve_institution_role_membership } = await generate_test_setup();
+
+        let user_barnabus = await collection_user.mongoose_model.create({
+            auth_id: 'barnabus'
+        });
+
+        let access_role_steve_institution_grants_project_no_update = await collection_role.mongoose_model.create({
+            name: 'steve full access',
+            institution_id: steve_institution._id,
+            permissions: {
+                institutions: ['read', 'create', 'update', 'delete'],
+                clients: ['read', 'create', 'update', 'delete'],
+                projects: ['read', 'create', 'delete'],
+                roles: ['read', 'create', 'update', 'delete'],
+            }
+        });
+
+        let barnabus_institution_role_membership = await collection_institution_role_membership.mongoose_model.create({
+            role_id: access_role_steve_institution_grants_project_no_update._id,
+            user_id: user_barnabus._id,
+            institution_id: steve_institution._id,
+        })
+
+        let steve_new_access_role = await collection_role.mongoose_model.create({
+            name: 'steve no project update',
+            institution_id: steve_institution._id,
+            permissions: {
+                institutions: ['read', 'create', 'update', 'delete'],
+                clients: ['read', 'create', 'update', 'delete'],
+                projects: ['read', 'create', 'delete'],
+                roles: ['read', 'create', 'update', 'delete'],
+            }
+        });
+
+        await collection_client_role_membership.mongoose_model.findByIdAndUpdate(steve_steve_institution_role_membership._id, {
+            role_id: steve_new_access_role._id
+        })
+
+        //@ts-ignore
+        steve_project = await collection_project.mongoose_model.findByIdAndUpdate(steve_project._id, {
+            $push: {
+                steps: {
+                    name: 'Fancy Step'
+                }
+            }
+        }, {new: true}).lean();
+        let step_id = steve_project.steps[0]._id;
+
+        await assert.rejects(async () => {
+            let results = await got.delete(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}/steps/${step_id}`, {
+                headers: {
+                    authorization: 'barnabus'
                 }
             }).json();
         },

@@ -509,7 +509,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
 
                 if (!results) {
-                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                     res.json(sendable);
                 } else {
                     res.json({ data: results });
@@ -615,7 +615,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
 
                 if (!results) {
-                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                     res.json(sendable);
                 } else {
                     res.json({ data: results });
@@ -687,7 +687,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
 
                 if (!results) {
-                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                     res.json(sendable);
                 } else {
                     res.json({ data: results });

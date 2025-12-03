@@ -420,7 +420,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     return;
                 }
                 if (!results) {
-                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                     res.json(sendable);
                 }
                 else {
@@ -514,7 +514,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     return;
                 }
                 if (!results) {
-                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                     res.json(sendable);
                 }
                 else {
@@ -577,7 +577,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     return;
                 }
                 if (!results) {
-                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'create');
+                    let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                     res.json(sendable);
                 }
                 else {

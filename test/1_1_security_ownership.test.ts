@@ -16,7 +16,7 @@ import { Server } from "http";
 
 
 
-describe.only('Security Model Ownership', function () {
+describe('Security Model Ownership', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;
