@@ -69,7 +69,7 @@ describe('Mongoose from Zod', function () {
         it(`should convert ${basic_type.label} to mongoose type with nullable`, function () {
             let zodSchema = z.object({ test_value: basic_type.zod_function().nullable() })
             let mongooseSchema = schema_from_zod(zodSchema)
-            assert.deepEqual({ test_value: { mongoose_type: basic_type.mongoose_type, required: true } }, mongooseSchema)
+            assert.deepEqual({ test_value: { mongoose_type: basic_type.mongoose_type, required: false } }, mongooseSchema)
         });
 
         it(`should convert ${basic_type.label} to mongoose type with optional AND default values`, function () {

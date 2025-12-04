@@ -100,10 +100,10 @@ export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: 
             result.required = !zod_definition.safeParse(undefined).success
             return result;
         case "nullable":
-            // stuff is nullable in mongodb by default, so just return the ordinary results of the parse
-            //@ts-expect-error
-            return schema_entry_from_zod((zod_definition as z.core.$ZodNullable)._zod.def.innerType, loop_detector)
         case "optional":
+            // stuff is nullable in mongodb by default, so just return the ordinary results of the parse
+            ////@ts-expect-error
+            //return schema_entry_from_zod((zod_definition as z.core.$ZodNullable)._zod.def.innerType, loop_detector)
             return parse_optional(zod_definition._zod.def as z.core.$ZodOptionalDef, loop_detector);
         case "record":
             result = parse_record(zod_definition._zod.def as z.core.$ZodRecordDef, loop_detector);

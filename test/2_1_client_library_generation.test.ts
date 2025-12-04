@@ -26,7 +26,7 @@ mongoose.connection.on('close', () => console.log('close'));*/
 
 const remove_whitespace = (input: string): string => input.replaceAll(/[\n\r\s]+/g, '')
 
-describe('Client Library Generation: Library Generation', function () {
+describe/*.only*/('Client Library Generation: Library Generation', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;
@@ -49,6 +49,10 @@ describe('Client Library Generation: Library Generation', function () {
         institution_id: z_mongodb_id,
         client_id: z_mongodb_id,
         project_number: z.number(),
+        steps: z.array(z.object({
+            _id: z_mongodb_id,
+            name: z.string()
+        }))
     });
 
     const validate_brief_news_category = z.object({
@@ -244,11 +248,131 @@ describe('Client Library Generation: Library Generation', function () {
                 });
         } catch(err) {
             console.error(await err.response.json())
+            throw err;
         }
 
         assert.deepEqual(
             JSON.parse(JSON.stringify(test_projects.filter(ele => ele.project_number > 5))),
             result
+        )
+    });
+
+    it(`should be able to service a basic POST on an array child`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution, client, test_projects } = await generate_test_setup();
+        let test_project = test_projects[0];
+        
+        let result;
+        try {
+            result = await api(`http://localhost:${port}/api`, async () => "todd")
+                .collection('institution')
+                .document(institution._id)
+                .collection('client')
+                .document(client._id)
+                .collection("project")
+                .document(test_project._id)
+                .array("steps")
+                .push({ name: 'Really Awesome Step' })
+        } catch(err) {
+            console.error(await err.response.text())
+            throw err;
+        }
+
+        assert.deepEqual(
+            JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(test_project._id).lean())),
+            result
+        )
+
+        assert.equal(
+            'Really Awesome Step',
+            result.steps[0].name
+        )
+    });
+
+    it(`should be able to service a basic PUT on an array child`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution, client, test_projects } = await generate_test_setup();
+        let test_project = test_projects[0];
+        
+        await collection_project.mongoose_model.findByIdAndUpdate(test_project._id, {
+            $push: {
+                steps: {
+                    name: 'Really Awesome Step'
+                }
+            }
+        });
+        //@ts-ignore
+        test_project = await collection_project.mongoose_model.findById(test_project._id).lean();
+        let replacement_step = test_project.steps[0];
+        replacement_step.name = "CHUPACABRA MILK";
+        
+        let result;
+        try {
+            result = await api(`http://localhost:${port}/api`, async () => "todd")
+                .collection('institution')
+                .document(institution._id)
+                .collection('client')
+                .document(client._id)
+                .collection("project")
+                .document(test_project._id)
+                .array("steps")
+                .replace(replacement_step)
+        } catch(err) {
+            console.error(await err.response.text())
+            throw err;
+        }
+
+        assert.deepEqual(
+            JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(test_project._id).lean())),
+            result
+        )
+
+        assert.equal(
+            'CHUPACABRA MILK',
+            result.steps[0].name
+        )
+    });
+
+    it(`should be able to service a basic DELETE on an array child`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution, client, test_projects } = await generate_test_setup();
+        let test_project = test_projects[0];
+        
+        await collection_project.mongoose_model.findByIdAndUpdate(test_project._id, {
+            $push: {
+                steps: {
+                    name: 'Really Awesome Step'
+                }
+            }
+        });
+        //@ts-ignore
+        test_project = await collection_project.mongoose_model.findById(test_project._id).lean();
+        let deletion_step = test_project.steps[0];
+        
+        let result;
+        try {
+            result = await api(`http://localhost:${port}/api`, async () => "todd")
+                .collection('institution')
+                .document(institution._id)
+                .collection('client')
+                .document(client._id)
+                .collection("project")
+                .document(test_project._id)
+                .array("steps")
+                .delete(deletion_step._id)
+        } catch(err) {
+            console.error(await err.response.text())
+            throw err;
+        }
+
+        assert.deepEqual(
+            JSON.parse(JSON.stringify(await collection_project.mongoose_model.findById(test_project._id).lean())),
+            result
+        )
+
+        assert.equal(
+            0,
+            result.steps.length
         )
     });
     

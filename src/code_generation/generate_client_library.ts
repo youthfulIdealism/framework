@@ -26,8 +26,17 @@ function build_path(...args: string[]){
 export async function generate_client_library<Collections>(output_path: string, collection_registry: F_Collection_Registry<Collections>, service_name = 'default-service') {
     let api_builder: api_builder = {
         mustache_context: {},
-        children: {}
+        children: {},
     };
+
+    if(!existsSync(build_path(output_path, 'src'))){ await mkdir(build_path(output_path, 'src')); }
+    if(!existsSync(build_path(output_path, 'dist'))){ await mkdir(build_path(output_path, 'dist')); }
+    if(!existsSync(build_path(output_path, 'src', 'types'))){ await mkdir(build_path(output_path, 'src', 'types')); }
+    if(!existsSync(build_path(output_path, 'src', 'utils'))){ await mkdir(build_path(output_path, 'src', 'utils')); }
+    await writeFile(build_path(output_path, 'src', 'utils', 'utils.ts'), await readFile(fileURLToPath(import.meta.resolve('./templates/utils.ts.mustache')), { encoding: 'utf-8' }));
+    await writeFile(build_path(output_path, 'tsconfig.json'), await readFile(fileURLToPath(import.meta.resolve('./templates/tsconfig.json.mustache')), { encoding: 'utf-8' }));
+    await writeFile(build_path(output_path, '.gitignore'), await readFile(fileURLToPath(import.meta.resolve('./templates/.gitignore.mustache')), { encoding: 'utf-8' }));
+        
 
     // build the typescript types
     for(let col of Object.values(collection_registry.collections)){
@@ -48,6 +57,27 @@ export async function generate_client_library<Collections>(output_path: string, 
 
             type_post: `${get_type_name(collection.collection_id)}_post`,
             path_type_post: `types/${get_type_name(collection.collection_id)}_post`,
+
+            array_children: [] as any[],
+            has_array_children: false,
+        }
+
+        for(let [array_child_key, array_child_validator] of collection.array_children_map.entries()){
+            let array_child_put_type = type_from_zod(array_child_validator);
+            let array_child_post_type = type_from_zod(collection.array_children_post_map.get(array_child_key));
+            let type_name = get_array_child_type_name(mustache_context.type_return, array_child_key);
+            let type_put_name = `${type_name}_put`
+            let type_post_name = `${type_name}_post`
+
+            let array_child_mustache_context = {
+                array_name: array_child_key,
+                type_array_child_put: type_put_name,
+                array_type_put_definition: `export type ${type_put_name} = ${array_child_put_type[0]}\n${array_child_put_type.slice(1)}`,
+                type_array_child_post: type_post_name,
+                array_type_post_definition: `export type ${type_post_name} = ${array_child_post_type[0]}\n${array_child_post_type.slice(1)}`,
+            };
+            mustache_context.array_children.push(array_child_mustache_context);
+            mustache_context.has_array_children = true;
         }
 
         let collection_type_definition_builder = [] as string[];
@@ -66,13 +96,6 @@ export async function generate_client_library<Collections>(output_path: string, 
         let collection_type_post = type_from_zod(collection.post_validator);
         collection_post_type_definition_builder.push(`export type ${mustache_context.type_post} = ${collection_type_post[0]}`, ...collection_type_post.slice(1));
 
-        if(!existsSync(build_path(output_path, 'src'))){ await mkdir(build_path(output_path, 'src')); }
-        if(!existsSync(build_path(output_path, 'dist'))){ await mkdir(build_path(output_path, 'dist')); }
-        if(!existsSync(build_path(output_path, 'src', 'types'))){ await mkdir(build_path(output_path, 'src', 'types')); }
-        if(!existsSync(build_path(output_path, 'src', 'utils'))){ await mkdir(build_path(output_path, 'src', 'utils')); }
-        await writeFile(build_path(output_path, 'src', 'utils', 'utils.ts'), await readFile(fileURLToPath(import.meta.resolve('./templates/utils.ts.mustache')), { encoding: 'utf-8' }));
-        await writeFile(build_path(output_path, 'tsconfig.json'), await readFile(fileURLToPath(import.meta.resolve('./templates/tsconfig.json.mustache')), { encoding: 'utf-8' }));
-        await writeFile(build_path(output_path, '.gitignore'), await readFile(fileURLToPath(import.meta.resolve('./templates/.gitignore.mustache')), { encoding: 'utf-8' }));
         await writeFile(build_path(output_path, 'src', mustache_context.path_type_return + '.ts'), collection_type_definition_builder.join('\n'));
         await writeFile(build_path(output_path, 'src', mustache_context.path_type_query + '.ts'), collection_query_type_definition_builder.join('\n'));
         await writeFile(build_path(output_path, 'src', mustache_context.path_type_put + '.ts'), collection_put_type_definition_builder.join('\n'));
@@ -153,6 +176,10 @@ export async function generate_client_library<Collections>(output_path: string, 
 
 export function get_type_name(collection_id: string, suffix?: string): string {
     return suffix ? `${collection_id}_${suffix}`.replace(/[^(a-zA-Z0-9\_)]/g, '_') : collection_id.replace(/[^(a-zA-Z0-9\_)]/g, '_');
+}
+
+export function get_array_child_type_name(collection_id: string, array_key: string): string {
+    return collection_id + '_' + array_key.replace(/[^(a-zA-Z0-9\_)]/g, '_');
 }
 
 export function uppercase(str: string): string {

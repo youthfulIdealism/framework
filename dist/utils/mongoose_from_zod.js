@@ -95,7 +95,6 @@ export function schema_entry_from_zod(zod_definition, loop_detector) {
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "nullable":
-            return schema_entry_from_zod(zod_definition._zod.def.innerType, loop_detector);
         case "optional":
             return parse_optional(zod_definition._zod.def, loop_detector);
         case "record":

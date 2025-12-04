@@ -130,4 +130,82 @@ class Document {
         }
     }
     {{/has_subcollections}}
+
+    {{#has_array_children}}
+    {{#array_children}}
+    array(key: "{{array_name}}"): Collection_{{my_built_collection}}_Array_{{array_name}};
+    {{/array_children}}
+    array(key: string) {
+        switch(key) {
+            {{#array_children}}
+            case "{{array_name}}":
+                return new Collection_{{my_built_collection}}_Array_{{array_name}}([...this.path, this.document_id, "{{array_name}}"], this.get_auth);
+            {{/array_children}}
+            default:
+                throw new Error(`Collection ${this.collection_id} does not have an array at the key ${key}`)
+        }
+    }
+    {{/has_array_children}}
 }
+
+{{#array_children}}
+{{array_type_put_definition}}
+{{array_type_post_definition}}
+
+export class Collection_{{my_built_collection}}_Array_{{array_name}} {
+    path: string[]
+    get_auth: () => Promise<any>
+    collection_id: string
+    collection_name_plural: string
+    array_key: string
+
+    constructor(path: string[], get_auth: () => Promise<any>) {
+        this.path = path;
+        this.get_auth = get_auth;
+        this.collection_id = "{{collection_id}}";
+        this.collection_name_plural = "{{collection_name_plural}}"
+        this.array_key = "{{array_name}}"
+    }
+
+    async push(document: {{type_array_child_post}}): Promise<{{type_return}}>{
+        try {
+            let result = await ky.post(this.path.join('/'), {
+                headers: {
+                    authorization: await this.get_auth()
+                },
+                json: document
+            }).json() as Response<{{type_return}}>;
+            return result.data;
+        } catch(err){
+            return Promise.reject(err)
+        }
+    }
+
+    async replace(document: {{type_array_child_put}}): Promise<{{type_return}}>{
+        try {
+            let result = await ky.put([...this.path, document._id].join('/'), {
+                headers: {
+                    authorization: await this.get_auth()
+                },
+                json: document
+            }).json() as Response<{{type_return}}>;
+            return result.data;
+        } catch(err){
+            return Promise.reject(err)
+        }
+    }
+
+    async delete(document_id: string): Promise<{{type_return}}>{
+        try {
+            let result = await ky.delete([...this.path, document_id].join('/'), {
+                headers: {
+                    authorization: await this.get_auth()
+                }
+            }).json() as Response<{{type_return}}>;
+            return result.data;
+        } catch(err){
+            return Promise.reject(err)
+        }
+    }
+}
+{{/array_children}}
