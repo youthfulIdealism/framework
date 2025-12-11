@@ -31,6 +31,7 @@ export type Auth_Data = {
             [key: string]: string[];
         };
     }[];
+    metadata?: any;
 };
 export type Authenticated_Request = Request & {
     auth: Auth_Data;

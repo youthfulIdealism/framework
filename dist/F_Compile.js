@@ -4,6 +4,11 @@ import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 import { detect_malicious_keys } from "./utils/malicious_keys.js";
 export function compile(app, collection, api_prefix, collection_registry) {
+    let me_path = [api_prefix, 'me'].join('/');
+    app.get(me_path, async (req, res) => {
+        let auth_data = await F_Security_Model.auth_fetcher(req);
+        res.json(auth_data);
+    });
     for (let access_layers of collection.access_layers) {
         for (let layer of access_layers.layers) {
             if (layer === collection.collection_id) {

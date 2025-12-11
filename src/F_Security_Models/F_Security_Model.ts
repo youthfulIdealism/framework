@@ -76,7 +76,8 @@ export type Auth_Data = {
         layer_id: string,
         permissions: {[key: string]: Operation[]},
         special_permissions: {[key: string]: string[]}
-    }[]
+    }[],
+    metadata?: any
 }
 
 export type Authenticated_Request = Request & {

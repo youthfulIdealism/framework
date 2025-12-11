@@ -6,6 +6,17 @@ import { Collection_{{built_collection}} } from "{{ built_collection_path }}"
 {{/child_collections}}
 
 
+export type Auth_Data = {
+    user_id: string,
+    layers: {
+        layer: string,
+        layer_id: string,
+        permissions: {[key: string]: ('get' | 'update' | 'create' | 'delete')[]},
+        special_permissions: {[key: string]: string[]}
+    }[],
+    metadata?: any
+}
+
 export function api(base_url: string, get_auth: () => Promise<any>) {
     return new Api(base_url, get_auth)
 }
@@ -30,6 +41,20 @@ class Api {
             {{/child_collections}}
             default:
                 throw new Error(`Api does not have the collection ${collection_id}`)
+        }
+    }
+
+    async me(): Promise<Auth_Data> {
+        try {
+            let result = await ky.put([this.base_url, 'me'].join('/'), {
+                headers: {
+                    authorization: await this.get_auth()
+                },
+                json: document
+            }).json() as Auth_Data;
+            return result;
+        } catch(err){
+            return Promise.reject(err)
         }
     }
 }
