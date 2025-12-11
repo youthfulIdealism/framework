@@ -46,11 +46,10 @@ class Api {
 
     async me(): Promise<Auth_Data> {
         try {
-            let result = await ky.put([this.base_url, 'me'].join('/'), {
+            let result = await ky.get([this.base_url, 'me'].join('/'), {
                 headers: {
                     authorization: await this.get_auth()
-                },
-                json: document
+                }
             }).json() as Auth_Data;
             return result;
         } catch(err){
