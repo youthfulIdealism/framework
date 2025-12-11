@@ -22,6 +22,7 @@ export declare abstract class F_Security_Model<Collection_ID extends string, Zod
 export type Auth_Data = {
     user_id: string;
     layers: {
+        layer: string;
         layer_id: string;
         permissions: {
             [key: string]: Operation[];

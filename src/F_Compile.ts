@@ -24,6 +24,12 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         next();
     })*/
 
+    let me_path = [api_prefix, 'me'].join('/');
+    app.get(me_path, async (req: Request, res: Response) => { 
+        let auth_data = await F_Security_Model.auth_fetcher(req);
+        res.json(auth_data)
+    });
+
     
     for(let access_layers of collection.access_layers){
         for(let layer of access_layers.layers){

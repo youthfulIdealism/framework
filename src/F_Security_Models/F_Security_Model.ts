@@ -72,6 +72,7 @@ export abstract class F_Security_Model<Collection_ID extends string, ZodSchema e
 export type Auth_Data = {
     user_id: string,
     layers: {
+        layer: string,
         layer_id: string,
         permissions: {[key: string]: Operation[]},
         special_permissions: {[key: string]: string[]}
