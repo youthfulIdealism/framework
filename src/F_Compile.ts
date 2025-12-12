@@ -93,7 +93,6 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
                 let document;
                 try {
-                    //@ts-expect-error
                     document = await collection.mongoose_model.findOne(find, undefined, { 'lean': true });
                 } catch(err){
                     res.status(500);
@@ -154,7 +153,6 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
            
             let documents;
             try {
-                //@ts-expect-error
                 let query = collection.mongoose_model.find(find, undefined, { 'lean': true });
                 if(validated_query_args.sort && validated_query_args.cursor) {
                     res.status(400);

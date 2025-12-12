@@ -162,6 +162,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         if(this.create_hooks.length > 0){
             await mongoose.connection.transaction(async (session) => {
                 // create the document
+                //@ts-expect-error
                 let [created_document] = await this.mongoose_model.create([data], {session: session, lean: true});
                 created_document_data = created_document;
 
@@ -172,6 +173,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                 }
             });
         } else {// if we don't have any post create hooks, run the create operation normally
+            //@ts-expect-error
             created_document_data = await this.mongoose_model.create(data);
         }
 
@@ -254,7 +256,6 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                 // run each hook one-by-one because running them in parallell is verboten
                 // https://mongoosejs.com/docs/transactions.html
                 for(let hook of this.delete_hooks){
-                    //@ts-expect-error
                     await hook(session, deleted_document);
                 }
             });
@@ -265,7 +266,6 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         // run the post-update hooks, which should not make DB changes.
         for(let hook of this.post_delete_hooks) {
             try {
-                //@ts-expect-error
                 await hook(deleted_document_data);
             } catch(err) {
                 console.error(`Error in ${this.collection_id} after_delete:`)
@@ -273,7 +273,6 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
             }
         }
 
-        //@ts-expect-error
         return deleted_document_data;
     }
 }
