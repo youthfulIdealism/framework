@@ -63,6 +63,7 @@ export async function generate_client_library<Collections>(output_path: string, 
         }
 
         for(let [array_child_key, array_child_validator] of collection.array_children_map.entries()){
+            console.log(type_from_zod(array_child_validator))
             let array_child_put_type = type_from_zod(array_child_validator);
             let array_child_post_type = type_from_zod(collection.array_children_post_map.get(array_child_key));
             let type_name = get_array_child_type_name(mustache_context.type_return, array_child_key);
@@ -72,9 +73,9 @@ export async function generate_client_library<Collections>(output_path: string, 
             let array_child_mustache_context = {
                 array_name: array_child_key,
                 type_array_child_put: type_put_name,
-                array_type_put_definition: `export type ${type_put_name} = ${array_child_put_type[0]}\n${array_child_put_type.slice(1)}`,
+                array_type_put_definition: `export type ${type_put_name} = ${array_child_put_type[0]}\n${array_child_put_type.slice(1).join('\n')}`,
                 type_array_child_post: type_post_name,
-                array_type_post_definition: `export type ${type_post_name} = ${array_child_post_type[0]}\n${array_child_post_type.slice(1)}`,
+                array_type_post_definition: `export type ${type_post_name} = ${array_child_post_type[0]}\n${array_child_post_type.slice(1).join('\n')}`,
             };
             mustache_context.array_children.push(array_child_mustache_context);
             mustache_context.has_array_children = true;

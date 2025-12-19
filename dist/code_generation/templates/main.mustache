@@ -11,7 +11,7 @@ export type Auth_Data = {
     layers: {
         layer: string,
         layer_id: string,
-        permissions: {[key: string]: ('get' | 'update' | 'create' | 'delete')[]},
+        permissions: {[key: string]: ('read' | 'update' | 'create' | 'delete')[]},
         special_permissions: {[key: string]: string[]}
     }[],
     metadata?: any
