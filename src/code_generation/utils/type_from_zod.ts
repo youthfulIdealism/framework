@@ -127,8 +127,17 @@ function parse_enum(def: z.core.$ZodEnumDef): any {
 
 function parse_record(def: z.core.$ZodRecordDef, indent_level: number, loop_detector: Map<any, validator_group>, skip_once: z.core.$ZodTypeDef): any {
     let retval = ['{']
+    let key_phrase = '';
+   
     //@ts-ignore
-    let key_phrase = `[key: ${parse_zod(def.keyType, indent_level + 1, loop_detector, skip_once)}]:`;
+    if(def.keyType.def.type === 'enum') {
+        //@ts-ignore
+        key_phrase = `[key in ${parse_zod(def.keyType, indent_level + 1, loop_detector, skip_once)}]:`;
+    } else {
+        //@ts-ignore
+        key_phrase = `[key: ${parse_zod(def.keyType, indent_level + 1, loop_detector, skip_once)}]:`;
+    }
+    
 
     //@ts-ignore
     let type_value = parse_zod(def.valueType, indent_level + 1, loop_detector, skip_once)

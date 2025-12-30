@@ -105,7 +105,13 @@ function parse_enum(def) {
 }
 function parse_record(def, indent_level, loop_detector, skip_once) {
     let retval = ['{'];
-    let key_phrase = `[key: ${parse_zod(def.keyType, indent_level + 1, loop_detector, skip_once)}]:`;
+    let key_phrase = '';
+    if (def.keyType.def.type === 'enum') {
+        key_phrase = `[key in ${parse_zod(def.keyType, indent_level + 1, loop_detector, skip_once)}]:`;
+    }
+    else {
+        key_phrase = `[key: ${parse_zod(def.keyType, indent_level + 1, loop_detector, skip_once)}]:`;
+    }
     let type_value = parse_zod(def.valueType, indent_level + 1, loop_detector, skip_once);
     if (type_value.length > 1) {
         retval.push(indent(indent_level + 1, `${key_phrase} ${type_value[0]}`));
