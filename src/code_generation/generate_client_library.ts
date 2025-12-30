@@ -63,7 +63,6 @@ export async function generate_client_library<Collections>(output_path: string, 
         }
 
         for(let [array_child_key, array_child_validator] of collection.array_children_map.entries()){
-            console.log(type_from_zod(array_child_validator))
             let array_child_put_type = type_from_zod(array_child_validator);
             let array_child_post_type = type_from_zod(collection.array_children_post_map.get(array_child_key));
             let type_name = get_array_child_type_name(mustache_context.type_return, array_child_key);

@@ -198,7 +198,9 @@ function parse_union(def: z.core.$ZodUnionDef): any {
 }
 
 function parse_record(def: z.core.$ZodRecordDef, loop_detector: Map<any, validator_group> ): any {
-    if(def.keyType._zod.def.type !== 'string') { throw new Error('mongoDB only supports maps where the key is a string.'); }
+    if(!['string', 'enum'].includes(def.keyType._zod.def.type)) {
+        throw new Error('mongoDB only supports maps where the key is a string.');
+    }
     //@ts-ignore
     let retval = { mongoose_type: Schema.Types.Map, of: schema_entry_from_zod(def.valueType, loop_detector), required: true}
     retval.required = true;
