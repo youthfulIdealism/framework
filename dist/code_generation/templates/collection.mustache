@@ -1,5 +1,6 @@
 import ky from "ky";
 import { encode_search_params, Response, Response_Multiple } from "./utils/utils.js";
+import { Collection, Bare_Document, Document_Array, _Base_Document, _With_Children, _With_Array } from "./root_types.js"
 
 {{#child_collections}}
 import { Collection_{{built_collection}} } from "{{ built_collection_path }}"
@@ -7,17 +8,9 @@ import { Collection_{{built_collection}} } from "{{ built_collection_path }}"
 
 {{types}}
 
-export class Collection_{{my_built_collection}} {
-    path: string[]
-    get_auth: () => Promise<any>
-    collection_id: string
-    collection_name_plural: string
-
+export class Collection_{{my_built_collection}} extends Collection {
     constructor(path: string[], get_auth: () => Promise<any>) {
-        this.path = path;
-        this.get_auth = get_auth;
-        this.collection_id = "{{collection_id}}";
-        this.collection_name_plural = "{{collection_name_plural}}"
+        super(path, get_auth, "{{collection_id}}", "{{collection_name_plural}}");
     }
 
     
@@ -54,25 +47,13 @@ export class Collection_{{my_built_collection}} {
         let get_auth = this.get_auth;
         let collection_id = this.collection_id;
         let collection_name_plural = this.collection_name_plural;
-        return new Document(path, collection_id, document_id, collection_name_plural, get_auth);
+        return new Document_{{my_built_collection}}(path, collection_id, document_id, collection_name_plural, get_auth);
     }
 }
 
-
-
-class Document {
-    path: string[];
-    collection_id: string;
-    document_id: string;
-    collection_name_plural: string;
-    get_auth: () => Promise<any>;
-
+class Document_{{my_built_collection}} extends Bare_Document implements _Base_Document{{#has_subcollections}}, _With_Children{{/has_subcollections}}{{#has_array_children}}, _With_Array{{/has_array_children}} {
     constructor(path: string[], collection_id: string, document_id: string, collection_name_plural: string, get_auth: () => Promise<any>) {
-        this.path = path;
-        this.collection_id = collection_id;
-        this.document_id = document_id;
-        this.collection_name_plural = collection_name_plural;
-        this.get_auth = get_auth;
+        super(path, collection_id, document_id, collection_name_plural, get_auth);
     }
 
     async get(): Promise<{{type_return}}>{
@@ -152,19 +133,10 @@ class Document {
 {{array_type_put_definition}}
 {{array_type_post_definition}}
 
-export class Collection_{{my_built_collection}}_Array_{{array_name}} {
-    path: string[]
-    get_auth: () => Promise<any>
-    collection_id: string
-    collection_name_plural: string
-    array_key: string
+export class Collection_{{my_built_collection}}_Array_{{array_name}} extends Document_Array {
 
     constructor(path: string[], get_auth: () => Promise<any>) {
-        this.path = path;
-        this.get_auth = get_auth;
-        this.collection_id = "{{collection_id}}";
-        this.collection_name_plural = "{{collection_name_plural}}"
-        this.array_key = "{{array_name}}"
+        super(path, get_auth, "{{collection_id}}", "{{collection_name_plural}}", "{{array_name}}")
     }
 
     async push(document: {{type_array_child_post}}): Promise<{{type_return}}>{

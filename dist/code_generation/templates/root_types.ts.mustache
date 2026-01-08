@@ -1,0 +1,69 @@
+export abstract class Collection {
+    path: string[]
+    get_auth: () => Promise<any>
+    collection_id: string
+    collection_name_plural: string
+
+    constructor(path: string[], get_auth: () => Promise<any>, collection_id: string, collection_name_plural: string) {
+        this.path = path;
+        this.get_auth = get_auth;
+        this.collection_id = collection_id;
+        this.collection_name_plural = collection_name_plural;
+    }
+
+    abstract query(query: any): Promise<any[]>;
+    abstract post(document: any): Promise<any>;
+    abstract document(document_id: string): Document
+}
+
+export type Document = (Bare_Document & _Base_Document) | (Bare_Document & _Base_Document & _With_Children) | (Bare_Document & _Base_Document & _With_Array) | (Bare_Document & _Base_Document & _With_Array & _With_Children);
+
+export abstract class Bare_Document {
+    path: string[];
+    collection_id: string;
+    document_id: string;
+    collection_name_plural: string;
+    get_auth: () => Promise<any>;
+
+    constructor(path: string[], collection_id: string, document_id: string, collection_name_plural: string, get_auth: () => Promise<any>) {
+        this.path = path;
+        this.collection_id = collection_id;
+        this.document_id = document_id;
+        this.collection_name_plural = collection_name_plural;
+        this.get_auth = get_auth;
+    }
+}
+
+export interface _Base_Document {
+    get(): any
+    put(update: any): Promise<any>
+    remove(): Promise<any>
+}
+
+export interface _With_Children {
+    collection(collection_id: string): Collection
+}
+
+export interface _With_Array {
+    array(key: string): Document_Array
+}
+
+export abstract class Document_Array {
+    path: string[]
+    collection_id: string
+    collection_name_plural: string
+    array_key: string
+    get_auth: () => Promise<any>
+
+    constructor(path: string[], get_auth: () => Promise<any>, collection_id: string, collection_name_plural: string, array_key: string) {
+        this.path = path;
+        this.get_auth = get_auth;
+        this.collection_id = collection_id;
+        this.collection_name_plural = collection_name_plural
+        this.array_key = array_key
+    }
+
+    abstract push(document: any): Promise<any>
+    abstract replace(document: any): Promise<any>
+    abstract delete(document_id: string): Promise<any>
+}

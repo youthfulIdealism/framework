@@ -21,7 +21,7 @@ export function api(base_url: string, get_auth: () => Promise<any>) {
     return new Api(base_url, get_auth)
 }
 
-class Api {
+export class Api {
     base_url: string;
     get_auth: () => Promise<any>
 

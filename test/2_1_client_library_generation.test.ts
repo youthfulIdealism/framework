@@ -26,7 +26,7 @@ mongoose.connection.on('close', () => console.log('close'));*/
 
 const remove_whitespace = (input: string): string => input.replaceAll(/[\n\r\s]+/g, '')
 
-describe/*.only*/('Client Library Generation: Library Generation', function () {
+describe('Client Library Generation: Library Generation', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;

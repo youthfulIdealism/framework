@@ -34,6 +34,7 @@ export async function generate_client_library<Collections>(output_path: string, 
     if(!existsSync(build_path(output_path, 'src', 'types'))){ await mkdir(build_path(output_path, 'src', 'types')); }
     if(!existsSync(build_path(output_path, 'src', 'utils'))){ await mkdir(build_path(output_path, 'src', 'utils')); }
     await writeFile(build_path(output_path, 'src', 'utils', 'utils.ts'), await readFile(fileURLToPath(import.meta.resolve('./templates/utils.ts.mustache')), { encoding: 'utf-8' }));
+    await writeFile(build_path(output_path, 'src', 'root_types.ts'), await readFile(fileURLToPath(import.meta.resolve('./templates/root_types.ts.mustache')), { encoding: 'utf-8' }));
     await writeFile(build_path(output_path, 'tsconfig.json'), await readFile(fileURLToPath(import.meta.resolve('./templates/tsconfig.json.mustache')), { encoding: 'utf-8' }));
     await writeFile(build_path(output_path, '.gitignore'), await readFile(fileURLToPath(import.meta.resolve('./templates/.gitignore.mustache')), { encoding: 'utf-8' }));
         
