@@ -219,7 +219,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
-                    req.body.updated_by = (req as Authenticated_Request).auth?.user_id;
+                    req.body.updated_by = '' + (req as Authenticated_Request).auth?.user_id;
                 } else {
                     req.body.updated_by = null;
                 }
@@ -306,7 +306,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
-                    req.body.updated_by = (req as Authenticated_Request).auth?.user_id;
+                    req.body.updated_by = '' + (req as Authenticated_Request).auth?.user_id;
                 } else {
                     req.body.updated_by = null;
                 }
@@ -319,7 +319,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             if(collection.mongoose_schema.created_by?.mongoose_type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
-                    req.body.created_by = (req as Authenticated_Request).auth?.user_id;
+                    req.body.created_by = '' + (req as Authenticated_Request).auth?.user_id;
                 } else {
                     req.body.created_by = null;
                 }
@@ -465,7 +465,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                     if((req as Authenticated_Request).auth?.user_id){
-                        metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
+                        metadata_updater.updated_by = '' + (req as Authenticated_Request).auth?.user_id;
                     } else {
                         metadata_updater.updated_by = null;
                     }
@@ -571,7 +571,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                     if((req as Authenticated_Request).auth?.user_id){
-                        metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
+                        metadata_updater.updated_by = '' + (req as Authenticated_Request).auth?.user_id;
                     } else {
                         metadata_updater.updated_by = null;
                     }
@@ -668,7 +668,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                     if((req as Authenticated_Request).auth?.user_id){
-                        metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
+                        metadata_updater.updated_by = '' + (req as Authenticated_Request).auth?.user_id;
                     } else {
                         metadata_updater.updated_by = null;
                     }

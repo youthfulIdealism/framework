@@ -166,7 +166,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
             }
             if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                 if (req.auth?.user_id) {
-                    req.body.updated_by = req.auth?.user_id;
+                    req.body.updated_by = '' + req.auth?.user_id;
                 }
                 else {
                     req.body.updated_by = null;
@@ -245,7 +245,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
             }
             if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                 if (req.auth?.user_id) {
-                    req.body.updated_by = req.auth?.user_id;
+                    req.body.updated_by = '' + req.auth?.user_id;
                 }
                 else {
                     req.body.updated_by = null;
@@ -256,7 +256,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
             }
             if (collection.mongoose_schema.created_by?.mongoose_type === String) {
                 if (req.auth?.user_id) {
-                    req.body.created_by = req.auth?.user_id;
+                    req.body.created_by = '' + req.auth?.user_id;
                 }
                 else {
                     req.body.created_by = null;
@@ -381,7 +381,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 let metadata_updater = {};
                 if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     if (req.auth?.user_id) {
-                        metadata_updater.updated_by = req.auth?.user_id;
+                        metadata_updater.updated_by = '' + req.auth?.user_id;
                     }
                     else {
                         metadata_updater.updated_by = null;
@@ -475,7 +475,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 let metadata_updater = {};
                 if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     if (req.auth?.user_id) {
-                        metadata_updater.updated_by = req.auth?.user_id;
+                        metadata_updater.updated_by = '' + req.auth?.user_id;
                     }
                     else {
                         metadata_updater.updated_by = null;
@@ -563,7 +563,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 let metadata_updater = {};
                 if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     if (req.auth?.user_id) {
-                        metadata_updater.updated_by = req.auth?.user_id;
+                        metadata_updater.updated_by = '' + req.auth?.user_id;
                     }
                     else {
                         metadata_updater.updated_by = null;
