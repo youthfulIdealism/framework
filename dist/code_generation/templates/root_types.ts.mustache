@@ -52,15 +52,17 @@ export abstract class Document_Array {
     path: string[]
     collection_id: string
     collection_name_plural: string
+    document_id: string;
     array_key: string
     get_auth: () => Promise<any>
 
-    constructor(path: string[], get_auth: () => Promise<any>, collection_id: string, collection_name_plural: string, array_key: string) {
+    constructor(path: string[], get_auth: () => Promise<any>, collection_id: string, collection_name_plural: string, document_id: string, array_key: string) {
         this.path = path;
         this.get_auth = get_auth;
         this.collection_id = collection_id;
-        this.collection_name_plural = collection_name_plural
-        this.array_key = array_key
+        this.collection_name_plural = collection_name_plural;
+        this.document_id = document_id;
+        this.array_key = array_key;
     }
 
     abstract push(document: any): Promise<any>

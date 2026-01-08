@@ -120,7 +120,7 @@ class Document_{{my_built_collection}} extends Bare_Document implements _Base_Do
         switch(key) {
             {{#array_children}}
             case "{{array_name}}":
-                return new Collection_{{my_built_collection}}_Array_{{array_name}}([...this.path, this.document_id, "{{array_name}}"], this.get_auth);
+                return new Collection_{{my_built_collection}}_Array_{{array_name}}([...this.path, this.document_id, "{{array_name}}"], this.document_id, this.get_auth);
             {{/array_children}}
             default:
                 throw new Error(`Collection ${this.collection_id} does not have an array at the key ${key}`)
@@ -135,8 +135,8 @@ class Document_{{my_built_collection}} extends Bare_Document implements _Base_Do
 
 export class Collection_{{my_built_collection}}_Array_{{array_name}} extends Document_Array {
 
-    constructor(path: string[], get_auth: () => Promise<any>) {
-        super(path, get_auth, "{{collection_id}}", "{{collection_name_plural}}", "{{array_name}}")
+    constructor(path: string[], document_id: string, get_auth: () => Promise<any>) {
+        super(path, get_auth, "{{collection_id}}", "{{collection_name_plural}}", document_id, "{{array_name}}")
     }
 
     async push(document: {{type_array_child_post}}): Promise<{{type_return}}>{
