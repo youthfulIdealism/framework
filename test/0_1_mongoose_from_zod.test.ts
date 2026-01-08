@@ -31,6 +31,11 @@ describe('Mongoose from Zod', function () {
             zod_function: z.boolean,
             default_val: true,
         }, {
+            label: 'date via string coersion',
+            mongoose_type: Date,
+            zod_function: z.coerce.date,
+            default_val: new Date().toISOString(),
+        },{
             label: 'date',
             mongoose_type: Date,
             zod_function: z.date,

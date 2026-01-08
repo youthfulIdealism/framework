@@ -216,7 +216,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 return;
             }
 
-            if(collection.mongoose_schema.updated_by?.type === String) {
+            if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
                     req.body.updated_by = (req as Authenticated_Request).auth?.user_id;
@@ -225,9 +225,12 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
             }
 
-            if(collection.mongoose_schema.updated_at?.type === Date) {
+            if(collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                 req.body.updated_at = new Date();
             }
+
+            if(collection.mongoose_schema.created_by?.mongoose_type === String) { delete req.body.created_by; }
+            if(collection.mongoose_schema.created_at?.mongoose_type === Date) { delete req.body.created_at; }
 
             // TODO: it might be possible to build a validator that matches mongoDB's update
             // syntax to allow for targeted updating of nested stuff
@@ -300,7 +303,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 return;
             }
 
-            if(collection.mongoose_schema.updated_by?.type === String) {
+            if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
                     req.body.updated_by = (req as Authenticated_Request).auth?.user_id;
@@ -309,11 +312,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
             }
 
-            if(collection.mongoose_schema.updated_at?.type === Date) {
+            if(collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                 req.body.updated_at = new Date();
             }
 
-            if(collection.mongoose_schema.created_by?.type === String) {
+            if(collection.mongoose_schema.created_by?.mongoose_type === String) {
                 // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                 if((req as Authenticated_Request).auth?.user_id){
                     req.body.created_by = (req as Authenticated_Request).auth?.user_id;
@@ -322,7 +325,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
             }
 
-            if(collection.mongoose_schema.created_at?.type === Date) {
+            if(collection.mongoose_schema.created_at?.mongoose_type === Date) {
                 req.body.created_at = new Date();
             }
 
@@ -459,7 +462,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
 
                 let metadata_updater: any = {};
-                if(collection.mongoose_schema.updated_by?.type === String) {
+                if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                     if((req as Authenticated_Request).auth?.user_id){
                         metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
@@ -468,7 +471,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                     }
                 }
 
-                if(collection.mongoose_schema.updated_at?.type === Date) {
+                if(collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                     metadata_updater.updated_at = new Date();
                 }
 
@@ -565,7 +568,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
 
                 let metadata_updater: any = {};
-                if(collection.mongoose_schema.updated_by?.type === String) {
+                if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                     if((req as Authenticated_Request).auth?.user_id){
                         metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
@@ -574,7 +577,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                     }
                 }
 
-                if(collection.mongoose_schema.updated_at?.type === Date) {
+                if(collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                     metadata_updater.updated_at = new Date();
                 }
 
@@ -662,7 +665,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 }
 
                 let metadata_updater: any = {};
-                if(collection.mongoose_schema.updated_by?.type === String) {
+                if(collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     // if the security schema required the user to be logged in, then req.auth.user_id will not be null
                     if((req as Authenticated_Request).auth?.user_id){
                         metadata_updater.updated_by = (req as Authenticated_Request).auth?.user_id;
@@ -671,7 +674,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                     }
                 }
 
-                if(collection.mongoose_schema.updated_at?.type === Date) {
+                if(collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                     metadata_updater.updated_at = new Date();
                 }
                 let results;

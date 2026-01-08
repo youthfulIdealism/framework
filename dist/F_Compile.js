@@ -164,7 +164,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 res.json({ error: `You do not have permission to fetch documents from ${collection.collection_id}.` });
                 return;
             }
-            if (collection.mongoose_schema.updated_by?.type === String) {
+            if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                 if (req.auth?.user_id) {
                     req.body.updated_by = req.auth?.user_id;
                 }
@@ -172,8 +172,14 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     req.body.updated_by = null;
                 }
             }
-            if (collection.mongoose_schema.updated_at?.type === Date) {
+            if (collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                 req.body.updated_at = new Date();
+            }
+            if (collection.mongoose_schema.created_by?.mongoose_type === String) {
+                delete req.body.created_by;
+            }
+            if (collection.mongoose_schema.created_at?.mongoose_type === Date) {
+                delete req.body.created_at;
             }
             let validated_request_body;
             try {
@@ -237,7 +243,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 res.json({ error: `You do not have permission to fetch documents from ${collection.collection_id}.` });
                 return;
             }
-            if (collection.mongoose_schema.updated_by?.type === String) {
+            if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                 if (req.auth?.user_id) {
                     req.body.updated_by = req.auth?.user_id;
                 }
@@ -245,10 +251,10 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     req.body.updated_by = null;
                 }
             }
-            if (collection.mongoose_schema.updated_at?.type === Date) {
+            if (collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                 req.body.updated_at = new Date();
             }
-            if (collection.mongoose_schema.created_by?.type === String) {
+            if (collection.mongoose_schema.created_by?.mongoose_type === String) {
                 if (req.auth?.user_id) {
                     req.body.created_by = req.auth?.user_id;
                 }
@@ -256,7 +262,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     req.body.created_by = null;
                 }
             }
-            if (collection.mongoose_schema.created_at?.type === Date) {
+            if (collection.mongoose_schema.created_at?.mongoose_type === Date) {
                 req.body.created_at = new Date();
             }
             let validated_request_body;
@@ -373,7 +379,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     return;
                 }
                 let metadata_updater = {};
-                if (collection.mongoose_schema.updated_by?.type === String) {
+                if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     if (req.auth?.user_id) {
                         metadata_updater.updated_by = req.auth?.user_id;
                     }
@@ -381,7 +387,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                         metadata_updater.updated_by = null;
                     }
                 }
-                if (collection.mongoose_schema.updated_at?.type === Date) {
+                if (collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                     metadata_updater.updated_at = new Date();
                 }
                 let validated_request_body;
@@ -467,7 +473,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     return;
                 }
                 let metadata_updater = {};
-                if (collection.mongoose_schema.updated_by?.type === String) {
+                if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     if (req.auth?.user_id) {
                         metadata_updater.updated_by = req.auth?.user_id;
                     }
@@ -475,7 +481,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                         metadata_updater.updated_by = null;
                     }
                 }
-                if (collection.mongoose_schema.updated_at?.type === Date) {
+                if (collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                     metadata_updater.updated_at = new Date();
                 }
                 let validated_request_body;
@@ -555,7 +561,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     return;
                 }
                 let metadata_updater = {};
-                if (collection.mongoose_schema.updated_by?.type === String) {
+                if (collection.mongoose_schema.updated_by?.mongoose_type === String) {
                     if (req.auth?.user_id) {
                         metadata_updater.updated_by = req.auth?.user_id;
                     }
@@ -563,7 +569,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                         metadata_updater.updated_by = null;
                     }
                 }
-                if (collection.mongoose_schema.updated_at?.type === Date) {
+                if (collection.mongoose_schema.updated_at?.mongoose_type === Date) {
                     metadata_updater.updated_at = new Date();
                 }
                 let results;
