@@ -296,7 +296,7 @@ describe('Client Library Generation: Basic Types', function () {
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "_id": string
-                    "test": ("red" | "green" | "blue")[]
+                    "test": (("red" | "green" | "blue"))[]
                 }`)
         )
     });
@@ -382,10 +382,10 @@ describe('Client Library Generation: Basic Types', function () {
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "_id": string
-                    "field_string": string[]
-                    "field_number": number[]
-                    "field_boolean": boolean[]
-                    "field_date": Date[]
+                    "field_string": (string)[]
+                    "field_number": (number)[]
+                    "field_boolean": (boolean)[]
+                    "field_date": (Date)[]
                 }`)
         )
     });
@@ -413,12 +413,12 @@ describe('Client Library Generation: Basic Types', function () {
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                 "_id": string
-                "field_array": {
-                        "field_string": string[]
-                        "field_number": number[]
-                        "field_boolean": boolean[]
-                        "field_date": Date[]
-                    }[]
+                "field_array": ({
+                        "field_string": (string)[]
+                        "field_number": (number)[]
+                        "field_boolean": (boolean)[]
+                        "field_date": (Date)[]
+                    })[]
                 }`)
         )
     });
@@ -447,12 +447,12 @@ describe('Client Library Generation: Basic Types', function () {
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                 "_id": string
-                "field_array": {
-                        "field_string": string[]
-                        "field_number": number[]
-                        "field_boolean": boolean[]
-                        "field_date": Date[]
-                    }[][]
+                "field_array": (({
+                        "field_string": (string)[]
+                        "field_number": (number)[]
+                        "field_boolean": (boolean)[]
+                        "field_date": (Date)[]
+                    })[])[]
                 }`)
         )
     });
@@ -587,7 +587,7 @@ describe('Client Library Generation: Basic Types', function () {
             remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
             remove_whitespace(`export type test_collection = {
                     "_id": string
-                    "test": {[key: string]: string[]}
+                    "test": {[key: string]: (string)[]}
                 }`)
         )
     });

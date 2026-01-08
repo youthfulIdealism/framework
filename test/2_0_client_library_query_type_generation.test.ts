@@ -65,7 +65,7 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "sort"?: ("_id")
                 }`)
         )
@@ -93,11 +93,11 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "test"?: string
                     "test_gt"?: string
                     "test_lt"?: string
-                    "test_in"?: string[]
+                    "test_in"?: (string)[]
                     "sort"?: ("_id" | "test")
                 }`)
         )
@@ -125,7 +125,7 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "test"?: number
                     "test_gt"?: number
                     "test_gte"?: number
@@ -158,7 +158,7 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "test"?: boolean
                     "sort"?: ("_id" | "test")
                 }`)
@@ -187,7 +187,7 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "test"?: Date
                     "test_gt"?: Date
                     "test_lt"?: Date
@@ -218,9 +218,9 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "test"?: ("red" | "green" | "blue")
-                    "test_in"?: ("red" | "green" | "blue")[]
+                    "test_in"?: (("red" | "green" | "blue"))[]
                     "sort"?: ("_id" | "test")
                 }`)
         )
@@ -251,7 +251,7 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "sort"?: ("_id")
                 }`)
         )
@@ -288,12 +288,12 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
 
                     "test.field_string"?: string
                     "test.field_string_gt"?: string
                     "test.field_string_lt"?: string
-                    "test.field_string_in"?: string[]
+                    "test.field_string_in"?: (string)[]
 
                     "test.field_number"?: number
                     "test.field_number_gt"?: number
@@ -337,7 +337,7 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "field_string"?: string
                     "field_number"?: number
                     "field_boolean"?: boolean
@@ -368,7 +368,7 @@ describe('Client Library Generation: Query Types', function () {
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
-                    "_id_in"?: string[]
+                    "_id_in"?: (string)[]
                     "test"?: boolean
                     "sort"?: ("_id" | "test")
                 }`)

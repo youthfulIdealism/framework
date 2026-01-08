@@ -117,7 +117,8 @@ function parse_object(def: z.core.$ZodObjectDef, indent_level: number, loop_dete
 function parse_array(def: z.core.$ZodArrayDef, indent_level: number, loop_detector: Map<any, validator_group>, skip_once: z.core.$ZodTypeDef): any {
     //@ts-ignore
     let retval = parse_zod(def.element as z.ZodType, indent_level + 1, loop_detector, skip_once)
-    retval[retval.length - 1] = `${retval[retval.length - 1]}[]`
+    retval[0] = `(${retval[0]}`
+    retval[retval.length - 1] = `${retval[retval.length - 1]})[]`
     return retval;
 }
 

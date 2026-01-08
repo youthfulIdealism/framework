@@ -97,7 +97,8 @@ function parse_object(def, indent_level, loop_detector, skip_once) {
 }
 function parse_array(def, indent_level, loop_detector, skip_once) {
     let retval = parse_zod(def.element, indent_level + 1, loop_detector, skip_once);
-    retval[retval.length - 1] = `${retval[retval.length - 1]}[]`;
+    retval[0] = `(${retval[0]}`;
+    retval[retval.length - 1] = `${retval[retval.length - 1]})[]`;
     return retval;
 }
 function parse_enum(def) {
