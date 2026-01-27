@@ -1,9 +1,13 @@
+import escapeStringRegexp from 'escape-string-regexp';
 export let complex_query_map = {
     '_gt': '$gt',
     '_lt': '$lt',
     '_gte': '$gte',
     '_lte': '$lte',
-    '_in': '$in'
+    '_in': '$in',
+    '_search': (val) => {
+        return { $regex: new RegExp(escapeStringRegexp(val)), $options: 'i' };
+    }
 };
 export let query_meta_map = {
     'limit': true,
@@ -31,7 +35,12 @@ export function query_object_to_mongodb_query(query_object) {
             if (!retval[modified_key]) {
                 retval[modified_key] = {};
             }
-            retval[modified_key][complex_query_map[complex_suffix]] = value;
+            if (typeof complex_query_map[complex_suffix] === 'string') {
+                retval[modified_key][complex_query_map[complex_suffix]] = value;
+            }
+            else {
+                retval[modified_key] = complex_query_map[complex_suffix](value);
+            }
         }
         else {
             retval[key] = value;

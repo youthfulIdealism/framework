@@ -140,6 +140,11 @@ function parse_string(prefix: string, mode: Mode): type_filters {
                 sortable: false,
             },
             {
+                path: prefix + '_search',
+                filter: z.string().optional(),
+                sortable: false,
+            },
+            {
                 path: prefix + '_in',
                 filter: array_parser.optional(),
                 sortable: false,

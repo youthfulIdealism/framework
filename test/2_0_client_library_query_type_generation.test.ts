@@ -97,6 +97,7 @@ describe('Client Library Generation: Query Types', function () {
                     "test"?: string
                     "test_gt"?: string
                     "test_lt"?: string
+                    "test_search"?: string
                     "test_in"?: (string)[]
                     "sort"?: ("_id" | "test")
                 }`)
@@ -293,6 +294,7 @@ describe('Client Library Generation: Query Types', function () {
                     "test.field_string"?: string
                     "test.field_string_gt"?: string
                     "test.field_string_lt"?: string
+                    "test.field_string_search"?: string
                     "test.field_string_in"?: (string)[]
 
                     "test.field_number"?: number

@@ -471,6 +471,35 @@ describe('Basic Server', function () {
         })
     });
 
+
+    it(`should be able to perform a basic GET multiple with a regex search`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?name_search=li`).json();
+
+        //@ts-ignore
+        assert.equal(results.data.length, 2)
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions.filter(ele => ele.name.match(/li/i)))), results.data);
+    });
+
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
      /////////////////////////////////////////////////////////////    PUT        ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

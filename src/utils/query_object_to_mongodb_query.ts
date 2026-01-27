@@ -1,4 +1,5 @@
 import { QueryWithHelpers } from "mongoose";
+import escapeStringRegexp from 'escape-string-regexp';
 
 export let complex_query_map = {
     '_gt': '$gt',
@@ -12,7 +13,10 @@ export let complex_query_map = {
     '_ends_with': (key, value) => {
         return new RegExp(escapeRegExp(value) + '$')
     },*/
-    '_in': '$in'
+    '_in': '$in',
+    '_search': (val: string) => {
+        return { $regex: new RegExp(escapeStringRegexp(val)), $options: 'i' }
+    }
 }
 
 export let query_meta_map = {
@@ -32,7 +36,7 @@ export function convert_null(query_object: any){
     return query_object;
 }
 
-export function query_object_to_mongodb_query(query_object: any){
+export function query_object_to_mongodb_query(query_object: { [key: string]: string | null }){
     let retval = {} as any;
 
     for(let [key, value] of Object.entries(query_object)){
@@ -42,7 +46,10 @@ export function query_object_to_mongodb_query(query_object: any){
             let modified_key = key.slice(0, -complex_suffix.length);
 
             if (!retval[modified_key]) { retval[modified_key] = {} as any; }
-            retval[modified_key][complex_query_map[complex_suffix]] = value;
+            if(typeof complex_query_map[complex_suffix] ==='string') { retval[modified_key][complex_query_map[complex_suffix]] = value }
+            else {
+                retval[modified_key] = complex_query_map[complex_suffix](value)
+            }
         } else {
             retval[key] = value;
         }

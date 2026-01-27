@@ -174,6 +174,24 @@ describe('query validator to mongodb query', function () {
         )
     });
 
+    it('should be able to transform search', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            param: z.string(),
+        }))
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse({
+                param_search: 'den'
+            })),
+            {
+                param: {
+                    $regex: /den/,
+                    $options: 'i'
+                }
+            }
+        )
+    });
+
     it('should be able to discard controllers', async function () {
         let query_validator = query_validator_from_zod(z.object({
             param: z.number(),

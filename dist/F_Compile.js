@@ -84,6 +84,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 validated_query_args = collection.query_validator_server.parse(convert_null(req.query));
             }
             catch (err) {
+                console.log(err.issues);
                 if (err instanceof z.ZodError) {
                     res.status(400);
                     res.json({ error: err.issues });
