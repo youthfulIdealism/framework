@@ -35,26 +35,9 @@ describe.only('Basic server with complex queries', function () {
         institution_id: z_mongodb_id,
         name: z.string(),
     });
-    const validate_project = z.object({
-        _id: z_mongodb_id,
-        institution_id: z_mongodb_id,
-        client_id: z_mongodb_id,
-        name: z.string(),
-    });
-    const validate_list_container = z.object({
-        _id: z_mongodb_id,
-        container: z.object({
-            list: z.array(z.object({
-                _id: z_mongodb_id_optional,
-                value: z.string()
-            }))
-        })
-    });
 
     let institution: F_Collection<'institution', typeof validate_institution>;
     let client: F_Collection<'client', typeof validate_client>;
-    let project: F_Collection<'project', typeof validate_project>;
-    let list_container: F_Collection<'list_container', typeof validate_list_container>;
 
     let registry: F_Collection_Registry;
     
@@ -75,15 +58,9 @@ describe.only('Basic server with complex queries', function () {
         client = new F_Collection('client', 'clients', validate_client);
         client.add_layers([institution.collection_id], [new F_SM_Open_Access(client)]);
 
-        project = new F_Collection('project', 'projects', validate_project);
-        project.add_layers([institution.collection_id, client.collection_id], [new F_SM_Open_Access(project)]);
-
-        list_container = new F_Collection('list_container', 'list_containers', validate_list_container);
-        list_container.add_layers([], [new F_SM_Open_Access(list_container)]);
-
         // build registry
         let proto_registry = new F_Collection_Registry();
-        registry = proto_registry.register(institution).register(client).register(project).register(list_container);
+        registry = proto_registry.register(institution).register(client);
         registry.compile(express_app, '/api');
 
         server = express_app.listen(port);
