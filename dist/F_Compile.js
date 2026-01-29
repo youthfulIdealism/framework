@@ -107,6 +107,24 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 res.json({ error: `You do not have permission to fetch documents from ${collection.collection_id}.` });
                 return;
             }
+            if (validated_query_args.advanced_query) {
+                let parsed_advanced_query;
+                try {
+                    parsed_advanced_query = JSON.parse(validated_query_args.advanced_query);
+                }
+                catch (err) {
+                    res.status(400);
+                    res.json({ error: `The advanced_query field was not in JSON format` });
+                    return;
+                }
+                let { data: advanced_query, error: parsed_advanced_query_error, success: parsed_advanced_query_success } = collection.advanced_query_validator_server.safeParse(parsed_advanced_query);
+                if (!parsed_advanced_query_success) {
+                    res.status(400);
+                    res.json({ error: parsed_advanced_query_error.issues });
+                    return;
+                }
+                find = { $and: [find, advanced_query] };
+            }
             let documents;
             try {
                 let query = collection.mongoose_model.find(find, undefined, { 'lean': true });

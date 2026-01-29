@@ -62,6 +62,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
@@ -90,6 +91,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
@@ -123,6 +125,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
@@ -156,6 +159,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
@@ -185,6 +189,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
@@ -216,6 +221,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
@@ -249,6 +255,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
@@ -285,6 +292,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
 
                     "_id"?: string
                     "_id_gt"?: string
@@ -336,6 +344,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
@@ -367,6 +376,7 @@ describe('Client Library Generation: Query Types', function () {
                     "limit"?: number
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
                     "_id"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string

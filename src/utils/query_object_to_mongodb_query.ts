@@ -25,6 +25,7 @@ export let query_meta_map = {
     'sort': true,
     'sort_order': true,
     //'projection': true,
+    'advanced_query': true,
 }
 
 export function convert_null(query_object: any){

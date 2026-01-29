@@ -4,6 +4,7 @@ import mongoose, { Collection, Model, ObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
 import { array_children_from_zod } from "./utils/array_children_from_zod.js";
+import { complex_query_validator_from_zod } from "./utils/complex_query_validator_from_zod.js";
 
 export type CollectionType<Col extends F_Collection<string, Validator>, Validator extends z.ZodObject> = z.output<Col['validator']>;
 
@@ -24,6 +25,8 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
     
     query_validator_server: z.ZodType;
     query_validator_client: z.ZodType;
+    advanced_query_validator_server: z.ZodType;
+    advanced_query_validator_client: z.ZodType;
     put_validator: ReturnType<ZodSchema['partial']>;
     // TODO: Come back and find a way to select the particular partial I want
     // instead of partialing the whole object.
@@ -49,6 +52,8 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         this.mongoose_model = mongoose_from_zod(collection_name, validator, database);
         this.query_validator_server = query_validator_from_zod(validator, 'server');
         this.query_validator_client = query_validator_from_zod(validator, 'client');
+        this.advanced_query_validator_server = complex_query_validator_from_zod(validator, 'server').optional()
+        this.advanced_query_validator_client = complex_query_validator_from_zod(validator, 'client').optional()
         // TODO: we can make this more closely match the mongoDB PUT operation and allow updates to eg array.3.element fields
 
         if(!Object.hasOwn(this.validator._zod.def.shape, '_id')){

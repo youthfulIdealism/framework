@@ -15,6 +15,10 @@ function discover_loops(zod_definition, validator_groups = new Map()) {
         console.error('ISSUE');
         console.error(zod_definition);
     }
+    if (!zod_definition._zod) {
+        console.error('ISSUE 2');
+        console.error(zod_definition);
+    }
     switch (zod_definition._zod.def.type) {
         case "object":
             parse_object(zod_definition, validator_groups);

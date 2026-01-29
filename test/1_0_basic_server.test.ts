@@ -61,6 +61,7 @@ describe('Basic Server', function () {
 
     // before any tests run, set up the server and the db connection
     before(async function() {
+        this.timeout(10000)
         express_app = express();
         express_app.use(express.json());
         db_connection = await mongoose.connect('mongodb://127.0.0.1:27017/');

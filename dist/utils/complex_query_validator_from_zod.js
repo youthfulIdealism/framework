@@ -1,20 +1,21 @@
 import { z } from "zod/v4";
-import { z_mongodb_id_nullable, z_mongodb_id_optional } from "./mongoose_from_zod.js";
+import { z_mongodb_id } from "./mongoose_from_zod.js";
 import { find_loops } from './zod_loop_seperator.js';
-export function query_validator_from_zod(zod_definition, mode = 'server') {
+export function complex_query_validator_from_zod(zod_definition, mode = 'server') {
     let loops = find_loops(zod_definition);
-    let retval = {
-        limit: z.coerce.number().int().optional(),
-        cursor: z_mongodb_id_optional,
-        sort_order: z.enum(['ascending', 'descending']).optional(),
-        advanced_query: z.string().optional(),
-    };
+    let object_filter = {};
     let object_filters = parse_object(zod_definition._zod.def, '', loops, mode);
     for (let filter of object_filters) {
-        retval[filter.path.slice(1)] = filter.filter;
+        object_filter[filter.path.slice(1)] = filter.filter;
     }
-    retval.sort = z.enum(object_filters.filter(ele => ele.sortable).map(ele => ele.path.slice(1))).optional();
-    return z.object(retval).strict();
+    let compiled_object_filter = z.object(object_filter);
+    let and = z.object({
+        get $and() { return z.array(z.union([and, or, compiled_object_filter])); },
+    });
+    let or = z.object({
+        get $or() { return z.array(z.union([and, or, compiled_object_filter])); },
+    });
+    return z.union([and, or]);
 }
 function parse_any(zod_definition, prefix, loop_detector, mode = 'server') {
     switch (zod_definition._zod.def.type) {
@@ -98,129 +99,125 @@ function parse_union(def, prefix, mode) {
     ];
 }
 function parse_string(prefix, mode) {
-    let array_parser = mode === 'client' ? z.array(z.string()) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
         {
             path: prefix,
-            filter: z.string().optional(),
+            filter: z.union([
+                z.object({
+                    $eq: z.string()
+                }),
+                z.object({
+                    $in: z.array(z.string())
+                }),
+                z.object({
+                    $nin: z.array(z.string())
+                }),
+            ]).optional(),
             sortable: true,
-        },
-        {
-            path: prefix + '_gt',
-            filter: z.string().optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_lt',
-            filter: z.string().optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_search',
-            filter: z.string().optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_in',
-            filter: array_parser.optional(),
-            sortable: false,
         },
     ];
 }
 function parse_enum(definition, prefix, mode) {
-    let array_parser = mode === 'client' ? z.array(z.enum(definition.entries)) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
         {
             path: prefix,
-            filter: z.enum(definition.entries).optional(),
+            filter: z.union([
+                z.object({
+                    $eq: z.enum(definition.entries)
+                }),
+                z.object({
+                    $in: z.array(z.enum(definition.entries))
+                }),
+            ]).optional(),
             sortable: true,
-        },
-        {
-            path: prefix + '_in',
-            filter: array_parser.optional(),
-            sortable: false,
-        },
+        }
     ];
 }
 function parse_boolean(prefix, mode) {
-    let boolean_parser = mode === 'client' ? z.boolean() : z.stringbool();
     return [{
             path: prefix,
-            filter: boolean_parser.optional(),
+            filter: z.object({
+                $eq: z.boolean()
+            }).optional(),
             sortable: true,
         }];
 }
 function parse_number(prefix, mode) {
-    let number_parser = mode === 'client' ? z.number() : z.coerce.number();
-    return [
-        {
+    return [{
             path: prefix,
-            filter: number_parser.optional(),
+            filter: z.union([
+                z.object({
+                    $eq: z.number()
+                }),
+                z.object({
+                    $gt: z.number()
+                }),
+                z.object({
+                    $lt: z.number()
+                }),
+                z.object({
+                    $gte: z.number()
+                }),
+                z.object({
+                    $lte: z.number()
+                }),
+            ]).optional(),
             sortable: true,
-        },
-        {
-            path: prefix + '_gt',
-            filter: number_parser.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_gte',
-            filter: number_parser.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_lt',
-            filter: number_parser.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_lte',
-            filter: number_parser.optional(),
-            sortable: false,
-        },
-    ];
+        }];
 }
 function parse_date(prefix, mode) {
     let date_parser = mode === 'client' ? z.date() : z.coerce.date();
     return [{
             path: prefix,
-            filter: date_parser.optional(),
+            filter: z.union([
+                z.object({
+                    $eq: date_parser
+                }),
+                z.object({
+                    $gt: date_parser
+                }),
+                z.object({
+                    $lt: date_parser
+                }),
+                z.object({
+                    $gte: date_parser
+                }),
+                z.object({
+                    $lte: date_parser
+                }),
+            ]).optional(),
             sortable: true,
-        },
-        {
-            path: prefix + '_gt',
-            filter: date_parser.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_lt',
-            filter: date_parser.optional(),
-            sortable: false,
         }];
 }
 function parse_mongodb_id(prefix, mode) {
-    let array_parser = mode === 'client' ? z.array(z_mongodb_id_nullable) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
         {
             path: prefix,
-            filter: z_mongodb_id_nullable.optional(),
+            filter: z.union([
+                z.object({
+                    $eq: z_mongodb_id
+                }),
+                z.object({
+                    $gt: z_mongodb_id
+                }),
+                z.object({
+                    $lt: z_mongodb_id
+                }),
+                z.object({
+                    $gte: z_mongodb_id
+                }),
+                z.object({
+                    $lte: z_mongodb_id
+                }),
+                z.object({
+                    $in: z.array(z_mongodb_id)
+                }),
+                z.object({
+                    $nin: z.array(z_mongodb_id)
+                }),
+            ]).optional(),
             sortable: true,
-        },
-        {
-            path: prefix + '_gt',
-            filter: z_mongodb_id_nullable.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_lt',
-            filter: z_mongodb_id_nullable.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_in',
-            filter: array_parser.optional(),
-            sortable: false,
-        },
+        }
     ];
 }
-//# sourceMappingURL=query_validator_from_zod.js.map
+//# sourceMappingURL=complex_query_validator_from_zod.js.map

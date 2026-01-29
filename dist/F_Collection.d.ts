@@ -18,6 +18,8 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     mongoose_model: Model<z.infer<ZodSchema>>;
     query_validator_server: z.ZodType;
     query_validator_client: z.ZodType;
+    advanced_query_validator_server: z.ZodType;
+    advanced_query_validator_client: z.ZodType;
     put_validator: ReturnType<ZodSchema['partial']>;
     post_validator: ZodPartial_Return_Type<ZodSchema['partial']>;
     is_compiled: boolean;

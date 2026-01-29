@@ -14,6 +14,7 @@ export let query_meta_map = {
     'cursor': true,
     'sort': true,
     'sort_order': true,
+    'advanced_query': true,
 };
 export function convert_null(query_object) {
     for (let [key, value] of Object.entries(query_object)) {

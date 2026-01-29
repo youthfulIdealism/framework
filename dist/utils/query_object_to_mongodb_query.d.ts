@@ -15,6 +15,7 @@ export declare let query_meta_map: {
     cursor: boolean;
     sort: boolean;
     sort_order: boolean;
+    advanced_query: boolean;
 };
 export declare function convert_null(query_object: any): any;
 export declare function query_object_to_mongodb_query(query_object: {

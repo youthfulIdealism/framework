@@ -2,6 +2,7 @@ import { mongoose_from_zod, schema_from_zod } from "./utils/mongoose_from_zod.js
 import mongoose from "mongoose";
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
 import { array_children_from_zod } from "./utils/array_children_from_zod.js";
+import { complex_query_validator_from_zod } from "./utils/complex_query_validator_from_zod.js";
 export class F_Collection {
     collection_id;
     collection_name_plural;
@@ -10,6 +11,8 @@ export class F_Collection {
     mongoose_model;
     query_validator_server;
     query_validator_client;
+    advanced_query_validator_server;
+    advanced_query_validator_client;
     put_validator;
     post_validator;
     is_compiled;
@@ -30,6 +33,8 @@ export class F_Collection {
         this.mongoose_model = mongoose_from_zod(collection_name, validator, database);
         this.query_validator_server = query_validator_from_zod(validator, 'server');
         this.query_validator_client = query_validator_from_zod(validator, 'client');
+        this.advanced_query_validator_server = complex_query_validator_from_zod(validator, 'server').optional();
+        this.advanced_query_validator_client = complex_query_validator_from_zod(validator, 'client').optional();
         if (!Object.hasOwn(this.validator._zod.def.shape, '_id')) {
             throw new Error(`_id is a required field, because each collection is a mongoDB object.`);
         }

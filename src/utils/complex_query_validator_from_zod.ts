@@ -2,7 +2,6 @@ import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
 import { z_mongodb_id, z_mongodb_id_nullable, z_mongodb_id_optional } from "./mongoose_from_zod.js";
 import { find_loops, validator_group } from './zod_loop_seperator.js'
-import { complex_query_validator_from_zod } from "./complex_query_validator_from_zod.js";
 
 type type_filters = {
     path: string,
@@ -11,24 +10,24 @@ type type_filters = {
 }[]
 type Mode = 'client' | 'server'
 
-export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode = 'server'){
+export function complex_query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode = 'server'){
     let loops = find_loops(zod_definition as z.ZodType);
 
-    let retval = {
-        limit: z.coerce.number().int().optional(),
-        cursor: z_mongodb_id_optional,
-        sort_order: z.enum([/*'asc', 'desc', */'ascending', 'descending']).optional(),
-        advanced_query: z.string().optional(),
-    } as $ZodLooseShape;
-
+    let object_filter = {} as $ZodLooseShape;
     let object_filters = parse_object(zod_definition._zod.def, '', loops, mode);
     for(let filter of object_filters){
-        retval[filter.path.slice(1)] = filter.filter;
-    }
+        object_filter[filter.path.slice(1)] = filter.filter;
+    }                                
+    let compiled_object_filter = z.object(object_filter)
 
-    retval.sort = z.enum(object_filters.filter(ele => ele.sortable).map(ele => ele.path.slice(1))).optional()
+    let and = z.object({ 
+        get $and(){ return z.array(z.union([and, or, compiled_object_filter])); },
+    });
+    let or = z.object({
+        get $or(){ return z.array(z.union([and, or, compiled_object_filter])); },
+    });
 
-    return z.object(retval).strict();
+    return z.union([and, or]);
 }
 
 function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: Map<any, validator_group>, mode: Mode = 'server'): type_filters {
@@ -124,135 +123,130 @@ function parse_union(def: z.core.$ZodUnionDef, prefix: string, mode: Mode): type
 }
 
 function parse_string(prefix: string, mode: Mode): type_filters {
-    let array_parser = mode === 'client' ? z.array(z.string()) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
             {
                 path: prefix,
-                filter: z.string().optional(),
+                filter: z.union([
+                    z.object({
+                        $eq: z.string()
+                    }),
+                    z.object({
+                        $in: z.array(z.string())
+                    }),
+                    z.object({
+                        $nin: z.array(z.string())
+                    }),
+                ]).optional(),
                 sortable: true,
-            },
-            {
-                path: prefix + '_gt',
-                filter: z.string().optional(),
-                sortable: false,
-            },
-            {
-                path: prefix + '_lt',
-                filter: z.string().optional(),
-                sortable: false,
-            },
-            {
-                path: prefix + '_search',
-                filter: z.string().optional(),
-                sortable: false,
-            },
-            {
-                path: prefix + '_in',
-                filter: array_parser.optional(),
-                sortable: false,
             },
         ];
 }
 
 function parse_enum(definition: z.core.$ZodEnumDef, prefix: string, mode: Mode): type_filters {
-    // TODO: figure out how to validate on the server such that it's a member of the enu,
-    let array_parser = mode === 'client' ? z.array(z.enum(definition.entries)) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
-            {
-                path: prefix,
-                filter: z.enum(definition.entries).optional(),
-                sortable: true,
-            },
-            {
-                path: prefix + '_in',
-                filter: array_parser.optional(),
-                sortable: false,
-            },
-        ];
+        {
+            path: prefix,
+            filter: z.union([
+                z.object({
+                    $eq: z.enum(definition.entries)
+                }),
+                z.object({
+                    $in: z.array(z.enum(definition.entries))
+                }),
+            ]).optional(),
+            sortable: true,
+        }
+    ];
 }
 
 function parse_boolean(prefix: string, mode: Mode): type_filters {
-    let boolean_parser = mode === 'client' ? z.boolean() : z.stringbool();
     return [{
         path: prefix,
-        filter: boolean_parser.optional(),
+        filter: z.object({
+            $eq: z.boolean()
+        }).optional(),
         sortable: true,
     }];
 }
 
 function parse_number(prefix: string, mode: Mode): type_filters {
-    let number_parser = mode === 'client' ? z.number() : z.coerce.number();
-    return [
-        {
-            path: prefix,
-            filter: number_parser.optional(),
-            sortable: true,
-        },
-        {
-            path: prefix + '_gt',
-            filter: number_parser.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_gte',
-            filter: number_parser.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_lt',
-            filter: number_parser.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_lte',
-            filter: number_parser.optional(),
-            sortable: false,
-        },
-    ];
+    return [{
+        path: prefix,
+        filter: z.union([
+            z.object({  
+                $eq: z.number()
+            }),
+            z.object({
+                $gt: z.number()
+            }),
+            z.object({
+                $lt: z.number()
+            }),
+            z.object({
+                $gte: z.number()
+            }),
+            z.object({
+                $lte: z.number()
+            }),
+        ]).optional(),
+        sortable: true,
+    }];
 }
 
 function parse_date(prefix: string, mode: Mode): type_filters {
     let date_parser = mode === 'client' ? z.date() : z.coerce.date();
     return [{
         path: prefix,
-        filter: date_parser.optional(),
+        filter: z.union([
+            z.object({  
+                $eq: date_parser
+            }),
+            z.object({
+                $gt: date_parser
+            }),
+            z.object({
+                $lt: date_parser
+            }),
+            z.object({
+                $gte: date_parser
+            }),
+            z.object({
+                $lte: date_parser
+            }),
+        ]).optional(),
         sortable: true,
-    },
-    {
-        path: prefix + '_gt',
-        filter: date_parser.optional(),
-        sortable: false,
-    },
-    {
-        path: prefix + '_lt',
-        filter: date_parser.optional(),
-        sortable: false,
     }];
 }
 
 
 function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
-    let array_parser = mode === 'client' ? z.array(z_mongodb_id_nullable) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
         {
             path: prefix,
-            filter: z_mongodb_id_nullable.optional(),
+            filter: z.union([
+                z.object({  
+                    $eq: z_mongodb_id
+                }),
+                z.object({
+                    $gt: z_mongodb_id
+                }),
+                z.object({
+                    $lt: z_mongodb_id
+                }),
+                z.object({
+                    $gte: z_mongodb_id
+                }),
+                z.object({
+                    $lte: z_mongodb_id
+                }),
+                z.object({
+                    $in: z.array(z_mongodb_id)
+                }),
+                z.object({
+                    $nin: z.array(z_mongodb_id)
+                }),
+            ]).optional(),
             sortable: true,
-        },
-        {
-            path: prefix + '_gt',
-            filter: z_mongodb_id_nullable.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_lt',
-            filter: z_mongodb_id_nullable.optional(),
-            sortable: false,
-        },
-        {
-            path: prefix + '_in',
-            filter: array_parser.optional(),
-            sortable: false,
-        },
+        }
     ];
 }
