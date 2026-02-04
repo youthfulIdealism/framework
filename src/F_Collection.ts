@@ -252,7 +252,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
         let deleted_document_data;
 
         // if we have any update hooks, run the update operation in a transaction
-        if(this.update_hooks.length > 0){
+        if(this.delete_hooks.length > 0){
             await mongoose.connection.transaction(async (session) => {
                 // update the document
                 let deleted_document = await this.mongoose_model.findOneAndDelete(find, {returnDocument: 'after', session: session, lean: true})

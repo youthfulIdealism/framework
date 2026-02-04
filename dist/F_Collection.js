@@ -137,7 +137,7 @@ export class F_Collection {
     }
     async perform_delete_and_side_effects(find) {
         let deleted_document_data;
-        if (this.update_hooks.length > 0) {
+        if (this.delete_hooks.length > 0) {
             await mongoose.connection.transaction(async (session) => {
                 let deleted_document = await this.mongoose_model.findOneAndDelete(find, { returnDocument: 'after', session: session, lean: true });
                 deleted_document_data = deleted_document;

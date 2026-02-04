@@ -1,6 +1,7 @@
 import { z } from "zod/v4";
 import { z_mongodb_id } from "./mongoose_from_zod.js";
 import { find_loops } from './zod_loop_seperator.js';
+import escapeStringRegexp from "escape-string-regexp";
 export function complex_query_validator_from_zod(zod_definition, mode = 'server') {
     let loops = find_loops(zod_definition);
     let object_filter = {};
@@ -111,6 +112,14 @@ function parse_string(prefix, mode) {
                 }),
                 z.object({
                     $nin: z.array(z.string())
+                }),
+                z.object({
+                    $regex: z.transform((val) => {
+                        if (typeof val !== 'string') {
+                            return false;
+                        }
+                        return escapeStringRegexp(val);
+                    })
                 }),
             ]).optional(),
             sortable: true,

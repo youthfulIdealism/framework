@@ -386,7 +386,7 @@ describe('query validator to advanced query', function () {
         })
     });
 
-    it('advanced quey fields should be optional', async function () {
+    it('advanced query fields should be optional', async function () {
         let query_validator = complex_query_validator_from_zod(z.object({
             _id: z_mongodb_id,
             enum: z.enum(['one', 'two']),

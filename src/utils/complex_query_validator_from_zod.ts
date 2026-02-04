@@ -2,6 +2,7 @@ import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
 import { z_mongodb_id, z_mongodb_id_nullable, z_mongodb_id_optional } from "./mongoose_from_zod.js";
 import { find_loops, validator_group } from './zod_loop_seperator.js'
+import escapeStringRegexp from "escape-string-regexp";
 
 type type_filters = {
     path: string,
@@ -135,6 +136,12 @@ function parse_string(prefix: string, mode: Mode): type_filters {
                     }),
                     z.object({
                         $nin: z.array(z.string())
+                    }),
+                    z.object({
+                        $regex: z.transform((val) => {
+                            if(typeof val !== 'string'){ return false; }
+                            return escapeStringRegexp(val);
+                        })
                     }),
                 ]).optional(),
                 sortable: true,
