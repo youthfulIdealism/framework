@@ -1,6 +1,6 @@
 {
   "name": "@liminalfunctions/framework",
-  "version": "1.0.72",
+  "version": "1.0.73",
   "engines": {
     "node": "22.x.x"
   },
@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "test": "npm run-script build && mocha --node-option env-file=\"./test/.env\"",
-    "build": "tsc && rimraf \"./dist/code_generation/templates\" && copyfiles -a -u 3 \"./src/code_generation/templates/*.mustache\" \"./dist/code_generation/templates\""
+    "build": "tsc && rimraf \"./dist/code_generation/templates\" && cpy \"./src/code_generation/templates/*.mustache\" \"./dist/code_generation/templates\""
   },
   "exports": {
     "./index.js": "./dist/index.js",
@@ -31,6 +31,7 @@
     "@types/mocha": "^10.0.10",
     "@types/mustache": "^4.2.6",
     "@types/node": "^22.10.7",
+    "cpy-cli": "^7.0.0",
     "got": "^14.6.0",
     "mocha": "^11.1.0",
     "rimraf": "^6.0.1",
@@ -45,7 +46,6 @@
     "zod": "^4.0.0"
   },
   "dependencies": {
-    "copyfiles": "^2.4.1",
     "escape-string-regexp": "^5.0.0",
     "mustache": "^4.2.0"
   }

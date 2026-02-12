@@ -60,7 +60,7 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
                 [this.user_id_field]: user_id,
             };
             if(this.layer_collection_id){
-                find[`${this.layer_collection_id}_id`] = new mongoose.Types.ObjectId(layer_document_id)
+                find[`${this.layer_collection_id}_id`] = new mongoose.Types.ObjectId(layer_document_id as string)
             }
             let role_memberships = await this.role_membership_collection.mongoose_model.find(find, {}, {lean: true})
 
