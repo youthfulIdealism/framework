@@ -1,5 +1,5 @@
 import * as z from "zod/v4";
-import mongoose, { Model } from "mongoose";
+import mongoose, { ClientSession, Model } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 export type CollectionType<Col extends F_Collection<string, Validator>, Validator extends z.ZodObject> = z.output<Col['validator']>;
 export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodObject> = {
@@ -40,8 +40,8 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     after_create(hook: (created_document: z.output<ZodSchema>) => Promise<void>): void;
     after_update(hook: (updated_document: z.output<ZodSchema>) => Promise<void>): void;
     after_delete(hook: (deleted_document: z.output<ZodSchema>) => Promise<void>): void;
-    perform_create_and_side_effects(data: z.output<this['post_validator']>): Promise<z.output<ZodSchema>>;
-    perform_update_and_side_effects(find: any, data: z.output<this['put_validator']>): Promise<z.output<ZodSchema>>;
-    perform_delete_and_side_effects(find: any): Promise<z.output<ZodSchema>>;
+    perform_create_and_side_effects(data: z.output<this['post_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>>;
+    perform_update_and_side_effects(find: any, data: z.output<this['put_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>>;
+    perform_delete_and_side_effects(find: any, session?: ClientSession): Promise<z.output<ZodSchema>>;
 }
 export {};

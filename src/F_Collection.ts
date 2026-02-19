@@ -1,6 +1,6 @@
 import * as z from "zod/v4";
 import { mongoose_from_zod, schema_from_zod } from "./utils/mongoose_from_zod.js";
-import mongoose, { Collection, Model, ObjectId } from "mongoose";
+import mongoose, { ClientSession, Collection, Model, ObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
 import { array_children_from_zod } from "./utils/array_children_from_zod.js";
@@ -160,12 +160,12 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * If there are no side-effects specified by the on_create method, runs a normal non-transaction create to avoid
      * the performance impacts of a transaction.
      */
-    async perform_create_and_side_effects(data: z.output<this['post_validator']>): Promise<z.output<ZodSchema>> {
+    async perform_create_and_side_effects(data: z.output<this['post_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>> {
         let created_document_data;
 
         // if we have any create hooks, run the create operation in a transaction
-        if(this.create_hooks.length > 0){
-            await mongoose.connection.transaction(async (session) => {
+        if(this.create_hooks.length > 0 || session){
+            await create_or_use_session(async (session) => {
                 // create the document
                 //@ts-expect-error
                 let [created_document] = await this.mongoose_model.create([data], {session: session, lean: true});
@@ -176,7 +176,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                 for(let hook of this.create_hooks){
                     await hook(session, created_document);
                 }
-            });
+            }, session);
         } else {// if we don't have any post create hooks, run the create operation normally
             //@ts-expect-error
             created_document_data = await this.mongoose_model.create(data);
@@ -204,12 +204,12 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * If there are no side-effects specified by the on_update method, runs a normal non-transaction update to avoid
      * the performance impacts of a transaction.
      */
-    async perform_update_and_side_effects(find: any, data: z.output<this['put_validator']>): Promise<z.output<ZodSchema>> {
+    async perform_update_and_side_effects(find: any, data: z.output<this['put_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>> {
         let update_document_data;
 
         // if we have any update hooks, run the update operation in a transaction
-        if(this.update_hooks.length > 0){
-            await mongoose.connection.transaction(async (session) => {
+        if(this.update_hooks.length > 0 || session){
+            await create_or_use_session(async (session) => {
                 // update the document
                 let updated_document = await this.mongoose_model.findOneAndUpdate(find, data, {returnDocument: 'after', session: session, lean: true})
                 update_document_data = updated_document;
@@ -220,7 +220,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                     //@ts-expect-error
                     await hook(session, updated_document);
                 }
-            });
+            }, session);
         } else {// if we don't have any post update hooks, run the update operation normally
             update_document_data = await this.mongoose_model.findOneAndUpdate(find, data, {returnDocument: 'after', lean: true})
         }
@@ -248,36 +248,49 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * If there are no side-effects specified by the on_delete method, runs a normal non-transaction delete to avoid
      * the performance impacts of a transaction.
      */
-    async perform_delete_and_side_effects(find: any): Promise<z.output<ZodSchema>> {
+    async perform_delete_and_side_effects(find: any, session?: ClientSession): Promise<z.output<ZodSchema>> {
         let deleted_document_data;
 
-        // if we have any update hooks, run the update operation in a transaction
-        if(this.delete_hooks.length > 0){
-            await mongoose.connection.transaction(async (session) => {
-                // update the document
+        // if we have any delete hooks, run the delete operation in a transaction
+        if(this.delete_hooks.length > 0 || session){
+            await create_or_use_session(async (session) => {
+                // delete the document
                 let deleted_document = await this.mongoose_model.findOneAndDelete(find, {returnDocument: 'after', session: session, lean: true})
                 deleted_document_data = deleted_document;
 
-                // run each hook one-by-one because running them in parallell is verboten
-                // https://mongoosejs.com/docs/transactions.html
-                for(let hook of this.delete_hooks){
-                    await hook(session, deleted_document);
+                if(deleted_document_data) {
+                    // run each hook one-by-one because running them in parallell is verboten
+                    // https://mongoosejs.com/docs/transactions.html
+                    for(let hook of this.delete_hooks){
+                        await hook(session, deleted_document);
+                    }
                 }
-            });
-        } else {// if we don't have any post update hooks, run the update operation normally
+                
+            }, session);
+        } else {// if we don't have any post delete hooks, run the delete operation normally
             deleted_document_data = await this.mongoose_model.findOneAndDelete(find, {returnDocument: 'after', lean: true})
         }
 
-        // run the post-update hooks, which should not make DB changes.
-        for(let hook of this.post_delete_hooks) {
-            try {
-                await hook(deleted_document_data);
-            } catch(err) {
-                console.error(`Error in ${this.collection_id} after_delete:`)
-                console.error(err);
+        // run the post-delete hooks, which should not make DB changes.
+        if(deleted_document_data) {
+            for(let hook of this.post_delete_hooks) {
+                try {
+                    await hook(deleted_document_data);
+                } catch(err) {
+                    console.error(`Error in ${this.collection_id} after_delete:`)
+                    console.error(err);
+                }
             }
         }
 
         return deleted_document_data;
+    }
+}
+
+async function create_or_use_session(callback: (session: ClientSession) => Promise<void>, session?: ClientSession, ) {
+    if(session) {
+        return await callback(session);
+    } else {
+       return await mongoose.connection.transaction(callback);
     }
 }

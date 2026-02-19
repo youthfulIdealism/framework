@@ -85,16 +85,16 @@ export class F_Collection {
     after_delete(hook) {
         this.post_delete_hooks.push(hook);
     }
-    async perform_create_and_side_effects(data) {
+    async perform_create_and_side_effects(data, session) {
         let created_document_data;
-        if (this.create_hooks.length > 0) {
-            await mongoose.connection.transaction(async (session) => {
+        if (this.create_hooks.length > 0 || session) {
+            await create_or_use_session(async (session) => {
                 let [created_document] = await this.mongoose_model.create([data], { session: session, lean: true });
                 created_document_data = created_document;
                 for (let hook of this.create_hooks) {
                     await hook(session, created_document);
                 }
-            });
+            }, session);
         }
         else {
             created_document_data = await this.mongoose_model.create(data);
@@ -110,16 +110,16 @@ export class F_Collection {
         }
         return created_document_data;
     }
-    async perform_update_and_side_effects(find, data) {
+    async perform_update_and_side_effects(find, data, session) {
         let update_document_data;
-        if (this.update_hooks.length > 0) {
-            await mongoose.connection.transaction(async (session) => {
+        if (this.update_hooks.length > 0 || session) {
+            await create_or_use_session(async (session) => {
                 let updated_document = await this.mongoose_model.findOneAndUpdate(find, data, { returnDocument: 'after', session: session, lean: true });
                 update_document_data = updated_document;
                 for (let hook of this.update_hooks) {
                     await hook(session, updated_document);
                 }
-            });
+            }, session);
         }
         else {
             update_document_data = await this.mongoose_model.findOneAndUpdate(find, data, { returnDocument: 'after', lean: true });
@@ -135,30 +135,42 @@ export class F_Collection {
         }
         return update_document_data;
     }
-    async perform_delete_and_side_effects(find) {
+    async perform_delete_and_side_effects(find, session) {
         let deleted_document_data;
-        if (this.delete_hooks.length > 0) {
-            await mongoose.connection.transaction(async (session) => {
+        if (this.delete_hooks.length > 0 || session) {
+            await create_or_use_session(async (session) => {
                 let deleted_document = await this.mongoose_model.findOneAndDelete(find, { returnDocument: 'after', session: session, lean: true });
                 deleted_document_data = deleted_document;
-                for (let hook of this.delete_hooks) {
-                    await hook(session, deleted_document);
+                if (deleted_document_data) {
+                    for (let hook of this.delete_hooks) {
+                        await hook(session, deleted_document);
+                    }
                 }
-            });
+            }, session);
         }
         else {
             deleted_document_data = await this.mongoose_model.findOneAndDelete(find, { returnDocument: 'after', lean: true });
         }
-        for (let hook of this.post_delete_hooks) {
-            try {
-                await hook(deleted_document_data);
-            }
-            catch (err) {
-                console.error(`Error in ${this.collection_id} after_delete:`);
-                console.error(err);
+        if (deleted_document_data) {
+            for (let hook of this.post_delete_hooks) {
+                try {
+                    await hook(deleted_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} after_delete:`);
+                    console.error(err);
+                }
             }
         }
         return deleted_document_data;
+    }
+}
+async function create_or_use_session(callback, session) {
+    if (session) {
+        return await callback(session);
+    }
+    else {
+        return await mongoose.connection.transaction(callback);
     }
 }
 //# sourceMappingURL=F_Collection.js.map
