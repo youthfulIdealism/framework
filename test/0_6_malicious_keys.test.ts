@@ -1,7 +1,7 @@
 import assert from "assert";
 import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
-import { detect_malicious_keys } from '../dist/utils/mongoose_any_paths.js';
+import { detect_malicious_keys } from '../dist/utils/malicious_keys.js';
 
 
 import { Schema } from 'mongoose'

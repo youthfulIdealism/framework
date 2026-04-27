@@ -64,6 +64,10 @@ function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: 
         case "default":
             //@ts-ignore
             return parse_any((zod_definition._zod.def as z.core.$ZodDefaultDef).innerType, prefix, loop_detector, mode)
+        case "nullable":
+        case "optional":
+            //@ts-ignore
+            return parse_any((zod_definition._zod.def as z.core.$ZodOptionalDef).innerType, prefix, loop_detector, mode);
         default:
             return []
     }

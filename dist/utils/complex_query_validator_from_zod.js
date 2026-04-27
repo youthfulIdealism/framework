@@ -50,6 +50,9 @@ function parse_any(zod_definition, prefix, loop_detector, mode = 'server') {
             }
         case "default":
             return parse_any(zod_definition._zod.def.innerType, prefix, loop_detector, mode);
+        case "nullable":
+        case "optional":
+            return parse_any(zod_definition._zod.def.innerType, prefix, loop_detector, mode);
         default:
             return [];
     }

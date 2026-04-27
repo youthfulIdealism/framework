@@ -19,7 +19,7 @@ mongoose.connection.on('reconnected', () => console.log('reconnected'));
 mongoose.connection.on('disconnecting', () => console.log('disconnecting'));
 mongoose.connection.on('close', () => console.log('close'));*/
 
-describe.only('Basic server with complex queries', function () {
+describe.only('Basic server with advanced queries', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;
@@ -28,7 +28,9 @@ describe.only('Basic server with complex queries', function () {
     const validate_institution = z.object({
         _id: z_mongodb_id,
         name: z.string(),
-        meta: z.any().optional()
+        meta: z.object({
+            remote_index: z.number().optional(),
+        }).optional()
     });
     const validate_client = z.object({
         _id: z_mongodb_id,
@@ -192,6 +194,38 @@ describe.only('Basic server with complex queries', function () {
 
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(test_institutions)).slice(0, 2), results.data);
+    });
+
+    it(`should be able to perform a GET multiple operation with a nested field`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                    'jousing club of omaha, nebraska',
+                    'dental hygenist paratrooper union',
+                    'martha stewart\'s cannibal fan club',
+                    'wrecking ball operator crochet club',
+                    'accidental co'
+                ][q],
+                meta: {remote_index: q}
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let advanced_query = {
+            $and: [{
+                'meta.remote_index': { $lt: 3}
+            }]
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?advanced_query=${JSON.stringify(advanced_query)}`).json();
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await institution.mongoose_model.find(advanced_query).lean())), results.data);
     });
 
     /*it(`should be able to perform a GET multiple operation with a cursor`, async function () {

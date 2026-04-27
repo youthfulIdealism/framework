@@ -56,13 +56,13 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         // a cheap operation even though it makes an extra database query. Use the cache's first_fetch_then_refresh
         // method so that we aren't keeping out-of-date auth data in the cache.
         let role_membership = await this.role_membership_cache.first_fetch_then_refresh(cache_key, async () => {
-            let find: {[key: string]: any} = { 
+            let find_role_membership: {[key: string]: any} = { 
                 [this.user_id_field]: user_id,
             };
             if(this.layer_collection_id){
-                find[`${this.layer_collection_id}_id`] = new mongoose.Types.ObjectId(layer_document_id as string)
+                find_role_membership[`${this.layer_collection_id}_id`] = new mongoose.Types.ObjectId(layer_document_id as string)
             }
-            let role_memberships = await this.role_membership_collection.mongoose_model.find(find, {}, {lean: true})
+            let role_memberships = await this.role_membership_collection.mongoose_model.find(find_role_membership, {}, {lean: true})
 
             if(role_memberships.length > 1){
                 console.warn(`in F_SM_Role_Membership, more than one role membership for user ${user_id} at layer ${this.layer_collection_id} found.`)
@@ -71,7 +71,7 @@ export class F_SM_Role_Membership<Collection_ID extends string, ZodSchema extend
         })
 
         if(!role_membership){ return false; }
-        if(!role_membership[this.role_id_field]){ console.warn(`role membership collection ${this.role_membership_collection.collection_id} did not have role ID filed ${this.role_id_field}`); return false;}
+        if(!role_membership[this.role_id_field]){ console.warn(`role membership collection ${this.role_membership_collection.collection_id} did not have role ID field ${this.role_id_field}`); return false;}
 
         // return the role associated with the role membership. This uses the cache heavily, so it should be
         // a cheap operation even though it makes an extra database query. Use the cache's first_fetch_then_refresh
