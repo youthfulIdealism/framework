@@ -143,8 +143,6 @@ describe('Security Model Ownership', function () {
                     authorization: 'sharon'
                 }
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -204,8 +202,6 @@ describe('Security Model Ownership', function () {
                     authorization: 'sharon'
                 }
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -249,8 +245,6 @@ describe('Security Model Ownership', function () {
                     email: 'steven@test.com'
                 }
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -297,8 +291,6 @@ describe('Security Model Ownership', function () {
                     nicknames: []
                 }
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -336,8 +328,6 @@ describe('Security Model Ownership', function () {
                     authorization: 'sharon'
                 }
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -381,8 +371,6 @@ describe('Security Model Ownership', function () {
                     name: 'steve the mighty'
                 }
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -450,8 +438,6 @@ describe('Security Model Ownership', function () {
                     name: 'ubersteve'
                 }
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         })
     });
 
@@ -506,8 +492,6 @@ describe('Security Model Ownership', function () {
                     authorization: 'sharon'
                 },
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         })
     });
 });

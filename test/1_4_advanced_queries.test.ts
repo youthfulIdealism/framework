@@ -19,7 +19,7 @@ mongoose.connection.on('reconnected', () => console.log('reconnected'));
 mongoose.connection.on('disconnecting', () => console.log('disconnecting'));
 mongoose.connection.on('close', () => console.log('close'));*/
 
-describe.only('Basic server with advanced queries', function () {
+describe('Basic server with advanced queries', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;

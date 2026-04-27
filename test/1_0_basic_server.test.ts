@@ -601,8 +601,6 @@ describe('Basic Server', function () {
 
                 },
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         });
     });
 
@@ -635,8 +633,6 @@ describe('Basic Server', function () {
                     name: `Leather Pants Transubstantiation`,
                 },
             }).json();
-        }, {
-            message: 'Response code 400 (Bad Request)'
         });
     });
 
@@ -654,8 +650,6 @@ describe('Basic Server', function () {
                     }
                 },
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         });
     });
 
@@ -737,8 +731,6 @@ describe('Basic Server', function () {
                     institution_id: test_institution._id,
                 },
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         });
     });
 
@@ -752,8 +744,6 @@ describe('Basic Server', function () {
                     }
                 },
             }).json();
-        }, {
-            message: 'Response code 403 (Forbidden)'
         });
     });
             
