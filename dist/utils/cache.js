@@ -48,17 +48,13 @@ export class Cache {
             return result_value;
         }
         let result_value;
-        let fetch_promise = fetch_function().finally(() => {
-            this.refetch_map.delete(key);
-        });
-        this.refetch_map.set(key, fetch_promise);
+        let fetch_promise = this._fetch_set(key, fetch_function);
         try {
             result_value = await fetch_promise;
         }
         catch (err) {
             return Promise.reject(err);
         }
-        this.set(key, result_value);
         return result_value;
     }
     async first_fetch_then_refresh(key, fetch_function) {
@@ -77,25 +73,32 @@ export class Cache {
         }
         if (this.base_cache.has(key)) {
             let result_value = this.get(key);
-            let fetch_promise = fetch_function().finally(() => {
-                this.refetch_map.delete(key);
-            });
-            this.refetch_map.set(key, fetch_promise);
+            this._fetch_set(key, fetch_function);
             return result_value;
         }
         let retval;
-        let fetch_promise = fetch_function().finally(() => {
-            this.refetch_map.delete(key);
-        });
-        this.refetch_map.set(key, fetch_promise);
+        let fetch_promise = this._fetch_set(key, fetch_function);
         try {
             retval = await fetch_promise;
         }
         catch (err) {
             return Promise.reject(err);
         }
-        this.set(key, retval);
         return retval;
+    }
+    async _fetch_set(key, fetch_function) {
+        let fetch_promise = fetch_function()
+            .then((val) => { this.set(key, val); return val; })
+            .finally(() => {
+            this.refetch_map.delete(key);
+        });
+        this.refetch_map.set(key, fetch_promise);
+        try {
+            return await fetch_promise;
+        }
+        catch (err) {
+            return Promise.reject(err);
+        }
     }
 }
 //# sourceMappingURL=cache.js.map

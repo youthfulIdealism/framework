@@ -66,13 +66,7 @@ export class Cache<T> {
         // ...if we're not already fetching the data,...
         // ...start to fetch it
         let result_value;
-        let fetch_promise = fetch_function().finally(() => {
-            this.refetch_map.delete(key);
-        });
-        // ...store the fetch promise in the refetch_map so that any fetch
-        // operations on the same key can use the fetch that's already being
-        // executed instead of starting a new fetch
-        this.refetch_map.set(key, fetch_promise)
+        let fetch_promise = this._fetch_set(key, fetch_function);
 
         // ...wait for the results,...
         try {
@@ -81,9 +75,6 @@ export class Cache<T> {
             // ...throwing an error if necessary,...
             return Promise.reject(err);
         }
-
-        // ...and setting & returning the restults if there's no error.
-        this.set(key, result_value);
         return result_value;
     }
 
@@ -112,27 +103,13 @@ export class Cache<T> {
         // if we already have the key, start a fetch promise and return the existing key
         if (this.base_cache.has(key)) { 
             let result_value = this.get(key);
-
-            let fetch_promise = fetch_function().finally(() => {
-                this.refetch_map.delete(key);
-            });
-            // ...store the fetch promise in the refetch_map so that any fetch
-            // operations on the same key can use the fetch that's already being
-            // executed instead of starting a new fetch
-            this.refetch_map.set(key, fetch_promise)
-
+            this._fetch_set(key, fetch_function);
             return result_value;
         }
 
         // if we don't have the key, generate a fetch promise and return whatever it returns.
         let retval;
-        let fetch_promise = fetch_function().finally(() => {
-            this.refetch_map.delete(key);
-        });
-        // ...store the fetch promise in the refetch_map so that any fetch
-        // operations on the same key can use the fetch that's already being
-        // executed instead of starting a new fetch
-        this.refetch_map.set(key, fetch_promise)
+        let fetch_promise = this._fetch_set(key, fetch_function);
 
         // ...wait for the results,...
         try {
@@ -142,8 +119,22 @@ export class Cache<T> {
             return Promise.reject(err);
         }
 
-        // ...and setting & returning the restults if there's no error.
-        this.set(key, retval);
         return retval;
+    }
+
+    async _fetch_set(key: string, fetch_function: () => Promise<T>) {
+        let fetch_promise = fetch_function()
+            .then((val) => { this.set(key, val); return val; })
+            .finally(() => {
+            this.refetch_map.delete(key);
+        });
+
+        this.refetch_map.set(key, fetch_promise);
+
+        try {
+             return await fetch_promise;
+        } catch(err){
+            return Promise.reject(err);
+        }
     }
 }

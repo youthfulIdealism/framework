@@ -201,4 +201,30 @@ describe('Cache', function () {
         assert.deepEqual(run_counter, 1);
     });
 
+    it('if the first_fetch_then_refresh method is called and then the value changes, subsequent calls should change.', async function () {
+        let cache = new Cache(30);
+
+        const key = 'best_animal'
+        let value = 'flamingo'
+        
+        let fetch_method = async () => { await sleep(5); return value; };
+
+        let fetch_val = await cache.first_fetch_then_refresh(key, fetch_method)
+        assert.deepEqual(fetch_val, value);
+
+        await sleep(7);
+
+        value = 'giraffe';
+
+        fetch_val = await cache.first_fetch_then_refresh(key, fetch_method)
+        assert.deepEqual(fetch_val, 'flamingo');
+
+        await sleep(7);
+        
+        fetch_val = await cache.first_fetch_then_refresh(key, fetch_method)
+        assert.deepEqual(fetch_val, 'giraffe');
+
+        await sleep(7);
+    });
+
 });

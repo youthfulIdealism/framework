@@ -10,4 +10,5 @@ export declare class Cache<T> {
     delete(key: string): void;
     first_get_then_fetch(key: string, fetch_function: () => Promise<T>): Promise<T>;
     first_fetch_then_refresh(key: string, fetch_function: () => Promise<T>): Promise<T>;
+    _fetch_set(key: string, fetch_function: () => Promise<T>): Promise<T>;
 }
