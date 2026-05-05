@@ -1,9 +1,10 @@
 {
     "compilerOptions": {
-      "module": "node16",
+      "module": "nodenext",
       "noImplicitAny": true,
       "removeComments": true,
       "preserveConstEnums": true,
+      "rootDir": "./src",
       "outDir": "dist",
       "sourceMap": true,
       "declaration": true,
