@@ -168,7 +168,7 @@ describe('Client Library Generation: Basic Types', function () {
     it(`should be able to generate a plain object containing a nullable string`, async function () {
         const validate_test_collection = z.object({
             _id: z_mongodb_id,
-            test: z.nullable(z.string()),
+            test: z.string().nullable(),
         });
 
         let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);

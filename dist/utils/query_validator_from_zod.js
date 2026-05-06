@@ -49,8 +49,9 @@ function parse_any(zod_definition, prefix, loop_detector, mode = 'server') {
         case "default":
             return parse_any(zod_definition._zod.def.innerType, prefix, loop_detector, mode);
         case "optional":
-        case "nullable":
             return parse_any(zod_definition._zod.def.innerType, prefix, loop_detector, mode);
+        case "nullable":
+            return parse_nullable(zod_definition._zod.def.innerType, prefix, loop_detector, mode);
         default:
             return [];
     }
@@ -225,5 +226,14 @@ function parse_mongodb_id(prefix, mode) {
             sortable: false,
         },
     ];
+}
+function parse_nullable(inner_type, prefix, loop_detector, mode = 'server') {
+    let inner = parse_any(inner_type, prefix, loop_detector, mode);
+    for (let ele of inner) {
+        if ([`${prefix}`, `${prefix}_in`].includes(ele.path)) {
+            ele.filter = ele.filter.nullable();
+        }
+    }
+    return inner;
 }
 //# sourceMappingURL=query_validator_from_zod.js.map

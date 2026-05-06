@@ -51,6 +51,9 @@ export function parse_zod(zod_definition: z.ZodType, indent_level: number, loop_
         case "nullable":
             //@ts-expect-error
             return [...parse_zod((zod_definition._zod.def as z.core.$ZodNullable).innerType as ZodType, indent_level, loop_detector, skip_once), ` | null`]
+        case "optional":
+            //@ts-expect-error
+            return [...parse_zod((zod_definition._zod.def as z.core.$ZodOptional).innerType as ZodType, indent_level, loop_detector, skip_once), ` | undefined`]
         case "union":
             return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, indent_level, loop_detector, skip_once);
         case "record":
@@ -94,7 +97,7 @@ function parse_object(def: z.core.$ZodObjectDef, indent_level: number, loop_dete
     let retval = ['{']
     for(let [key, value] of Object.entries(def.shape)){
         //@ts-ignore
-        let key_phrase = (value.safeParse(undefined).success || value._zod.def.type === 'optional') ? `"${key}"?:` : `"${key}":`;
+        let key_phrase = (value.safeParse(undefined).success || optional_in_chain(value)) ? `"${key}"?:` : `"${key}":`;
 
         let non_optional_type = value;
         
@@ -172,4 +175,14 @@ function randomString(length: number = 16) {
     var result = '';
     for (let i = length; i > 0; --i) result += random_string_chars[Math.floor(Math.random() * random_string_chars.length)];
     return result;
+}
+
+export function optional_in_chain(zod_definition: z.ZodType): boolean {
+    let current = zod_definition;
+    while(['nullable', 'optional', 'default'].includes(current._zod.def.type)) {
+        if(current._zod.def.type === 'optional'){ return true; }
+        //@ts-ignore
+        current = current._zod.def.innerType;
+    }
+    return false;
 }

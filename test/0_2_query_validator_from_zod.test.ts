@@ -41,6 +41,53 @@ describe('query validator from zod', function () {
         })
     });
 
+    it('should be able to process a nullable mongodb_id', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z_mongodb_id.nullable()
+            })
+        );
+        assert.deepEqual(
+            query_validator.parse({
+                parameter: '6894cba684185cb03275d511',
+            }),
+            {
+                parameter: '6894cba684185cb03275d511',
+            }
+        );
+
+        assert.deepEqual(
+            query_validator.parse({
+                parameter: null,
+            }),
+            {
+                parameter: null,
+            }
+        );
+    });
+
+    it('should be able to process an optional mongodb_id', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z_mongodb_id.optional()
+            })
+        );
+
+        assert.deepEqual(
+            query_validator.parse({
+                parameter: '6894cba684185cb03275d511',
+            }),
+            {
+                parameter: '6894cba684185cb03275d511',
+            }
+        );
+
+        assert.deepEqual(
+            query_validator.parse({}),
+            {}
+        );
+    });
+
     it('should be able to process a mongodb_id with greater than and less than', async function () {
         let query_validator = query_validator_from_zod(
             z.object({

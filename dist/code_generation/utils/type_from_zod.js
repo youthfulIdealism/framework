@@ -36,6 +36,8 @@ export function parse_zod(zod_definition, indent_level, loop_detector, skip_once
             return ["any"];
         case "nullable":
             return [...parse_zod(zod_definition._zod.def.innerType, indent_level, loop_detector, skip_once), ` | null`];
+        case "optional":
+            return [...parse_zod(zod_definition._zod.def.innerType, indent_level, loop_detector, skip_once), ` | undefined`];
         case "union":
             return parse_union(zod_definition._zod.def, indent_level, loop_detector, skip_once);
         case "record":
@@ -78,7 +80,7 @@ function parse_object(def, indent_level, loop_detector, skip_once) {
     ;
     let retval = ['{'];
     for (let [key, value] of Object.entries(def.shape)) {
-        let key_phrase = (value.safeParse(undefined).success || value._zod.def.type === 'optional') ? `"${key}"?:` : `"${key}":`;
+        let key_phrase = (value.safeParse(undefined).success || optional_in_chain(value)) ? `"${key}"?:` : `"${key}":`;
         let non_optional_type = value;
         while (non_optional_type._zod.def.type === 'optional') {
             non_optional_type = non_optional_type._zod.def.innerType;
@@ -141,5 +143,15 @@ function randomString(length = 16) {
     for (let i = length; i > 0; --i)
         result += random_string_chars[Math.floor(Math.random() * random_string_chars.length)];
     return result;
+}
+export function optional_in_chain(zod_definition) {
+    let current = zod_definition;
+    while (['nullable', 'optional', 'default'].includes(current._zod.def.type)) {
+        if (current._zod.def.type === 'optional') {
+            return true;
+        }
+        current = current._zod.def.innerType;
+    }
+    return false;
 }
 //# sourceMappingURL=type_from_zod.js.map

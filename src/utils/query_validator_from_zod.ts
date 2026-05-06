@@ -64,9 +64,11 @@ function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: 
             //@ts-ignore
             return parse_any((zod_definition._zod.def as z.core.$ZodDefaultDef).innerType, prefix, loop_detector, mode)
         case "optional":
+            //@ts-ignore
+            return parse_any((zod_definition._zod.def as z.core.$ZodDefaultDef).innerType, prefix, loop_detector, mode)
         case "nullable":
             //@ts-ignore
-            return parse_any((zod_definition._zod.def as z.core.$ZodOptionalDef).innerType, prefix, loop_detector, mode)
+            return parse_nullable((zod_definition._zod.def as z.core.$ZodOptionalDef).innerType, prefix, loop_detector, mode)
         default:
             return []
     }
@@ -258,4 +260,15 @@ function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
             sortable: false,
         },
     ];
+}
+
+function parse_nullable(inner_type: z.ZodTypeAny, prefix: string, loop_detector: Map<any, validator_group>, mode: Mode = 'server'): type_filters {
+    let inner = parse_any(inner_type, prefix, loop_detector, mode)
+    for(let ele of inner){
+        if([`${prefix}`, `${prefix}_in`].includes(ele.path)){
+            ele.filter = ele.filter.nullable();
+        }
+    }
+
+    return inner;
 }
