@@ -5,7 +5,7 @@ export function query_validator_from_zod(zod_definition, mode = 'server') {
     let loops = find_loops(zod_definition);
     let retval = {
         limit: z.coerce.number().int().optional(),
-        cursor: z_mongodb_id_optional,
+        cursor: z_mongodb_id_optional.optional(),
         sort_order: z.enum(['ascending', 'descending']).optional(),
         advanced_query: z.string().optional(),
     };

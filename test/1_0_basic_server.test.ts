@@ -864,12 +864,14 @@ describe('Basic Server', function () {
                 }]
             }
         });
-
+        
         let results = await got.put(`http://localhost:${port}/api/list_container/${test_list_container._id}/container.list/${test_list_container.container.list[0]._id}`, {
             json: {
+                _id: test_list_container.container.list[0]._id,
                 value: 'updated value'
             }
         }).json();
+        
         
         //@ts-ignore
         assert.deepEqual('updated value', results.data.container.list[0].value);

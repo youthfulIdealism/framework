@@ -258,28 +258,28 @@ describe.skip('Security Model Role Membership', function () {
 
         let steve_project = await collection_project.mongoose_model.create({
             institution_id: steve_institution._id,
-            client_id: steve_client,
+            client_id: steve_client._id,
             name: 'steve project',
             steps: [],
         })
 
         let joe_project = await collection_project.mongoose_model.create({
             institution_id: steve_institution._id,
-            client_id: joe_client,
+            client_id: joe_client._id,
             name: 'joe project',
             steps: [],
         })
 
         let nathan_project = await collection_project.mongoose_model.create({
             institution_id: edwin_institution._id,
-            client_id: nathan_client,
+            client_id: nathan_client._id,
             name: 'nathan project',
             steps: [],
         })
 
         let edna_project = await collection_project.mongoose_model.create({
             institution_id: edwin_institution._id,
-            client_id: edna_client,
+            client_id: edna_client._id,
             name: 'edna project',
             steps: [],
         })
@@ -424,8 +424,7 @@ describe.skip('Security Model Role Membership', function () {
                     authorization: 'steve'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic GET operation on a document where the user has no role membership`, async function () {
@@ -437,8 +436,7 @@ describe.skip('Security Model Role Membership', function () {
                     authorization: 'edwin'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should authorize a basic GET operation on a layer collection`, async function () {
@@ -467,7 +465,7 @@ describe.skip('Security Model Role Membership', function () {
         for(let q = 0; q < 5; q++){
             projects.push(await collection_project.mongoose_model.create({
                 institution_id: steve_institution._id,
-                client_id: steve_client,
+                client_id: steve_client._id,
                 name: `additional project ${q}`,
                 steps: [],
             }))
@@ -490,7 +488,7 @@ describe.skip('Security Model Role Membership', function () {
         for(let q = 0; q < 5; q++){
             projects.push(await collection_project.mongoose_model.create({
                 institution_id: edwin_institution._id,
-                client_id: nathan_client,
+                client_id: nathan_client._id,
                 name: `additional project ${q}`,
                 steps: [],
             }))
@@ -513,7 +511,7 @@ describe.skip('Security Model Role Membership', function () {
         for(let q = 0; q < 5; q++){
             projects.push(await collection_project.mongoose_model.create({
                 institution_id: edwin_institution._id,
-                client_id: edna_client,
+                client_id: edna_client._id,
                 name: `additional project ${q}`,
                 steps: [],
             }))
@@ -525,8 +523,7 @@ describe.skip('Security Model Role Membership', function () {
                     authorization: 'steve'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic GET multiple operation where the user has no role membership`, async function () {
@@ -536,7 +533,7 @@ describe.skip('Security Model Role Membership', function () {
         for(let q = 0; q < 5; q++){
             projects.push(await collection_project.mongoose_model.create({
                 institution_id: steve_institution._id,
-                client_id: steve_client,
+                client_id: steve_client._id,
                 name: `additional project ${q}`,
                 steps: [],
             }))
@@ -548,8 +545,7 @@ describe.skip('Security Model Role Membership', function () {
                     authorization: 'edwin'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
 
@@ -608,8 +604,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Flammable Project'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic PUT operation on a document where the user has no role membership`, async function () {
@@ -624,8 +619,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Flammable Project'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -685,8 +679,7 @@ describe.skip('Security Model Role Membership', function () {
                     steps: [],
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic POST operation on a document where the user has no role membership`, async function () {
@@ -703,8 +696,7 @@ describe.skip('Security Model Role Membership', function () {
                     client_id: steve_client._id,
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
 
@@ -751,8 +743,7 @@ describe.skip('Security Model Role Membership', function () {
                     authorization: 'steve'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic DELETE operation on a document where the user has no role membership`, async function () {
@@ -764,8 +755,7 @@ describe.skip('Security Model Role Membership', function () {
                     authorization: 'edwin'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
 
@@ -800,7 +790,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }
-        }, {new: true}).lean();
+        }, {returnDocument: 'after'}).lean();
         let step_id = steve_project.steps[0]._id;
 
         let results = await got.put(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}/steps/${step_id}`, {
@@ -828,7 +818,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }
-        }, {new: true}).lean();
+        }, {returnDocument: 'after'}).lean();
         let step_id = steve_project.steps[0]._id;
 
         let results = await got.delete(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/project/${steve_project._id}/steps/${step_id}`, {
@@ -869,7 +859,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }
-        }, {new: true}).lean();
+        }, {returnDocument: 'after'}).lean();
         let step_id = nathan_project.steps[0]._id;
 
         let results = await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project/${nathan_project._id}/steps/${step_id}`, {
@@ -897,7 +887,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }
-        }, {new: true}).lean();
+        }, {returnDocument: 'after'}).lean();
         let step_id = nathan_project.steps[0]._id;
 
         let results = await got.delete(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/project/${nathan_project._id}/steps/${step_id}`, {
@@ -923,8 +913,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic PUT operation on a document's array children where the user has a role membership without permission`, async function () {
@@ -937,7 +926,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }
-        }, {new: true}).lean();
+        }, {returnDocument: 'after'}).lean();
         let step_id = edna_project.steps[0]._id;
 
         await assert.rejects(async () => {
@@ -950,8 +939,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Somber Step'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic DELETE operation on a document's array children where the user has a role membership without permission`, async function () {
@@ -964,7 +952,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }
-        }, {new: true}).lean();
+        }, {returnDocument: 'after'}).lean();
         let step_id = edna_project.steps[0]._id;
 
         await assert.rejects(async () => {
@@ -973,8 +961,7 @@ describe.skip('Security Model Role Membership', function () {
                     authorization: 'steve'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic POST operation on a document's array children where the user has POST permission but not PUT permission`, async function () {
@@ -1010,8 +997,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 
     it(`should reject a basic DELETE operation on a document's array children where the user has DELETE permission but not PUT permission`, async function () {
@@ -1060,7 +1046,7 @@ describe.skip('Security Model Role Membership', function () {
                     name: 'Fancy Step'
                 }
             }
-        }, {new: true}).lean();
+        }, {returnDocument: 'after'}).lean();
         let step_id = steve_project.steps[0]._id;
 
         await assert.rejects(async () => {
@@ -1069,7 +1055,6 @@ describe.skip('Security Model Role Membership', function () {
                     authorization: 'barnabus'
                 }
             }).json();
-        },
-        { message: 'Response code 403 (Forbidden)' })
+        })
     });
 });

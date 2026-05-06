@@ -93,23 +93,23 @@ describe('Cache', function () {
     });
 
     it('if should delay throwing away the cached value every time the key is fetched', async function () {
-        let cache = new Cache(5);
+        let cache = new Cache(10);
 
         const key = 'best_animal'
         const value = { 'test': 'flamingo' }
         
         cache.set(key, value);
-        await sleep(2);
+        await sleep(4);
         cache.get(key);
-        await sleep(2);
+        await sleep(4);
         cache.get(key);
-        await sleep(2);
+        await sleep(4);
         cache.get(key);
-        await sleep(2);
+        await sleep(4);
         cache.get(key);
-        await sleep(2);
+        await sleep(4);
         cache.get(key);
-        await sleep(2);
+        await sleep(4);
 
         assert.deepEqual(cache.get(key), value);
     });

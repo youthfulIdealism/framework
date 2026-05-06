@@ -10,7 +10,8 @@
       "declaration": true,
       "strict": false,
       //"declarationMap": true//check this
+      "types": ["mocha", "node"]
     },
-    "include": ["src/**/*", "test/0_mongoose_from_zod.test.js"],
+    "include": ["src/**/*"],
     "exclude": []
   }

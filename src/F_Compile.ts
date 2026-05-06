@@ -64,11 +64,6 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             `${collection.collection_id}/:document_id`
         ].join('/')
 
-        
-
-
-        //console.log(get_one_path);
-
         // get individual document
         app.get(get_one_path, async (req: Request, res: Response, next: NextFunction) => {
             try {
@@ -127,7 +122,6 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             try {
                 validated_query_args = collection.query_validator_server.parse(convert_null(req.query));
             } catch(err){
-                console.log(err.issues)
                 if(err instanceof z.ZodError){
                     res.status(400);
                     res.json({ error: err.issues });

@@ -1,8 +1,7 @@
 import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
-import { z_mongodb_id, z_mongodb_id_nullable, z_mongodb_id_optional } from "./mongoose_from_zod.js";
+import { z_mongodb_id_nullable, z_mongodb_id_optional } from "./mongoose_from_zod.js";
 import { find_loops, validator_group } from './zod_loop_seperator.js'
-import { complex_query_validator_from_zod } from "./complex_query_validator_from_zod.js";
 
 type type_filters = {
     path: string,
@@ -16,7 +15,7 @@ export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode
 
     let retval = {
         limit: z.coerce.number().int().optional(),
-        cursor: z_mongodb_id_optional,
+        cursor: z_mongodb_id_optional.optional(),
         sort_order: z.enum([/*'asc', 'desc', */'ascending', 'descending']).optional(),
         advanced_query: z.string().optional(),
     } as $ZodLooseShape;

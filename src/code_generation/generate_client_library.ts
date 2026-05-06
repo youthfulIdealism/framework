@@ -33,10 +33,10 @@ export async function generate_client_library<Collections>(output_path: string, 
     if(!existsSync(build_path(output_path, 'dist'))){ await mkdir(build_path(output_path, 'dist')); }
     if(!existsSync(build_path(output_path, 'src', 'types'))){ await mkdir(build_path(output_path, 'src', 'types')); }
     if(!existsSync(build_path(output_path, 'src', 'utils'))){ await mkdir(build_path(output_path, 'src', 'utils')); }
-    await writeFile(build_path(output_path, 'src', 'utils', 'utils.ts'), await readFile(fileURLToPath(import.meta.resolve('./templates/utils.ts.mustache')), { encoding: 'utf-8' }));
-    await writeFile(build_path(output_path, 'src', 'root_types.ts'), await readFile(fileURLToPath(import.meta.resolve('./templates/root_types.ts.mustache')), { encoding: 'utf-8' }));
-    await writeFile(build_path(output_path, 'tsconfig.json'), await readFile(fileURLToPath(import.meta.resolve('./templates/tsconfig.json.mustache')), { encoding: 'utf-8' }));
-    await writeFile(build_path(output_path, '.gitignore'), await readFile(fileURLToPath(import.meta.resolve('./templates/gitignore.mustache')), { encoding: 'utf-8' }));
+    await writeFile(build_path(output_path, 'src', 'utils', 'utils.ts'), await readFile(fileURLToPath(new URL('./templates/utils.ts.mustache', import.meta.url)), { encoding: 'utf-8' }));
+    await writeFile(build_path(output_path, 'src', 'root_types.ts'), await readFile(fileURLToPath(new URL('./templates/root_types.ts.mustache', import.meta.url)), { encoding: 'utf-8' }));
+    await writeFile(build_path(output_path, 'tsconfig.json'), await readFile(fileURLToPath(new URL('./templates/tsconfig.json.mustache', import.meta.url)), { encoding: 'utf-8' }));
+    await writeFile(build_path(output_path, '.gitignore'), await readFile(fileURLToPath(new URL('./templates/gitignore.mustache', import.meta.url)), { encoding: 'utf-8' }));
         
 
     // build the typescript types
@@ -107,10 +107,10 @@ export async function generate_client_library<Collections>(output_path: string, 
         }
     }
 
-    let mustache_main = await readFile(fileURLToPath(import.meta.resolve('./templates/main.mustache')), { encoding: 'utf-8' });
-    let mustache_types = await readFile(fileURLToPath(import.meta.resolve('./templates/types.mustache')), { encoding: 'utf-8' });
-    let mustache_collection = await readFile(fileURLToPath(import.meta.resolve('./templates/collection.mustache')), { encoding: 'utf-8' });
-    let mustache_package = await readFile(fileURLToPath(import.meta.resolve('./templates/package.json.mustache')), { encoding: 'utf-8' });
+    let mustache_main = await readFile(fileURLToPath(new URL('./templates/main.mustache', import.meta.url)), { encoding: 'utf-8' });
+    let mustache_types = await readFile(fileURLToPath(new URL('./templates/types.mustache', import.meta.url)), { encoding: 'utf-8' });
+    let mustache_collection = await readFile(fileURLToPath(new URL('./templates/collection.mustache', import.meta.url)), { encoding: 'utf-8' });
+    let mustache_package = await readFile(fileURLToPath(new URL('./templates/package.json.mustache', import.meta.url)), { encoding: 'utf-8' });
 
     let builder_leaves = [];
     let queue: api_builder[] = [api_builder];
