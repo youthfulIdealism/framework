@@ -1,7 +1,7 @@
 
 import assert from "assert";
 
-import { z_mongodb_id, z_mongodb_id_optional } from '../dist/utils/mongoose_from_zod.js';
+import { z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { F_Collection } from '../dist/f_collection.js';
 import { F_Collection_Registry } from '../dist/F_Collection_Registry.js'
 import { F_SM_Open_Access } from '../dist/F_Security_Models/F_SM_Open_Access.js'
@@ -30,6 +30,11 @@ describe('Basic Server', function () {
         name: z.string(),
         meta: z.any().optional()
     });
+    const validate_market = z.object({
+        _id: z_mongodb_id,
+        institution_id: z_mongodb_id,
+        name: z.string(),
+    })
     const validate_client = z.object({
         _id: z_mongodb_id,
         institution_id: z_mongodb_id,
@@ -39,13 +44,14 @@ describe('Basic Server', function () {
         _id: z_mongodb_id,
         institution_id: z_mongodb_id,
         client_id: z_mongodb_id,
+        market_id: z_mongodb_id.optional(),
         name: z.string(),
     });
     const validate_list_container = z.object({
         _id: z_mongodb_id,
         container: z.object({
             list: z.array(z.object({
-                _id: z_mongodb_id_optional,
+                _id: z_mongodb_id.optional(),
                 value: z.string()
             }))
         })
@@ -54,6 +60,7 @@ describe('Basic Server', function () {
     let institution: F_Collection<'institution', typeof validate_institution>;
     let client: F_Collection<'client', typeof validate_client>;
     let project: F_Collection<'project', typeof validate_project>;
+    let market: F_Collection<'market', typeof validate_market>;
     let list_container: F_Collection<'list_container', typeof validate_list_container>;
 
     let registry: F_Collection_Registry;
@@ -75,15 +82,20 @@ describe('Basic Server', function () {
         client = new F_Collection('client', 'clients', validate_client);
         client.add_layers([institution.collection_id], [new F_SM_Open_Access(client)]);
 
+        market = new F_Collection('market', 'markets', validate_market);
+        market.add_layers([institution.collection_id], [new F_SM_Open_Access(market)]);
+
         project = new F_Collection('project', 'projects', validate_project);
         project.add_layers([institution.collection_id, client.collection_id], [new F_SM_Open_Access(project)]);
+        project.add_layers([institution.collection_id, market.collection_id], [new F_SM_Open_Access(project)]);
+        
 
         list_container = new F_Collection('list_container', 'list_containers', validate_list_container);
         list_container.add_layers([], [new F_SM_Open_Access(list_container)]);
 
         // build registry
         let proto_registry = new F_Collection_Registry();
-        registry = proto_registry.register(institution).register(client).register(project).register(list_container);
+        registry = proto_registry.register(institution).register(client).register(market).register(project).register(list_container);
         registry.compile(express_app, '/api');
 
         server = express_app.listen(port);
@@ -233,7 +245,7 @@ describe('Basic Server', function () {
             name: 'Spandex Co'
         });
 
-        let test_client_1 = await client.mongoose_model.create({
+        let test_market_1 = await market.mongoose_model.create({
             institution_id: test_institution_1._id,
             name: `Bob's spandex house`
         })
@@ -242,31 +254,38 @@ describe('Basic Server', function () {
             name: 'Spandex Co'
         });
 
-        let test_client_2 = await client.mongoose_model.create({
+        let test_market_2 = await client.mongoose_model.create({
             institution_id: test_institution_2._id,
             name: `Bob's spandex house`
         })
 
+         let test_client = await client.mongoose_model.create({
+            institution_id: test_institution_1._id,
+            name: `test_client`
+        });
+
         let test_projects = []
         for(let q = 0; q < 5; q++){
-            let test_client = await project.mongoose_model.create({
+            let test_project = await project.mongoose_model.create({
                 institution_id: test_institution_1._id,
-                client_id: test_client_1._id,
+                market_id: test_market_1._id,
+                client_id: test_client._id,
                 name: `Spandex Reincarnation`
             });
             //@ts-ignore
-            test_projects.push(test_client);
+            test_projects.push(test_project);
 
             // create a test project for the other institution to make sure
             // the endpoint doesn't return test project from other institutions
             await project.mongoose_model.create({
                 institution_id: test_institution_2._id,
-                client_id: test_client_2._id,
+                market_id: test_market_2._id,
+                client_id: test_client._id,
                 name: `Spandex Reincarnation`
             });
         }
 
-        let results = await got.get(`http://localhost:${port}/api/institution/${test_institution_1._id}/client/${test_client_1._id}/project`).json();
+        let results = await got.get(`http://localhost:${port}/api/institution/${test_institution_1._id}/market/${test_market_1._id}/project`).json();
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(test_projects)), results.data);
     });

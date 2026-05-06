@@ -1,7 +1,7 @@
 import assert from "assert";
 import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
-import { schema_from_zod, z_mongodb_id, z_mongodb_id_nullable, z_mongodb_id_optional } from '../dist/utils/mongoose_from_zod.js';
+import { schema_from_zod, z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { Schema } from 'mongoose'
 import { required } from "zod/mini";
 
@@ -109,7 +109,7 @@ describe('Mongoose from Zod', function () {
         });
 
         it(`should convert a nested object containing a ${basic_type.label} property to mongoose type while allowing for auto-ID`, function () {
-            let zodSchema = z.object({ test_value: z.object({_id: z_mongodb_id_optional, test_value: basic_type.zod_function() }) })
+            let zodSchema = z.object({ test_value: z.object({_id: z_mongodb_id.optional(), test_value: basic_type.zod_function() }) })
             let mongooseSchema = schema_from_zod(zodSchema)
             assert.deepEqual({ test_value: { mongoose_type: {test_value: { mongoose_type: basic_type.mongoose_type, required: true }}, required: true} }, mongooseSchema)
         });
@@ -190,13 +190,13 @@ describe('Mongoose from Zod', function () {
     */
 
     it(`should correctly handle nullable mongodb IDs`, function () {
-        let zodSchema = z.object({ test_value: z_mongodb_id_nullable})
+        let zodSchema = z.object({ test_value: z_mongodb_id.nullable() })
         let mongooseSchema = schema_from_zod(zodSchema)
         assert.deepEqual({ test_value: {mongoose_type: Schema.Types.ObjectId, required: false} }, mongooseSchema)
     });
 
     it(`should correctly handle optional mongodb IDs`, function () {
-        let zodSchema = z.object({ test_value: z_mongodb_id_optional })
+        let zodSchema = z.object({ test_value: z_mongodb_id.optional() })
         let mongooseSchema = schema_from_zod(zodSchema)
         assert.deepEqual({ test_value: {mongoose_type: Schema.Types.ObjectId, required: false} }, mongooseSchema)
     });

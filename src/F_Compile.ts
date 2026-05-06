@@ -8,6 +8,7 @@ import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_q
 import { z_mongodb_id } from "./utils/mongoose_from_zod.js";
 import { F_Collection_Registry } from "./F_Collection_Registry.js";
 import { detect_malicious_keys } from "./utils/malicious_keys.js";
+import { penetrate_nullable_optional } from "./utils/array_children_from_zod.js";
 
 /*process.on('unhandledRejection', (reason, promise) => {
     console.log(`CAUGHT UNHANDLED REJECTION`)
@@ -47,9 +48,9 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 throw new Error(`Error compiling collection ${collection.collection_id}: collection does not have a field "${layer}_id. Either remove ${layer} from the collection's layers, or add a field ${layer}_id`)
             }
 
-            let layer_id_is_mongodb_id = collection.validator._zod.def.shape[`${layer}_id`].meta()?.framework_override_type === 'mongodb_id';
+            let layer_id_is_mongodb_id = penetrate_nullable_optional(collection.validator._zod.def.shape[`${layer}_id`]).meta()?.framework_override_type === 'mongodb_id';
             if(!layer_id_is_mongodb_id){
-                throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_id must be a mongodb ID. use the z_mongodb_id, z_mongodb_id_nullable, or z_mongodb_id_optional special fields.`)
+                throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_id must be a mongodb ID`)
             }
         }
     }

@@ -3,6 +3,7 @@ import { isValidObjectId } from "mongoose";
 import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 import { detect_malicious_keys } from "./utils/malicious_keys.js";
+import { penetrate_nullable_optional } from "./utils/array_children_from_zod.js";
 export function compile(app, collection, api_prefix, collection_registry) {
     let me_path = [api_prefix, 'me'].join('/');
     app.get(me_path, async (req, res) => {
@@ -20,9 +21,9 @@ export function compile(app, collection, api_prefix, collection_registry) {
             if (!Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
                 throw new Error(`Error compiling collection ${collection.collection_id}: collection does not have a field "${layer}_id. Either remove ${layer} from the collection's layers, or add a field ${layer}_id`);
             }
-            let layer_id_is_mongodb_id = collection.validator._zod.def.shape[`${layer}_id`].meta()?.framework_override_type === 'mongodb_id';
+            let layer_id_is_mongodb_id = penetrate_nullable_optional(collection.validator._zod.def.shape[`${layer}_id`]).meta()?.framework_override_type === 'mongodb_id';
             if (!layer_id_is_mongodb_id) {
-                throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_id must be a mongodb ID. use the z_mongodb_id, z_mongodb_id_nullable, or z_mongodb_id_optional special fields.`);
+                throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_id must be a mongodb ID`);
             }
         }
     }

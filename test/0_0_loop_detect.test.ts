@@ -1,9 +1,7 @@
 import assert from "assert";
-import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
+import { z } from 'zod'
 
 import { find_loops } from '../dist/utils/zod_loop_seperator.js';
-import { Schema } from 'mongoose'
-import { required } from "zod/mini";
 
 process.env.DEBUG = 'express:*'
 

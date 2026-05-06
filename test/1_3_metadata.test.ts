@@ -1,7 +1,7 @@
 
 import assert from "assert";
 
-import { z_mongodb_id, z_mongodb_id_optional } from '../dist/utils/mongoose_from_zod.js';
+import { z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { F_Collection } from '../dist/f_collection.js';
 import { F_Collection_Registry } from '../dist/F_Collection_Registry.js'
 import { F_SM_Open_Access } from '../dist/F_Security_Models/F_SM_Open_Access.js'

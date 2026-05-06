@@ -2,8 +2,6 @@ import { z } from "zod/v4";
 import mongoose from "mongoose";
 import { validator_group } from './zod_loop_seperator.js';
 export declare const z_mongodb_id: z.ZodCustom<string, string>;
-export declare const z_mongodb_id_optional: z.ZodCustom<string, string>;
-export declare const z_mongodb_id_nullable: z.ZodCustom<string, string>;
 export declare function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType, database?: typeof mongoose): mongoose.Model<T, {}, {}, {}, mongoose.IfAny<T, any, mongoose.Document<unknown, {}, T, {}, mongoose.DefaultSchemaOptions> & mongoose.Require_id<T> & {
     __v: number;
 } & mongoose.AddDefaultId<T, {}, mongoose.DefaultSchemaOptions>>, any, T>;

@@ -7,14 +7,14 @@ export function array_children_from_zod(zod_definition: z.ZodObject, loop_detect
 
     for(let [key, value] of Object.entries(zod_definition.shape)){
         if(loops.has(value._zod.def)){ continue; }
-        let real_value = distill_zod(value);
+        let real_value = penetrate_nullable_optional(value);
         switch (real_value._zod.def.type) {
             case "object":
                 array_children_from_zod(real_value as z.ZodObject, loop_detector, results, prefix.length > 0 ? `${prefix}.${key}` : key)
                 break;
             case "array":
                 //@ts-ignore
-                let element = distill_zod((real_value as z.ZodArray).element);
+                let element = penetrate_nullable_optional((real_value as z.ZodArray).element);
                 if(element._zod.def.type === 'object') {
                     let objdef = element._zod.def as z.core.$ZodObjectDef;
                     if(objdef.shape._id){
@@ -30,15 +30,11 @@ export function array_children_from_zod(zod_definition: z.ZodObject, loop_detect
     return results;
 }
 
-function distill_zod(zod_definition: z.ZodType): z.ZodType {
-    switch (zod_definition._zod.def.type) {
-        case "nullable":
-            //@ts-ignore
-            return zod_definition._zod.def.innerType;
-        case "optional":
-            //@ts-ignore
-            return zod_definition._zod.def.innerType;
-        default:
-            return zod_definition;
+export function penetrate_nullable_optional(zod_definition: z.ZodType): z.ZodType {
+    let current = zod_definition;
+    while(['nullable', 'optional'].includes(current._zod.def.type)) {
+        //@ts-ignore
+        current = current._zod.def.innerType;
     }
+    return current;
 }

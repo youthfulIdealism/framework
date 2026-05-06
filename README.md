@@ -209,7 +209,7 @@ Create your schemas:
 ```typescript
 import { F_Collection } from '@liminalfunctions/framework/F_Collection.js';
 import { F_SM_Open_Access } from '@liminalfunctions/framework/F_SM_Open_Access.js';
-import { z_mongodb_id, z_mongodb_id_nullable, z_mongodb_id_optional } from '@liminalfunctions/framework/index.js';
+import { z_mongodb_id } from '@liminalfunctions/framework/index.js';
 import z from 'zod/v4';
 
 // define a collection for the user.
@@ -218,7 +218,7 @@ let collection_user = new F_Collection(
     'users',// the plural name of the collection
     z.object({// the valdiator
         // mongodb IDs need to use the  special validator `z_mongodb_id`. If you modify the validator (for example, by using z_mongodb_id.optional() or z_mongodb_id.nullable()),
-        // it will stop working properly. Instead, use the validators z_mongodb_id_nullable or z_mongodb_id_optional.
+        // it will stop working properly. Instead, use the validators  or .
         _id: z_mongodb_id,
         name: z.string(),
         auth_system_id: z.string(),

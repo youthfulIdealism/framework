@@ -1,6 +1,6 @@
 {
   "name": "@liminalfunctions/framework",
-  "version": "1.0.80",
+  "version": "1.1.80",
   "engines": {
     "node": "22.x.x"
   },

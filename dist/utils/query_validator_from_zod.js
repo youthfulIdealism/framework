@@ -1,11 +1,11 @@
 import { z } from "zod/v4";
-import { z_mongodb_id_nullable, z_mongodb_id_optional } from "./mongoose_from_zod.js";
+import { z_mongodb_id } from "./mongoose_from_zod.js";
 import { find_loops } from './zod_loop_seperator.js';
 export function query_validator_from_zod(zod_definition, mode = 'server') {
     let loops = find_loops(zod_definition);
     let retval = {
         limit: z.coerce.number().int().optional(),
-        cursor: z_mongodb_id_optional.optional(),
+        cursor: z_mongodb_id.optional(),
         sort_order: z.enum(['ascending', 'descending']).optional(),
         advanced_query: z.string().optional(),
     };
@@ -202,21 +202,21 @@ function parse_date(prefix, mode) {
         }];
 }
 function parse_mongodb_id(prefix, mode) {
-    let array_parser = mode === 'client' ? z.array(z_mongodb_id_nullable) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
+    let array_parser = mode === 'client' ? z.array(z_mongodb_id) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
     return [
         {
             path: prefix,
-            filter: z_mongodb_id_nullable.optional(),
+            filter: z_mongodb_id.optional(),
             sortable: true,
         },
         {
             path: prefix + '_gt',
-            filter: z_mongodb_id_nullable.optional(),
+            filter: z_mongodb_id.optional(),
             sortable: false,
         },
         {
             path: prefix + '_lt',
-            filter: z_mongodb_id_nullable.optional(),
+            filter: z_mongodb_id.optional(),
             sortable: false,
         },
         {

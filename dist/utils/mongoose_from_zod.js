@@ -3,8 +3,6 @@ import mongoose, { Schema } from "mongoose";
 import { find_loops } from './zod_loop_seperator.js';
 import { complex_query_map, query_meta_map } from "./query_object_to_mongodb_query.js";
 const underlying_mongodb_id_validator = z.string().length(24);
-const underlying_mongodb_id_validator_optional = underlying_mongodb_id_validator.optional();
-const underlying_mongodb_id_validator_nullable = underlying_mongodb_id_validator.nullable();
 const forbidden_prefixes = ['$'];
 const forbidden_keys = [...Object.keys(query_meta_map)];
 const forbidden_suffixes = [...Object.keys(complex_query_map)];
@@ -23,30 +21,6 @@ export const z_mongodb_id = z.custom((val) => {
     "type": "string",
     "format": "string",
 }).meta({ framework_override_type: 'mongodb_id' });
-export const z_mongodb_id_optional = z.custom((val) => {
-    let parsed = underlying_mongodb_id_validator_optional.safeParse(val);
-    if (!parsed.success) {
-        return false;
-    }
-    else {
-        return true;
-    }
-}).meta({
-    "type": "string",
-    "format": "string",
-}).meta({ framework_override_type: 'mongodb_id', optional: true });
-export const z_mongodb_id_nullable = z.custom((val) => {
-    let parsed = underlying_mongodb_id_validator_nullable.safeParse(val);
-    if (!parsed.success) {
-        return false;
-    }
-    else {
-        return true;
-    }
-}).meta({
-    "type": "string",
-    "format": "string",
-}).meta({ framework_override_type: 'mongodb_id', nullable: true });
 export function mongoose_from_zod(schema_name, zod_definition, database = mongoose) {
     let mongoose_schema = schema_from_zod(zod_definition);
     return database.model(schema_name, new Schema(mongoose_schema, { typeKey: 'mongoose_type', minimize: false }));

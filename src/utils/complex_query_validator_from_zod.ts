@@ -1,6 +1,6 @@
 import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
-import { z_mongodb_id, z_mongodb_id_nullable, z_mongodb_id_optional } from "./mongoose_from_zod.js";
+import { z_mongodb_id } from "./mongoose_from_zod.js";
 import { find_loops, validator_group } from './zod_loop_seperator.js'
 import escapeStringRegexp from "escape-string-regexp";
 
