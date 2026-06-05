@@ -1,4 +1,4 @@
-export function detect_malicious_keys(input: any): any {
+export function detect_malicious_keys(input: any): void {
     if(Array.isArray(input)){
         input.map(detect_malicious_keys);
     }

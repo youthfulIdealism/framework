@@ -81,7 +81,7 @@ describe('Mongoose from Zod', function () {
     it('should detect loops within default', function () {
         let zodSchema = z.object({ 
             val: z.string(),
-            get looped() {
+            get looped(): typeof zodSchema {
                 //@ts-ignore
                 return zodSchema.default({val: 'test', looped: undefined})
             }
@@ -104,6 +104,19 @@ describe('Mongoose from Zod', function () {
     it('should detect loops within union', function () {
         let zodSchema = z.object({ 
             val: z.string(),
+            get looped() {
+                return z.string().or(zodSchema)
+            }
+        })
+        let loops = find_loops(zodSchema);
+        assert.equal(loops.size, 1)
+    });
+
+    it('should detect loops within union of objects', function () {
+        let zodSchema = z.object({ 
+            val: z.object({
+                test: z.string(),
+            }),
             get looped() {
                 return z.string().or(zodSchema)
             }

@@ -18,7 +18,7 @@ import { Server } from "http";
 // IF YOU RUN THESE TESTS ON THEIR OWN, THEY WORK FINE
 // there's something janky going on with the mongodb or express
 // setup/teardown that's causing them to fail when run with the other tests
-describe.skip('Security Model Role Membership', function () {
+describe('Security Model Role Membership', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;
@@ -178,7 +178,7 @@ describe.skip('Security Model Role Membership', function () {
     })
 
     after(async function (){
-        await server.close();
+        await new Promise<void>((resolve, reject) => server.close(err => err ? reject(err) : resolve()));
         mongoose.connection.modelNames().forEach(ele => mongoose.connection.deleteModel(ele));
         db_connection.modelNames().forEach(ele => db_connection.deleteModel(ele));
         

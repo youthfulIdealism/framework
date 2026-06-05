@@ -212,6 +212,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
             await create_or_use_session(async (session) => {
                 // update the document
                 let updated_document = await this.mongoose_model.findOneAndUpdate(find, data, {returnDocument: 'after', session: session, lean: true})
+                if(!updated_document){ return; }
                 update_document_data = updated_document;
 
                 // run each hook one-by-one because running them in parallell is verboten

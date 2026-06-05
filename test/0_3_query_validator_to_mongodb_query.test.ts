@@ -1,12 +1,9 @@
 import assert from "assert";
-import { array, boolean, z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
+import { z} from 'zod'
 
 import { z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { query_validator_from_zod } from '../dist/utils/query_validator_from_zod.js';
 import { query_object_to_mongodb_query, query_object_to_mongodb_limits } from '../dist/utils/query_object_to_mongodb_query.js';
-import { Schema } from 'mongoose'
-
-import { Cache } from '../dist/utils/cache.js'
 
 describe('query validator to mongodb query', function () {
 
@@ -20,24 +17,24 @@ describe('query validator to mongodb query', function () {
 
         }
 
-        sort(sort){
+        sort(sort: any){
             this.meta.sort = sort;
             return this;
         }
 
-        limit(limit){
+        limit(limit: number){
             this.meta.limit = limit;
             return this;
         }
 
-        gt(path, value){
+        gt(path: string, value: number){
             this.filter[path] = {
                 $gt: value
             }
             return this;
         }
 
-        lt(path, value){
+        lt(path: string, value: number){
             this.filter[path] = {
                 $lt: value
             }
@@ -380,6 +377,25 @@ describe('query validator to mongodb query', function () {
                 limit: 100,
                 sort: {
                     _id: 'ascending'
+                }
+            }
+        )
+    });
+
+    it('should be able to transform multiple complex operations without losing information', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            param: z.number(),
+        }))
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse({
+                param_gt: '5',
+                param_lt: 7
+            })),
+            {
+                param: {
+                    $gt: 5,
+                    $lt: 7
                 }
             }
         )

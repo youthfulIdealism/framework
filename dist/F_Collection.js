@@ -115,6 +115,9 @@ export class F_Collection {
         if (this.update_hooks.length > 0 || session) {
             await create_or_use_session(async (session) => {
                 let updated_document = await this.mongoose_model.findOneAndUpdate(find, data, { returnDocument: 'after', session: session, lean: true });
+                if (!updated_document) {
+                    return;
+                }
                 update_document_data = updated_document;
                 for (let hook of this.update_hooks) {
                     await hook(session, updated_document);

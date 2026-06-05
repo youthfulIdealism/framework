@@ -40,7 +40,7 @@ export function query_object_to_mongodb_query(query_object) {
                 retval[modified_key][complex_query_map[complex_suffix]] = value;
             }
             else {
-                retval[modified_key] = complex_query_map[complex_suffix](value);
+                retval[modified_key] = { ...retval[modified_key], ...complex_query_map[complex_suffix](value) };
             }
         }
         else {

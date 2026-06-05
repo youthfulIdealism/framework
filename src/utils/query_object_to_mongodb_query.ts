@@ -47,9 +47,9 @@ export function query_object_to_mongodb_query(query_object: { [key: string]: str
             let modified_key = key.slice(0, -complex_suffix.length);
 
             if (!retval[modified_key]) { retval[modified_key] = {} as any; }
-            if(typeof complex_query_map[complex_suffix] ==='string') { retval[modified_key][complex_query_map[complex_suffix]] = value }
+            if(typeof complex_query_map[complex_suffix] === 'string') { retval[modified_key][complex_query_map[complex_suffix]] = value }
             else {
-                retval[modified_key] = complex_query_map[complex_suffix](value)
+                retval[modified_key] = { ...retval[modified_key], ...complex_query_map[complex_suffix](value) }
             }
         } else {
             retval[key] = value;

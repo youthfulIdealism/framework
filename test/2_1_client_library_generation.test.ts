@@ -136,7 +136,7 @@ describe('Client Library Generation: Library Generation', function () {
     })
 
     after(async function (){
-        await server.close();
+        await new Promise<void>((resolve, reject) => server.close(err => err ? reject(err) : resolve()));
         mongoose.connection.modelNames().forEach(ele => mongoose.connection.deleteModel(ele));
         db_connection.modelNames().forEach(ele => db_connection.deleteModel(ele));
         await db_connection.disconnect()

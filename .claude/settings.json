@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(*.env)",
+      "Read(*.env.*)",
+      "Read(*.pem)",
+      "Read(*.key)",
+      "Read(~/.ssh/**)",
+      "Read(*.secret_test.*)",
+      "Read(*.secret_test-local)",
+      "Read(*credentials.json)"
+    ]
+  }
+}
