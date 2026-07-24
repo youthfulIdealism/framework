@@ -44,14 +44,26 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 throw new Error(`Error compiling collection ${collection.collection_id}: collection registry does not have a collection with the ID "${layer}". Each layer must be a valid collection ID.`)
             }
 
-            if(!Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+            if(!Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`) && !Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ida`)) {
                 throw new Error(`Error compiling collection ${collection.collection_id}: collection does not have a field "${layer}_id. Either remove ${layer} from the collection's layers, or add a field ${layer}_id`)
             }
 
-            let layer_id_is_mongodb_id = penetrate_nullable_optional(collection.validator._zod.def.shape[`${layer}_id`]).meta()?.framework_override_type === 'mongodb_id';
-            if(!layer_id_is_mongodb_id){
-                throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_id must be a mongodb ID`)
+            if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                let layer_id_is_mongodb_id = penetrate_nullable_optional(collection.validator._zod.def.shape[`${layer}_id`]).meta()?.framework_override_type === 'mongodb_id';
+                if(!layer_id_is_mongodb_id){
+                    throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_id must be a mongodb ID`)
+                }
             }
+
+            if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                let layer_id_array = penetrate_nullable_optional(collection.validator._zod.def.shape[`${layer}_ida`]);
+                if(layer_id_array._zod.def.type !== 'array'){ throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_ids must be an array of mongodb ID`) }
+                let layer_id_is_mongodb_id = ((layer_id_array._zod.def as z.core.$ZodArrayDef).element as z.ZodType).meta()?.framework_override_type === 'mongodb_id';
+                if(!layer_id_is_mongodb_id){
+                    throw new Error(`Error compiling collection ${collection.collection_id}:  ${layer}_ids must be an array of mongodb ID`)
+                }
+            }
+            
         }
     }
     
