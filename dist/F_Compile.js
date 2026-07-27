@@ -55,7 +55,15 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 }
                 let find = { '_id': req.params.document_id };
                 for (let layer of access_layers.layers) {
-                    find[`${layer}_id`] = req.params[layer];
+                    if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                        find[`${layer}_id`] = req.params[layer];
+                    }
+                    else if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                        find[`${layer}_ids`] = req.params[layer];
+                    }
+                    else {
+                        throw new Error(`Shape ${layer} was unexpected`);
+                    }
                 }
                 let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
                 if (!permissive_security_model) {
@@ -111,7 +119,15 @@ export function compile(app, collection, api_prefix, collection_registry) {
             }
             let find = query_object_to_mongodb_query(validated_query_args);
             for (let layer of access_layers.layers) {
-                find[`${layer}_id`] = req.params[layer];
+                if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                    find[`${layer}_id`] = req.params[layer];
+                }
+                else if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                    find[`${layer}_ids`] = req.params[layer];
+                }
+                else {
+                    throw new Error(`Shape ${layer} was unexpected`);
+                }
             }
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
             if (!permissive_security_model) {
@@ -187,7 +203,15 @@ export function compile(app, collection, api_prefix, collection_registry) {
             }
             let find = { '_id': req.params.document_id };
             for (let layer of access_layers.layers) {
-                find[`${layer}_id`] = req.params[layer];
+                if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                    find[`${layer}_id`] = req.params[layer];
+                }
+                else if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                    find[`${layer}_ids`] = req.params[layer];
+                }
+                else {
+                    throw new Error(`Shape ${layer} was unexpected`);
+                }
             }
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
             if (!permissive_security_model) {
@@ -359,7 +383,15 @@ export function compile(app, collection, api_prefix, collection_registry) {
             }
             let find = { '_id': req.params.document_id };
             for (let layer of access_layers.layers) {
-                find[`${layer}_id`] = req.params[layer];
+                if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                    find[`${layer}_id`] = req.params[layer];
+                }
+                else if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                    find[`${layer}_ids`] = req.params[layer];
+                }
+                else {
+                    throw new Error(`Shape ${layer} was unexpected`);
+                }
             }
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'delete');
             if (!permissive_security_model) {
@@ -401,7 +433,15 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 }
                 let find = { '_id': req.params.document_id };
                 for (let layer of access_layers.layers) {
-                    find[`${layer}_id`] = req.params[layer];
+                    if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                        find[`${layer}_id`] = req.params[layer];
+                    }
+                    else if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                        find[`${layer}_ids`] = req.params[layer];
+                    }
+                    else {
+                        throw new Error(`Shape ${layer} was unexpected`);
+                    }
                 }
                 let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
                 if (!permissive_security_model) {
@@ -494,7 +534,15 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 }
                 let find = { '_id': req.params.document_id };
                 for (let layer of access_layers.layers) {
-                    find[`${layer}_id`] = req.params[layer];
+                    if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                        find[`${layer}_id`] = req.params[layer];
+                    }
+                    else if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                        find[`${layer}_ids`] = req.params[layer];
+                    }
+                    else {
+                        throw new Error(`Shape ${layer} was unexpected`);
+                    }
                 }
                 find[`${array_child_path}._id`] = req.params.array_item_id;
                 let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
@@ -583,7 +631,15 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 }
                 let find = { '_id': req.params.document_id };
                 for (let layer of access_layers.layers) {
-                    find[`${layer}_id`] = req.params[layer];
+                    if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                        find[`${layer}_id`] = req.params[layer];
+                    }
+                    else if (Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                        find[`${layer}_ids`] = req.params[layer];
+                    }
+                    else {
+                        throw new Error(`Shape ${layer} was unexpected`);
+                    }
                 }
                 let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'update');
                 if (!permissive_security_model) {

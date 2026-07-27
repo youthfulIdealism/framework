@@ -85,7 +85,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
                 let find = { '_id': req.params.document_id } as { [key: string]: any } 
                 for(let layer of access_layers.layers){
-                    find[`${layer}_id`] = req.params[layer];
+                    if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                        find[`${layer}_id`] = req.params[layer];
+                    }else if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                        find[`${layer}_ids`] = req.params[layer];
+                    } else {throw new Error(`Shape ${layer} was unexpected`)}
                 }
 
                 let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
@@ -145,7 +149,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
             let find = query_object_to_mongodb_query(validated_query_args) as { [key: string]: any };
             for(let layer of access_layers.layers){
-                find[`${layer}_id`] = req.params[layer];
+                if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                    find[`${layer}_id`] = req.params[layer];
+                }else if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                    find[`${layer}_ids`] = req.params[layer];
+                } else {throw new Error(`Shape ${layer} was unexpected`)}
             }
 
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'get');
@@ -226,7 +234,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
             let find = { '_id': req.params.document_id } as { [key: string]: any } ;
             for(let layer of access_layers.layers){
-                find[`${layer}_id`] = req.params[layer];
+                if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                    find[`${layer}_id`] = req.params[layer];
+                }else if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                    find[`${layer}_ids`] = req.params[layer];
+                } else {throw new Error(`Shape ${layer} was unexpected`)}
             }
 
             
@@ -418,7 +430,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
             let find = { '_id': req.params.document_id } as { [key: string]: any } ;
             for(let layer of access_layers.layers){
-                find[`${layer}_id`] = req.params[layer];
+                if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                    find[`${layer}_id`] = req.params[layer];
+                }else if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                    find[`${layer}_ids`] = req.params[layer];
+                } else {throw new Error(`Shape ${layer} was unexpected`)}
             }
 
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, find, 'delete');
@@ -471,7 +487,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
                 let find = { '_id': req.params.document_id } as { [key: string]: any } ;
                 for(let layer of access_layers.layers){
-                    find[`${layer}_id`] = req.params[layer];
+                    if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                        find[`${layer}_id`] = req.params[layer];
+                    }else if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                        find[`${layer}_ids`] = req.params[layer];
+                    } else {throw new Error(`Shape ${layer} was unexpected`)}
                 }
 
                 // I'd like to have a validator here. I think it might need to be a map or record validator?
@@ -576,7 +596,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
                 let find = { '_id': req.params.document_id } as { [key: string]: any } ;
                 for(let layer of access_layers.layers){
-                    find[`${layer}_id`] = req.params[layer];
+                    if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                        find[`${layer}_id`] = req.params[layer];
+                    }else if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                        find[`${layer}_ids`] = req.params[layer];
+                    } else {throw new Error(`Shape ${layer} was unexpected`)}
                 }
                 find[`${array_child_path}._id`] = req.params.array_item_id;
 
@@ -674,7 +698,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
                 let find = { '_id': req.params.document_id } as { [key: string]: any } ;
                 for(let layer of access_layers.layers){
-                    find[`${layer}_id`] = req.params[layer];
+                    if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_id`)) {
+                        find[`${layer}_id`] = req.params[layer];
+                    } else if(Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                        find[`${layer}_ids`] = req.params[layer];
+                    } else {throw new Error(`Shape ${layer} was unexpected`)}
                 }
 
                 // I'd like to have a validator here. I think it might need to be a map or record validator?
