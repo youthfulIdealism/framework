@@ -267,11 +267,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
                     return;
                 }
-                if (validated_request_body[`${layer}_ids`] && !validated_request_body[`${layer}_ids`].includes(req.params[layer])) {
-                    res.status(403);
-                    res.json({ error: `The system does not support changing the ${layer}_ids of the document in a way that removes it from the ${layer} it's being accessed through.` });
-                    return;
-                }
+                delete validated_request_body[`${layer}_ids`];
             }
             let results;
             try {
@@ -360,6 +356,24 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     res.status(403);
                     res.json({ error: `The system does not support creating a document under the ${layer} it's being accessed through without including it in ${layer}_ids.` });
                     return;
+                }
+                if (validated_request_body[`${layer}_ids`] && validated_request_body[`${layer}_ids`].length > 0) {
+                    let submitted_ids = validated_request_body[`${layer}_ids`];
+                    let direct_parent_id = submitted_ids[submitted_ids.length - 1];
+                    let parent_document = await collection_registry.collections[layer].mongoose_model.findById(direct_parent_id, { [`${layer}_ids`]: 1 }).lean();
+                    if (!parent_document) {
+                        res.status(400);
+                        res.json({ error: `The ${layer}_ids field must end with the ID of an existing ${layer} document.` });
+                        return;
+                    }
+                    let parent_ancestor_ids = (parent_document[`${layer}_ids`] ?? []).map((id) => '' + id);
+                    let submitted_ancestor_ids = submitted_ids.slice(0, -1);
+                    let ancestry_matches = parent_ancestor_ids.length === submitted_ancestor_ids.length && parent_ancestor_ids.every((id, index) => id === submitted_ancestor_ids[index]);
+                    if (!ancestry_matches) {
+                        res.status(403);
+                        res.json({ error: `The ${layer}_ids field must exactly match the real ancestry of the ${layer} document it descends from.` });
+                        return;
+                    }
                 }
             }
             let results;

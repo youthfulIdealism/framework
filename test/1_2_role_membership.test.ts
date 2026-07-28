@@ -31,6 +31,7 @@ describe('Security Model Role Membership', function () {
     const validate_client = z.object({
         _id: z_mongodb_id,
         institution_id: z_mongodb_id,
+        client_ids: z.array(z_mongodb_id).optional(),
         name: z.string(),
     });
     const validate_project = z.object({
@@ -109,7 +110,15 @@ describe('Security Model Role Membership', function () {
         collection_institution.add_layers([], [new F_SM_Role_Membership(collection_institution, collection_institution)]);
 
         collection_client.add_layers(['institution'], [new F_SM_Role_Membership(collection_client, collection_institution)]);
-        
+
+        // clients can also nest inside other clients, forming a tree. a client's client_ids field
+        // holds every ancestor client, so it can be reached (and its role membership checked) through
+        // any ancestor, not just its direct parent.
+        collection_client.add_layers(['institution', 'client'], [
+            new F_SM_Role_Membership(collection_client, collection_institution),
+            new F_SM_Role_Membership(collection_client, collection_client)
+        ]);
+
         collection_project.add_layers(['institution', 'client'], [
             new F_SM_Role_Membership(collection_project, collection_institution),
             new F_SM_Role_Membership(collection_project, collection_client)
@@ -201,7 +210,7 @@ describe('Security Model Role Membership', function () {
      * - - steve client
      * - - - steve project
      * - - joe client
-     * - - - steve project
+     * - - - joe project
      * - edwin institution
      * - - nathan client
      * - - - nathan project
@@ -1052,5 +1061,424 @@ describe('Security Model Role Membership', function () {
                 }
             }).json();
         })
+    });
+
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    TREE-NESTED CLIENTS        /////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    it(`should authorize a GET operation on a client nested under another client where the user has a T1 institution role membership`, async function () {
+        let { steve_institution, steve_client } = await generate_test_setup();
+
+        let nested_client = await collection_client.mongoose_model.create({
+            institution_id: steve_institution._id,
+            client_ids: [steve_client._id],
+            name: 'nested client'
+        });
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/client/${nested_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(nested_client)), results.data);
+    });
+
+    it(`should authorize a GET operation on a client nested several levels below an ancestor where the user has a T2 client role membership on that ancestor`, async function () {
+        let { edwin_institution, nathan_client } = await generate_test_setup();
+
+        let child_client = await collection_client.mongoose_model.create({ 
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'child client'
+        });
+
+        let grandchild_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id, child_client._id],
+            name: 'grandchild client'
+        });
+
+        let great_grandchild_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id, child_client._id, grandchild_client._id],
+            name: 'grandchild client'
+        });
+
+        // fetch the grandchild through the root ancestor, skipping the intermediate layer, to prove that
+        // any ancestor covered by the role membership works, not just the direct parent.
+        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${grandchild_client._id}/client/${great_grandchild_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(great_grandchild_client)), results.data);
+    });
+
+    it(`should reject a GET operation on a client nested under another client where the user has no role membership covering it`, async function () {
+        let { steve_institution, steve_client } = await generate_test_setup();
+
+        let nested_client = await collection_client.mongoose_model.create({
+            institution_id: steve_institution._id,
+            client_ids: [steve_client._id],
+            name: 'nested client'
+        });
+
+        await assert.rejects(async () => {
+            let results = await got.get(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${steve_client._id}/client/${nested_client._id}`, {
+                headers: {
+                    authorization: 'edwin'
+                }
+            }).json();
+        })
+    });
+
+    it(`should not leak a client whose ancestor role membership does not actually belong to its tree`, async function () {
+        let { edwin_institution, nathan_client, edna_client } = await generate_test_setup();
+
+        // steve has a role membership on edna_client, but this client only descends from nathan_client
+        let nested_under_nathan = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'nested under nathan'
+        });
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/client/${nested_under_nathan._id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(null, results.data);
+    });
+
+    it(`should authorize a GET multiple operation returning every descendant of an ancestor client where the user has a T2 client role membership`, async function () {
+        let { edwin_institution, nathan_client, edna_client } = await generate_test_setup();
+
+        let child_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'child client'
+        });
+
+        let grandchild_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id, child_client._id],
+            name: 'grandchild client'
+        });
+
+        // not a descendant of nathan_client, and should not show up in the results
+        await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [edna_client._id],
+            name: 'unrelated client'
+        });
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify([child_client, grandchild_client])), results.data);
+    });
+
+    it(`should authorize a POST operation nesting a client under an ancestor client where the user has a T2 client role membership`, async function () {
+        let { edwin_institution, nathan_client } = await generate_test_setup();
+
+        let results = await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'child client',
+                institution_id: edwin_institution._id,
+                client_ids: [nathan_client._id],
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_client.mongoose_model.findById(results.data._id))), results.data);
+    });
+
+    it(`should reject a POST operation nesting a client under an ancestor client where the role membership lacks create permission`, async function () {
+        let { edwin_institution, edna_client } = await generate_test_setup();
+
+        await assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/client`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    name: 'child client',
+                    institution_id: edwin_institution._id,
+                    client_ids: [edna_client._id],
+                }
+            }).json();
+        })
+    });
+
+    it(`should reject a POST operation nesting a client under an ancestor client it doesn't actually descend from`, async function () {
+        let { edwin_institution, nathan_client, edna_client } = await generate_test_setup();
+
+        await assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    name: 'child client',
+                    institution_id: edwin_institution._id,
+                    client_ids: [edna_client._id],
+                }
+            }).json();
+        })
+    });
+
+    it(`should authorize a PUT operation on a client nested below an ancestor client where the user has a T2 client role membership`, async function () {
+        let { edwin_institution, nathan_client } = await generate_test_setup();
+
+        let child_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'child client'
+        });
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'renamed child client'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.notDeepEqual(JSON.parse(JSON.stringify(child_client)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_client.mongoose_model.findById(child_client._id))), results.data);
+    });
+
+    it(`should silently ignore an attempt to remove a client from the ancestor layer it's being accessed through, since client_ids is immutable via PUT`, async function () {
+        let { edwin_institution, nathan_client } = await generate_test_setup();
+
+        let child_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'child client'
+        });
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'renamed child client',
+                client_ids: [],
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.equal(results.data.name, 'renamed child client');
+        //@ts-ignore
+        assert.deepEqual((await collection_client.mongoose_model.findById(child_client._id))?.client_ids.map(String), [String(nathan_client._id)]);
+    });
+
+    it(`should authorize a DELETE operation on a client nested below an ancestor client where the user has a T2 client role membership`, async function () {
+        let { edwin_institution, nathan_client } = await generate_test_setup();
+
+        let child_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'child client'
+        });
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(child_client)), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await collection_client.mongoose_model.findById(child_client._id))), undefined);
+    });
+
+    it(`should reject a DELETE operation on a client nested below an ancestor client where the role membership lacks delete permission`, async function () {
+        let { edwin_institution, edna_client } = await generate_test_setup();
+
+        let child_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [edna_client._id],
+            name: 'child client'
+        });
+
+        await assert.rejects(async () => {
+            let results = await got.delete(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/client/${child_client._id}`, {
+                headers: {
+                    authorization: 'steve'
+                }
+            }).json();
+        })
+    });
+
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    SECURITY: client_ids ANCESTOR INJECTION     /////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    it(`should silently ignore an attempt to graft an extra client_ids ancestor onto a document via PUT, since client_ids is immutable via PUT`, async function () {
+        let { edwin_institution, nathan_client, edna_client } = await generate_test_setup();
+
+        // child_client legitimately descends only from nathan_client, which steve fully controls
+        let child_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'child client'
+        });
+
+        // steve only has read access to edna_client -- attempting to graft child_client onto edna_client's
+        // branch via PUT should be silently ignored rather than applied
+        await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'child client',
+                client_ids: [nathan_client._id, edna_client._id],
+            }
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual((await collection_client.mongoose_model.findById(child_client._id))?.client_ids.map(String), [String(nathan_client._id)]);
+    });
+
+    it(`should not expose a document to an unrelated user's role membership just because another user planted that user's client in client_ids`, async function () {
+        let { edwin_institution, nathan_client, edna_client, access_role_edwin_institution_grants_project } = await generate_test_setup();
+
+        let user_barnabus = await collection_user.mongoose_model.create({
+            auth_id: 'barnabus'
+        });
+
+        // barnabus has full CRUD on edna_client's branch only, and no relationship whatsoever to nathan_client
+        await collection_client_role_membership.mongoose_model.create({
+            role_id: access_role_edwin_institution_grants_project._id,
+            user_id: user_barnabus._id,
+            institution_id: edwin_institution._id,
+            client_id: edna_client._id,
+        });
+
+        // child_client legitimately descends only from nathan_client, which barnabus has no access to
+        let child_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'child client'
+        });
+
+        // barnabus cannot see child_client yet
+        let baseline = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'barnabus'
+            }
+        }).json();
+        //@ts-ignore
+        assert.deepEqual(null, baseline.data);
+
+        // steve (who has full CRUD via nathan_client) plants edna_client into child_client's ancestor list
+        await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'child client',
+                client_ids: [nathan_client._id, edna_client._id],
+            }
+        }).json();
+
+        // barnabus should still not be able to reach a document he was never granted access to -- the planted
+        // ancestor never actually took effect, so this returns a permission-granted-but-no-match empty result
+        // rather than a 403, same as the baseline check above
+        let after_injection = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${edna_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'barnabus'
+            }
+        }).json();
+        //@ts-ignore
+        assert.deepEqual(null, after_injection.data);
+    });
+
+    it(`should not let a user retain access to a client after their role membership is revoked, by planting a self-controlled ancestor in client_ids beforehand`, async function () {
+        let { edwin_institution, nathan_client, user_steve, access_role_edwin_institution_grants_project, steve_nathan_client_role_membership } = await generate_test_setup();
+
+        // a client steve legitimately controls elsewhere in the same institution, unrelated to nathan_client
+        let backdoor_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            name: 'backdoor client'
+        });
+        await collection_client_role_membership.mongoose_model.create({
+            role_id: access_role_edwin_institution_grants_project._id,
+            user_id: user_steve._id,
+            institution_id: edwin_institution._id,
+            client_id: backdoor_client._id,
+        });
+
+        // child_client legitimately descends only from nathan_client
+        let child_client = await collection_client.mongoose_model.create({
+            institution_id: edwin_institution._id,
+            client_ids: [nathan_client._id],
+            name: 'child client'
+        });
+
+        // steve plants his own backdoor_client into child_client's ancestor list while he still has
+        // legitimate access via nathan_client
+        await got.put(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            },
+            json: {
+                name: 'child client',
+                client_ids: [nathan_client._id, backdoor_client._id],
+            }
+        }).json();
+
+        // the institution admin revokes steve's access to nathan_client entirely
+        await collection_client_role_membership.mongoose_model.findByIdAndDelete(steve_nathan_client_role_membership._id);
+
+        // steve should have lost all access to child_client -- the planted backdoor_client ancestor never
+        // actually took effect, so this returns a permission-granted-but-no-match empty result rather than
+        // exposing the document
+        let after_revocation = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${backdoor_client._id}/client/${child_client._id}`, {
+            headers: {
+                authorization: 'steve'
+            }
+        }).json();
+        //@ts-ignore
+        assert.deepEqual(null, after_revocation.data);
+    });
+
+    it(`should reject a POST that creates a client under a legitimate ancestor while also grafting it onto an ancestor the user has no create permission over`, async function () {
+        let { edwin_institution, nathan_client, edna_client } = await generate_test_setup();
+
+        // steve has full CRUD via nathan_client, but only read access to edna_client -- he should not
+        // be able to create a brand-new client that's simultaneously exposed under edna_client's branch
+        await assert.rejects(async () => {
+            await got.post(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    name: 'new client',
+                    institution_id: edwin_institution._id,
+                    client_ids: [nathan_client._id, edna_client._id],
+                }
+            }).json();
+        });
     });
 });

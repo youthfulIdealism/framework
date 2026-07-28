@@ -20,6 +20,7 @@
     "./F_SM_Open_Access.js": "./dist/F_Security_Models/F_SM_Open_Access.js",
     "./F_SM_Ownership.js": "./dist/F_Security_Models/F_SM_Ownership.js",
     "./F_SM_Role_Membership.js": "./dist/F_Security_Models/F_SM_Role_Membership.js",
+    "./F_SM_Role_Membership_With_Parent_Path.js": "./dist/F_Security_Models/F_SM_Role_Membership_With_Parent_Path.js",
     "./pretty_print_zod.js": "./dist/utils/pretty_print_zod.js",
     "./generate_client_library.js": "./dist/code_generation/generate_client_library.js"
   },

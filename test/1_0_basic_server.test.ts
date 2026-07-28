@@ -1050,7 +1050,7 @@ describe('Basic Server', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(await client.mongoose_model.findById(child_client._id))), results.data);
     });
 
-    it(`should reject a PUT operation that removes a client from the ancestor layer it's being accessed through`, async function () {
+    it(`should silently ignore an attempt to remove a client from the ancestor layer it's being accessed through, since client_ids is immutable via PUT`, async function () {
         let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
@@ -1066,14 +1066,17 @@ describe('Basic Server', function () {
             name: `Child Client`
         });
 
-        await assert.rejects(async () => {
-            let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client/${child_client._id}`, {
-                json: {
-                    name: `Renamed Child Client`,
-                    client_ids: [],
-                },
-            }).json();
-        });
+        let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client/${child_client._id}`, {
+            json: {
+                name: `Renamed Child Client`,
+                client_ids: [],
+            },
+        }).json();
+
+        //@ts-ignore
+        assert.equal(results.data.name, `Renamed Child Client`);
+        //@ts-ignore
+        assert.deepEqual((await client.mongoose_model.findById(child_client._id))?.client_ids.map(String), [String(root_client._id)]);
     });
 
     it(`should be able to perform a basic DELETE operation on a client nested below an ancestor client`, async function () {
