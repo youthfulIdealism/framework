@@ -6,7 +6,7 @@ import { F_Collection } from '../dist/f_collection.js';
 import { F_Collection_Registry } from '../dist/F_Collection_Registry.js'
 import { F_SM_Open_Access } from '../dist/F_Security_Models/F_SM_Open_Access.js'
 import { F_SM_Role_Membership } from '../dist/F_Security_Models/F_SM_Role_Membership.js'
-import { F_Security_Model } from '../dist/F_Security_Models/F_Security_Model.js'
+import { Auth_Data, F_Security_Model } from '../dist/F_Security_Models/F_Security_Model.js'
 import { Cache } from '../dist/utils/cache.js'
 import { z, ZodAny, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
@@ -106,49 +106,13 @@ describe('Security Model Role Membership', function () {
         collection_institution_role_membership = new F_Collection('institution_role_membership', 'institution_role_memberships', validate_institution_role_membership);
         collection_client_role_membership = new F_Collection('client_role_membership', 'client_role_memberships', validate_client_role_membership);
 
-        collection_institution.add_layers([], [new F_SM_Role_Membership(
-            collection_institution, 
-            collection_institution,
-            collection_institution_role_membership,
-            collection_role,
-            cache_institution_role_membership,
-            cache_role,
-            'user_id',
-            'role_id'
-        )]);
+        collection_institution.add_layers([], [new F_SM_Role_Membership(collection_institution, collection_institution)]);
 
-        collection_client.add_layers(['institution'], [new F_SM_Role_Membership(
-            collection_client, 
-            collection_institution,
-            collection_institution_role_membership,
-            collection_role,
-            cache_institution_role_membership,
-            cache_role,
-            'user_id',
-            'role_id'
-        )]);
+        collection_client.add_layers(['institution'], [new F_SM_Role_Membership(collection_client, collection_institution)]);
         
         collection_project.add_layers(['institution', 'client'], [
-            new F_SM_Role_Membership(
-                collection_project, 
-                collection_institution,
-                collection_institution_role_membership,
-                collection_role,
-                cache_institution_role_membership,
-                cache_role,
-                'user_id',
-                'role_id'
-            ),
-            new F_SM_Role_Membership(
-                collection_project, 
-                collection_client,
-                collection_client_role_membership,
-                collection_role,
-                cache_client_role_membership,
-                cache_role,
-                'user_id',
-                'role_id'
-            )
+            new F_SM_Role_Membership(collection_project, collection_institution),
+            new F_SM_Role_Membership(collection_project, collection_client)
         ]);
 
         let proto_registry = new F_Collection_Registry();
@@ -164,10 +128,42 @@ describe('Security Model Role Membership', function () {
         F_Security_Model.set_auth_fetcher(async (req: Request) => {
             if(!req.headers.authorization){ return undefined; }
 
-            let user_record = await collection_user.mongoose_model.findOne({auth_id: req.headers.authorization})
+            let user_record = await collection_user.mongoose_model.findOne({auth_id: req.headers.authorization}).lean()
             if(!user_record){ return undefined; }
+            let layers: (Auth_Data['layers']) = [];
 
-            return { user_id: user_record._id, layers: [] };
+            let institution_role_memberships = await collection_institution_role_membership.mongoose_model.find({ user_id: user_record._id }).lean();
+            let client_role_memberships = await collection_client_role_membership.mongoose_model.find({ user_id: user_record._id }).lean();
+            let institution_role_ids = institution_role_memberships.map(ele => ele.role_id );
+            let client_role_ids = client_role_memberships.map(ele => ele.role_id );
+            let all_role_ids = Array.from(new Set([...institution_role_ids, ...client_role_ids]));
+            let roles = await collection_role.mongoose_model.find({ _id: { $in: all_role_ids }}).lean();
+
+            for(let role_membership of institution_role_memberships){
+                let role = roles.find(ele => ele._id + '' === role_membership.role_id + '');
+                if(!role) { continue; }
+                layers.push({
+                    layer: 'institution',
+                    layer_id: role_membership.institution_id,
+                    //@ts-ignore
+                    permissions: role.permissions,
+                    special_permissions: {}
+                })
+            }
+
+            for(let role_membership of client_role_memberships){
+                let role = roles.find(ele => ele._id + '' === role_membership.role_id + '');
+                if(!role) { continue; }
+                layers.push({
+                    layer: 'client',
+                    layer_id: role_membership.client_id,
+                    //@ts-ignore
+                    permissions: role.permissions,
+                    special_permissions: {}
+                })
+            }
+
+            return { user_id: user_record._id, layers: layers };
         })
         registry.compile(express_app, '/api');
 
