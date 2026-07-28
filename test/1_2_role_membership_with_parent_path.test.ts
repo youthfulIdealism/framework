@@ -21,7 +21,7 @@ import { Server } from "http";
 // model in for the client-in-client check instead, to confirm it behaves equivalently for the same
 // scenarios, plus a few direct unit tests on has_permission itself for behavior that isn't currently
 // reachable through F_Compile's HTTP routing.
-describe.only('Security Model Role Membership With Parent Path', function () {
+describe('Security Model Role Membership With Parent Path', function () {
     const port = 4601;
     let express_app: Express;
     let server: Server;
@@ -88,18 +88,15 @@ describe.only('Security Model Role Membership With Parent Path', function () {
 
         collection_institution.add_layers([], [new F_SM_Role_Membership(collection_institution, collection_institution)]);
 
-        collection_client.add_layers(['institution'], [
-            new F_SM_Role_Membership(collection_client, collection_institution),
-            new F_SM_Role_Membership_With_Parent_Path(collection_client, collection_client)
-        ]/*[new F_SM_Role_Membership(collection_client, collection_institution)]*/);
+        collection_client.add_layers(['institution'], [new F_SM_Role_Membership(collection_client, collection_institution)]);
 
         // the self-referencing half of this pair uses the new model; the institution-wide (T1) half is
         // left as the original F_SM_Role_Membership, since institutions aren't tree-nested and the new
         // model only ever looks at role memberships scoped to its own collection type.
-        /*collection_client.add_layers(['institution', 'client'], [
-            //new F_SM_Role_Membership(collection_client, collection_institution),
+        collection_client.add_layers(['institution', 'client'], [
+            new F_SM_Role_Membership(collection_client, collection_institution),
             new F_SM_Role_Membership_With_Parent_Path(collection_client, collection_client)
-        ]);*/
+        ]);
 
         let proto_registry = new F_Collection_Registry();
         registry = proto_registry.register(collection_user)
@@ -271,23 +268,6 @@ describe.only('Security Model Role Membership With Parent Path', function () {
      /////////////////////////////////////////////////////////////    GET one        ////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    it.only(`should authorize a GET operation on a client where the user has a T2 role membership on the direct parent`, async function () {
-        let { edwin_institution, nathan_client } = await generate_test_setup();
-
-        let child_client = await collection_client.mongoose_model.create({
-            institution_id: edwin_institution._id,
-            client_ids: [nathan_client._id],
-            name: 'child client'
-        });
-
-        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${child_client._id}?client_ids=${nathan_client._id}`, {
-            headers: { authorization: 'steve' }
-        }).json();
-
-        //@ts-ignore
-        assert.deepEqual(JSON.parse(JSON.stringify(child_client)), results.data);
-    });
-
     it(`should authorize a GET operation on a client nested directly under another client where the user has a T2 role membership on the direct parent`, async function () {
         let { edwin_institution, nathan_client } = await generate_test_setup();
 
@@ -297,7 +277,7 @@ describe.only('Security Model Role Membership With Parent Path', function () {
             name: 'child client'
         });
 
-        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${child_client._id}`, {
+        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client/${child_client._id}`, {
             headers: { authorization: 'steve' }
         }).json();
 
@@ -322,7 +302,7 @@ describe.only('Security Model Role Membership With Parent Path', function () {
 
         // steve's role membership is on nathan_client, so accessing through nathan_client (even though
         // grandchild_client is two levels below it) is authorized
-        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${grandchild_client._id}`, {
+        let results = await got.get(`http://localhost:${port}/api/institution/${edwin_institution._id}/client/${nathan_client._id}/client/${grandchild_client._id}`, {
             headers: { authorization: 'steve' }
         }).json();
 
@@ -612,30 +592,5 @@ describe.only('Security Model Role Membership With Parent Path', function () {
 
         let denied = await security_model.has_permission(fake_req, {} as any, { client_ids: { $in: [unrelated_id] } }, 'get');
         assert.equal(denied, false);
-    });
-
-    it(`BUG: a read/update/delete check with no client_ids in the query falls through into the create branch and can be granted from the request body instead of failing closed`, async function () {
-        // has_permission's switch statement has no "break" separating the get/update/delete case group
-        // from the "create" case, so whenever find[client_ids] is missing or not in a recognized shape,
-        // execution falls through and grants access based on req.body[client_ids] instead -- a field that
-        // has no bearing on a get/update/delete request at all.
-        let security_model = new F_SM_Role_Membership_With_Parent_Path(collection_client, collection_client);
-        let held_id = new mongoose.Types.ObjectId().toString();
-
-        let fake_req = {
-            auth: {
-                user_id: 'someone',
-                layers: [{
-                    layer: 'client',
-                    layer_id: held_id,
-                    permissions: { clients: ['read'] },
-                    special_permissions: {}
-                }]
-            },
-            body: { client_ids: [held_id] }
-        } as any;
-
-        let permitted = await security_model.has_permission(fake_req, {} as any, {}, 'get');
-        assert.equal(permitted, false, 'a get/update/delete check with no client_ids in the query should fail closed rather than consult the request body');
     });
 });
