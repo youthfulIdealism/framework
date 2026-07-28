@@ -12,8 +12,8 @@ export function compile(app, collection, api_prefix, collection_registry) {
     });
     for (let access_layers of collection.access_layers) {
         for (let layer of access_layers.layers) {
-            if (layer === collection.collection_id) {
-                throw new Error(`Error compiling collection ${collection.collection_id}: a collection cannot be a member of it's own layer. Remove "${collection.collection_id}" from the collection's layers.`);
+            if (layer === collection.collection_id && !Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
+                throw new Error(`Error compiling collection ${collection.collection_id}: a collection cannot be a member of it's own layer unless it has a "${layer}_ids" array field for tree-style nesting. Remove "${collection.collection_id}" from the collection's layers, or add a "${layer}_ids" field.`);
             }
             if (!collection_registry.collections[layer]) {
                 throw new Error(`Error compiling collection ${collection.collection_id}: collection registry does not have a collection with the ID "${layer}". Each layer must be a valid collection ID.`);
@@ -267,6 +267,11 @@ export function compile(app, collection, api_prefix, collection_registry) {
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
                     return;
                 }
+                if (validated_request_body[`${layer}_ids`] && !validated_request_body[`${layer}_ids`].includes(req.params[layer])) {
+                    res.status(403);
+                    res.json({ error: `The system does not support changing the ${layer}_ids of the document in a way that removes it from the ${layer} it's being accessed through.` });
+                    return;
+                }
             }
             let results;
             try {
@@ -349,6 +354,11 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 if (validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]) {
                     res.status(403);
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
+                    return;
+                }
+                if (validated_request_body[`${layer}_ids`] && !validated_request_body[`${layer}_ids`].includes(req.params[layer])) {
+                    res.status(403);
+                    res.json({ error: `The system does not support creating a document under the ${layer} it's being accessed through without including it in ${layer}_ids.` });
                     return;
                 }
             }

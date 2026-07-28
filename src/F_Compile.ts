@@ -34,9 +34,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
     
     for(let access_layers of collection.access_layers){
         for(let layer of access_layers.layers){
-            // verify that the collection is not in its own layers
-            if(layer === collection.collection_id){
-                throw new Error(`Error compiling collection ${collection.collection_id}: a collection cannot be a member of it's own layer. Remove "${collection.collection_id}" from the collection's layers.`)
+            // a collection can only be a member of its own layer if it exposes a "<layer>_ids" array field,
+            // since that's what allows a document to record every ancestor in a tree-shaped nesting rather
+            // than just a single, self-referential parent.
+            if(layer === collection.collection_id && !Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)){
+                throw new Error(`Error compiling collection ${collection.collection_id}: a collection cannot be a member of it's own layer unless it has a "${layer}_ids" array field for tree-style nesting. Remove "${collection.collection_id}" from the collection's layers, or add a "${layer}_ids" field.`)
             }
 
             // verify that each layer has a corresponding collection
@@ -299,9 +301,14 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
                     return;
                 }
+                if(validated_request_body[`${layer}_ids`] && !validated_request_body[`${layer}_ids`].includes(req.params[layer])){
+                    res.status(403);
+                    res.json({ error: `The system does not support changing the ${layer}_ids of the document in a way that removes it from the ${layer} it's being accessed through.` });
+                    return;
+                }
             }
-            
-            
+
+
             let results;
             try {
                 results = await collection.perform_update_and_side_effects(find, validated_request_body);
@@ -392,6 +399,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 if(validated_request_body[`${layer}_id`] && validated_request_body[`${layer}_id`] !== req.params[layer]){
                     res.status(403);
                     res.json({ error: `The system does not support changing the ${layer}_id of the document with this endpoint.` });
+                    return;
+                }
+                if(validated_request_body[`${layer}_ids`] && !validated_request_body[`${layer}_ids`].includes(req.params[layer])){
+                    res.status(403);
+                    res.json({ error: `The system does not support creating a document under the ${layer} it's being accessed through without including it in ${layer}_ids.` });
                     return;
                 }
             }

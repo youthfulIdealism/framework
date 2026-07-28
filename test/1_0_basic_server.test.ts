@@ -38,6 +38,7 @@ describe('Basic Server', function () {
     const validate_client = z.object({
         _id: z_mongodb_id,
         institution_id: z_mongodb_id,
+        client_ids: z.array(z_mongodb_id).optional(),
         name: z.string(),
     });
     const validate_project = z.object({
@@ -81,6 +82,9 @@ describe('Basic Server', function () {
 
         client = new F_Collection('client', 'clients', validate_client);
         client.add_layers([institution.collection_id], [new F_SM_Open_Access(client)]);
+        // clients can also nest inside other clients, forming a tree. a client's client_ids field
+        // holds every ancestor client, so it can be reached through any of them, not just its direct parent.
+        client.add_layers([institution.collection_id, client.collection_id], [new F_SM_Open_Access(client)]);
 
         market = new F_Collection('market', 'markets', validate_market);
         market.add_layers([institution.collection_id], [new F_SM_Open_Access(market)]);
@@ -132,11 +136,6 @@ describe('Basic Server', function () {
         let test_institution = await institution.mongoose_model.create({
             name: 'Spandex Co'
         });
-
-        let test_client = await client.mongoose_model.create({
-            institution_id: test_institution._id,
-            name: `Bob's spandex house`
-        })
 
         let results = await got.get(`http://localhost:${port}/api/institution/${test_institution._id}`).json();
         //@ts-ignore
@@ -855,6 +854,254 @@ describe('Basic Server', function () {
         assert.deepEqual(null, results.data);
         assert.deepEqual(JSON.parse(JSON.stringify(await project.mongoose_model.findById(test_project._id))), JSON.parse(JSON.stringify(test_project)));
     });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    TREE-NESTED CLIENTS        /////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    it(`should be able to perform a GET operation on a client nested directly under its parent client`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client`
+        });
+
+        let child_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client._id],
+            name: `Child Client`
+        });
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client/${child_client._id}`).json();
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(child_client)), results.data);
+    });
+
+    it(`should be able to perform a GET operation on a client nested several levels below an ancestor`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client`
+        });
+
+        let child_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client._id],
+            name: `Child Client`
+        });
+
+        let grandchild_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client._id, child_client._id],
+            name: `Grandchild Client`
+        });
+
+        // fetch the grandchild through the root, skipping the intermediate layer, to prove that any
+        // ancestor works, not just the direct parent.
+        let results = await got.get(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client/${grandchild_client._id}`).json();
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(grandchild_client)), results.data);
+    });
+
+    it(`should not be able to fetch a client nested under a client that is not one of its ancestors`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client_a = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client A`
+        });
+
+        let root_client_b = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client B`
+        });
+
+        let child_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client_a._id],
+            name: `Child Client`
+        });
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client_b._id}/client/${child_client._id}`).json();
+        //@ts-ignore
+        assert.deepEqual(null, results.data);
+    });
+
+    it(`should be able to perform a GET multiple operation returning every descendant of an ancestor client`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client`
+        });
+
+        let other_root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Other Root Client`
+        });
+
+        let child_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client._id],
+            name: `Child Client`
+        });
+
+        let grandchild_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client._id, child_client._id],
+            name: `Grandchild Client`
+        });
+
+        // not a descendant of root_client, and should not show up in the results
+        await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [other_root_client._id],
+            name: `Unrelated Client`
+        });
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client`).json();
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify([child_client, grandchild_client])), results.data);
+    });
+
+    it(`should be able to perform a basic POST operation nesting a client under an ancestor client`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client`
+        });
+
+        let results = await got.post(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client`, {
+            json: {
+                name: `Child Client`,
+                institution_id: test_institution._id,
+                client_ids: [root_client._id],
+            },
+        }).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.mongoose_model.findById(results.data._id))), results.data);
+    });
+
+    it(`should reject a POST operation nesting a client under an ancestor client it doesn't actually descend from`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client`
+        });
+
+        let other_root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Other Root Client`
+        });
+
+        await assert.rejects(async () => {
+            let results = await got.post(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client`, {
+                json: {
+                    name: `Child Client`,
+                    institution_id: test_institution._id,
+                    client_ids: [other_root_client._id],
+                },
+            }).json();
+        });
+    });
+
+    it(`should be able to perform a basic PUT operation on a client nested below an ancestor client`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client`
+        });
+
+        let child_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client._id],
+            name: `Child Client`
+        });
+
+        let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client/${child_client._id}`, {
+            json: {
+                name: `Renamed Child Client`
+            },
+        }).json();
+
+        //@ts-ignore
+        assert.notDeepEqual(JSON.parse(JSON.stringify(child_client)), results.data);
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.mongoose_model.findById(child_client._id))), results.data);
+    });
+
+    it(`should reject a PUT operation that removes a client from the ancestor layer it's being accessed through`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client`
+        });
+
+        let child_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client._id],
+            name: `Child Client`
+        });
+
+        await assert.rejects(async () => {
+            let results = await got.put(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client/${child_client._id}`, {
+                json: {
+                    name: `Renamed Child Client`,
+                    client_ids: [],
+                },
+            }).json();
+        });
+    });
+
+    it(`should be able to perform a basic DELETE operation on a client nested below an ancestor client`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let root_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Root Client`
+        });
+
+        let child_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_ids: [root_client._id],
+            name: `Child Client`
+        });
+
+        let results = await got.delete(`http://localhost:${port}/api/institution/${test_institution._id}/client/${root_client._id}/client/${child_client._id}`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(child_client)), results.data);
+        assert.deepEqual(JSON.parse(JSON.stringify(await client.mongoose_model.findById(child_client._id))), undefined);
+    });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    OBJECT ARRAYS        ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     it(`should allow entries to be added to object arrays`, async function () {
         let test_list_container = await list_container.mongoose_model.create({
