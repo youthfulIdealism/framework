@@ -6,6 +6,9 @@ export class F_Collection_Registry {
     }
     register(collection) {
         let collections = this.collections;
+        if (collections[collection.collection_id]) {
+            throw new Error(`Collection ${collection.collection_id} has already been registered.`);
+        }
         collections[collection.collection_id] = collection;
         return this;
     }

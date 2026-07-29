@@ -3,7 +3,7 @@ import { z} from 'zod'
 
 import { z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { query_validator_from_zod } from '../dist/utils/query_validator_from_zod.js';
-import { query_object_to_mongodb_query, query_object_to_mongodb_limits } from '../dist/utils/query_object_to_mongodb_query.js';
+import { query_object_to_mongodb_query, query_object_to_mongodb_limits, convert_null } from '../dist/utils/query_object_to_mongodb_query.js';
 
 describe('query validator to mongodb query', function () {
 
@@ -399,5 +399,54 @@ describe('query validator to mongodb query', function () {
                 }
             }
         )
+    });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    convert_null        //////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    it('convert_null should turn the string "null" into an actual null value', function () {
+        assert.deepEqual(
+            convert_null({ param: 'null' }),
+            { param: null }
+        )
+    });
+
+    it('convert_null should leave non-"null" string values untouched', function () {
+        assert.deepEqual(
+            convert_null({ param: 'fungus' }),
+            { param: 'fungus' }
+        )
+    });
+
+    it('convert_null should convert every matching key in a multi-key object', function () {
+        assert.deepEqual(
+            convert_null({ a: 'null', b: 'value', c: 'null' }),
+            { a: null, b: 'value', c: null }
+        )
+    });
+
+    it('convert_null should leave an empty object untouched', function () {
+        assert.deepEqual(
+            convert_null({}),
+            {}
+        )
+    });
+
+    it('should be able to parse a converted null value through a nullable query validator field', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z.string().nullable()
+            })
+        );
+
+        assert.deepEqual(
+            query_validator.parse(convert_null({
+                parameter: 'null',
+            })),
+            {
+                parameter: null,
+            }
+        );
     });
 });

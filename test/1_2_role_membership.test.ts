@@ -129,7 +129,6 @@ describe('Security Model Role Membership', function () {
             .register(collection_institution)
             .register(collection_client)
             .register(collection_project)
-            .register(collection_user)
             .register(collection_role)
             .register(collection_institution_role_membership)
             .register(collection_client_role_membership);

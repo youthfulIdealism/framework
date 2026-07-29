@@ -227,4 +227,42 @@ describe('Cache', function () {
         await sleep(7);
     });
 
+    it('delete should remove a key from the cache', async function () {
+        let cache = new Cache(30);
+
+        const key = 'best_animal'
+        const value = { 'test': 'flamingo' }
+
+        cache.set(key, value);
+        assert.deepEqual(cache.get(key), value);
+
+        cache.delete(key);
+
+        assert.deepEqual(cache.get(key), undefined);
+    });
+
+    it('delete should cancel the pending expiry timer for that key', async function () {
+        let cache = new Cache(10);
+
+        const key = 'best_animal'
+        const value = { 'test': 'flamingo' }
+
+        cache.set(key, value);
+        assert.equal(cache.timeout_map.has(key), true);
+
+        cache.delete(key);
+
+        // if delete() left the old expiry timer running, it would eventually fire and evict whatever
+        // value later gets set under the same key, even though that later value has its own timer.
+        assert.equal(cache.timeout_map.has(key), false);
+    });
+
+    it('delete should be a no-op when called on a key that was never set', function () {
+        let cache = new Cache(10);
+
+        assert.doesNotThrow(() => {
+            cache.delete('never_set');
+        });
+    });
+
 });

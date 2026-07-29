@@ -27,8 +27,6 @@ export class F_SM_Role_Membership_With_Parent_Path<Collection_ID extends string,
         let enabled_layer_ids = new Set(req.auth.layers.filter(ele => ele.layer === this.collection.collection_id).filter(ele => ele.permissions[this.collection.collection_name_plural].includes(permission_name as Operation)).map(ele => ele.layer_id + ''))
         let id_field = `${this.layer_collection_id}_ids`;
 
-        console.log(find)
-
         switch(operation) {
             case "get":
             case "update":

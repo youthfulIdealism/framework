@@ -117,12 +117,7 @@ function parse_string(prefix, mode) {
                     $nin: z.array(z.string())
                 }),
                 z.object({
-                    $regex: z.transform((val) => {
-                        if (typeof val !== 'string') {
-                            return false;
-                        }
-                        return escapeStringRegexp(val);
-                    })
+                    $regex: z.string().transform((val) => escapeStringRegexp(val))
                 }),
             ]).optional(),
             sortable: true,

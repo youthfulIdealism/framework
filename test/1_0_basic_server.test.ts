@@ -5,6 +5,7 @@ import { z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { F_Collection } from '../dist/f_collection.js';
 import { F_Collection_Registry } from '../dist/F_Collection_Registry.js'
 import { F_SM_Open_Access } from '../dist/F_Security_Models/F_SM_Open_Access.js'
+import { F_Security_Model } from '../dist/F_Security_Models/F_Security_Model.js'
 import { z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
 import got from 'got'
@@ -1158,11 +1159,124 @@ describe('Basic Server', function () {
         });
 
         let results = await got.delete(`http://localhost:${port}/api/list_container/${test_list_container._id}/container.list/${test_list_container.container.list[0]._id}`).json();
-        
+
         //@ts-ignore
         assert.deepEqual(0, results.data.container.list.length);
         //@ts-ignore
         assert.deepEqual(JSON.parse(JSON.stringify(await list_container.mongoose_model.findById(test_list_container._id))), JSON.parse(JSON.stringify(results.data)));
     });
-    
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    /api/me        ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    it(`/api/me should return whatever the configured auth fetcher resolves to`, async function () {
+        F_Security_Model.set_auth_fetcher(async () => {
+            return { user_id: 'test_user', layers: [] };
+        });
+
+        let results = await got.get(`http://localhost:${port}/api/me`).json();
+
+        assert.deepEqual(results, { user_id: 'test_user', layers: [] });
+    });
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     /////////////////////////////////////////////////////////////    MALFORMED IDS        ///////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // got's parsed error body can arrive as either a raw JSON string or an already-parsed object
+    // depending on the request's responseType, so this normalizes it before asserting on it.
+    function error_message_of(err: any): string {
+        let body = err.response.body;
+        return typeof body === 'string' ? JSON.parse(body).error : body.error;
+    }
+
+    it(`should reject a GET operation on a malformed document ID with a 400`, async function () {
+        try {
+            await got.get(`http://localhost:${port}/api/institution/not-a-valid-id`).json();
+            assert.fail('expected the request to be rejected');
+        } catch(err) {
+            assert.equal(err.response.statusCode, 400);
+            assert.match(error_message_of(err), /not-a-valid-id.*is not a valid document ID/);
+        }
+    });
+
+    it(`should reject a PUT operation on a malformed document ID with a 400`, async function () {
+        try {
+            await got.put(`http://localhost:${port}/api/institution/not-a-valid-id`, {
+                json: { name: 'irrelevant' },
+            }).json();
+            assert.fail('expected the request to be rejected');
+        } catch(err) {
+            assert.equal(err.response.statusCode, 400);
+            assert.match(error_message_of(err), /not-a-valid-id.*is not a valid document ID/);
+        }
+    });
+
+    it(`should reject a DELETE operation on a malformed document ID with a 400`, async function () {
+        try {
+            await got.delete(`http://localhost:${port}/api/institution/not-a-valid-id`).json();
+            assert.fail('expected the request to be rejected');
+        } catch(err) {
+            assert.equal(err.response.statusCode, 400);
+            assert.match(error_message_of(err), /not-a-valid-id.*is not a valid document ID/);
+        }
+    });
+
+    it(`should reject a GET multiple operation with an unfilterable ID in the URL with a 400`, async function () {
+        try {
+            await got.get(`http://localhost:${port}/api/institution/not-a-valid-id/client`).json();
+            assert.fail('expected the request to be rejected');
+        } catch(err) {
+            assert.equal(err.response.statusCode, 400);
+            assert.match(error_message_of(err), /not a valid MongoDB object ID/);
+        }
+    });
+
+    it(`should reject a POST to an array child with a malformed document ID with a 400`, async function () {
+        try {
+            await got.post(`http://localhost:${port}/api/list_container/not-a-valid-id/container.list`, {
+                json: { value: 'test value' },
+            }).json();
+            assert.fail('expected the request to be rejected');
+        } catch(err) {
+            assert.equal(err.response.statusCode, 400);
+            assert.match(error_message_of(err), /not-a-valid-id.*is not a valid document ID/);
+        }
+    });
+
+    it(`should reject a PUT to an array child with a malformed array item ID with a 400`, async function () {
+        let test_list_container = await list_container.mongoose_model.create({
+            container: { list: [{ value: 'original value' }] }
+        });
+
+        try {
+            await got.put(`http://localhost:${port}/api/list_container/${test_list_container._id}/container.list/not-a-valid-id`, {
+                json: { value: 'updated value' },
+            }).json();
+            assert.fail('expected the request to be rejected');
+        } catch(err) {
+            assert.equal(err.response.statusCode, 400);
+            assert.match(error_message_of(err), /not-a-valid-id.*is not a valid document ID/);
+        }
+    });
+
+    it(`should reject a PUT to an array child whose body _id does not match the URL's array item ID with a 400`, async function () {
+        let test_list_container = await list_container.mongoose_model.create({
+            container: { list: [{ value: 'original value' }] }
+        });
+        let item_id = test_list_container.container.list[0]._id;
+        let other_id = new mongoose.Types.ObjectId().toString();
+
+        try {
+            await got.put(`http://localhost:${port}/api/list_container/${test_list_container._id}/container.list/${item_id}`, {
+                json: { _id: other_id, value: 'updated value' },
+            }).json();
+            assert.fail('expected the request to be rejected');
+        } catch(err) {
+            assert.equal(err.response.statusCode, 400);
+            assert.match(error_message_of(err), /cannot update element _id/);
+        }
+    });
+
 });

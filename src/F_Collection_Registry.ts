@@ -16,6 +16,7 @@ export class F_Collection_Registry<Collections = {}> {
 
     register<Collection_ID extends string, ZodSchema extends z.ZodObject>(collection: F_Collection<Collection_ID, ZodSchema>): F_Collection_Registry<Collections & { [key in Collection_ID]: F_Collection<Collection_ID, ZodSchema>}>{
         let collections = this.collections as Collections & { [key in Collection_ID]: F_Collection<Collection_ID, ZodSchema>};
+        if(collections[collection.collection_id]){ throw new Error(`Collection ${collection.collection_id} has already been registered.`); }
         // @ts-expect-error
         collections[collection.collection_id] = collection;
         return this as F_Collection_Registry<Collections & { [key in Collection_ID]: F_Collection<Collection_ID, ZodSchema>}>;
