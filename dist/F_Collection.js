@@ -119,21 +119,25 @@ export class F_Collection {
                     return;
                 }
                 update_document_data = updated_document;
-                for (let hook of this.update_hooks) {
-                    await hook(session, updated_document);
+                if (update_document_data) {
+                    for (let hook of this.update_hooks) {
+                        await hook(session, updated_document);
+                    }
                 }
             }, session);
         }
         else {
             update_document_data = await this.mongoose_model.findOneAndUpdate(find, data, { returnDocument: 'after', lean: true });
         }
-        for (let hook of this.post_update_hooks) {
-            try {
-                await hook(update_document_data);
-            }
-            catch (err) {
-                console.error(`Error in ${this.collection_id} after_update:`);
-                console.error(err);
+        if (update_document_data) {
+            for (let hook of this.post_update_hooks) {
+                try {
+                    await hook(update_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} after_update:`);
+                    console.error(err);
+                }
             }
         }
         return update_document_data;

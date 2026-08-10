@@ -215,25 +215,36 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                 if(!updated_document){ return; }
                 update_document_data = updated_document;
 
-                // run each hook one-by-one because running them in parallell is verboten
-                // https://mongoosejs.com/docs/transactions.html
-                for(let hook of this.update_hooks){
-                    //@ts-expect-error
-                    await hook(session, updated_document);
+                // it's possible for the update to fail due to security adding a parameter
+                // that prevents any update from occurring. Only perform the hooks if the
+                // update went through.
+                if(update_document_data){
+                    // run each hook one-by-one because running them in parallell is verboten
+                    // https://mongoosejs.com/docs/transactions.html
+                    for(let hook of this.update_hooks){
+                        //@ts-expect-error
+                        await hook(session, updated_document);
+                    }
                 }
+                
             }, session);
         } else {// if we don't have any post update hooks, run the update operation normally
             update_document_data = await this.mongoose_model.findOneAndUpdate(find, data, {returnDocument: 'after', lean: true})
         }
-
-        // run the post-update hooks, which should not make DB changes.
-        for(let hook of this.post_update_hooks) {
-            try {
-                //@ts-expect-error
-                await hook(update_document_data);
-            } catch(err) {
-                console.error(`Error in ${this.collection_id} after_update:`)
-                console.error(err);
+        
+        // it's possible for the update to fail due to security adding a parameter
+        // that prevents any update from occurring. Only perform the hooks if the
+        // update went through.
+        if(update_document_data){
+            // run the post-update hooks, which should not make DB changes.
+            for(let hook of this.post_update_hooks) {
+                try {
+                    //@ts-expect-error
+                    await hook(update_document_data);
+                } catch(err) {
+                    console.error(`Error in ${this.collection_id} after_update:`)
+                    console.error(err);
+                }
             }
         }
 
