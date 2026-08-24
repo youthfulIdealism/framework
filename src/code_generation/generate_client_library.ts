@@ -72,6 +72,7 @@ export async function generate_client_library<Collections>(output_path: string, 
 
             let array_child_mustache_context = {
                 array_name: array_child_key,
+                sanitized_array_name: array_child_key.replace(/[^(a-zA-Z0-9\_)]/g, '_'),
                 type_array_child_put: type_put_name,
                 array_type_put_definition: `export type ${type_put_name} = ${array_child_put_type[0]}\n${array_child_put_type.slice(1).join('\n')}`,
                 type_array_child_post: type_post_name,

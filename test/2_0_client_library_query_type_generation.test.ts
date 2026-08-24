@@ -323,6 +323,39 @@ describe('Client Library Generation: Query Types', function () {
         )
     });
 
+    it(`should be able to generate an object containing an array of objects`, async function () {
+        const validate_test_collection = z.object({
+            _id: z_mongodb_id,
+            settings: z.object({
+                field: z.array(z.object({
+                    subfield: z.string()
+                }))
+            }),
+        });
+
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
+
+        let proto_registry = new F_Collection_Registry();
+        let registry = proto_registry.register(test_collection);
+
+        await generate_client_library('./test/tmp', registry);
+
+        assert.equal(
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection_query.ts', { encoding: 'utf-8' })),
+            remove_whitespace(`export type test_collection_query = {
+                    "limit"?: number
+                    "cursor"?: string
+                    "sort_order"?: ("ascending" | "descending")
+                    "advanced_query"?: string
+                    "_id"?: string
+                    "_id_gt"?: string
+                    "_id_lt"?: string
+                    "_id_in"?: (string)[]
+                    "sort"?: ("_id")
+                }`)
+        )
+    });
+
     it(`should be able to generate arrays of primitive fields`, async function () {
         const validate_test_collection = z.object({
             _id: z_mongodb_id,

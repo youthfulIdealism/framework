@@ -423,6 +423,36 @@ describe('Client Library Generation: Basic Types', function () {
         )
     });
 
+    it(`should be able to generate an object containing an array of objects`, async function () {
+        const validate_test_collection = z.object({
+            _id: z_mongodb_id,
+            settings: z.object({
+                field: z.array(z.object({
+                    subfield: z.string()
+                }))
+            }),
+        });
+
+        let test_collection = new F_Collection('test_collection', 'test_collection', validate_test_collection);
+
+        let proto_registry = new F_Collection_Registry();
+        let registry = proto_registry.register(test_collection);
+
+        await generate_client_library('./test/tmp', registry);
+
+        assert.equal(
+            remove_whitespace(await readFile('./test/tmp/src/types/test_collection.ts', { encoding: 'utf-8' })),
+            remove_whitespace(`export type test_collection = {
+                    "_id": string
+                    "settings": {
+                        "field": ({
+                                "subfield": string
+                            })[]
+                    }
+                }`)
+        )
+    });
+
     it(`should be able to generate nested arrays`, async function () {
         const validate_test_collection = z.object({
             _id: z_mongodb_id,
