@@ -34,7 +34,7 @@ function parse_any(zod_definition, prefix, loop_detector, mode = 'server') {
         case "array":
             return parse_array(zod_definition._zod.def, prefix, loop_detector, mode);
         case "union":
-            return parse_union(zod_definition._zod.def, prefix, mode);
+            return parse_union(zod_definition._zod.def, prefix, loop_detector, mode);
         case "custom":
             if (!zod_definition.meta()) {
                 throw new Error(`could not find custom parser in the magic value dictionary`);
@@ -83,11 +83,35 @@ function parse_object(def, prefix, loop_detector, mode) {
     }
     return retval;
 }
-function parse_union(def, prefix, mode) {
+function flatten_union_options(options) {
+    return options.flatMap(option => option._zod.def.type === 'union' ? flatten_union_options(option._zod.def.options) : [option]);
+}
+function merge_type_filters_by_path(filters) {
+    let by_path = new Map();
+    for (let filter of filters) {
+        let existing = by_path.get(filter.path);
+        if (!existing) {
+            by_path.set(filter.path, filter);
+        }
+        else {
+            by_path.set(filter.path, {
+                path: filter.path,
+                filter: existing.filter.or(filter.filter),
+                sortable: existing.sortable && filter.sortable,
+            });
+        }
+    }
+    return [...by_path.values()];
+}
+function parse_union(def, prefix, loop_detector, mode) {
+    let options = flatten_union_options(def.options);
     let simple_children = ['enum', 'string', 'number', 'int', 'boolean'];
-    let filter_queue = def.options.slice().filter(ele => simple_children.includes(ele._zod.def.type));
+    let filter_queue = options.slice().filter(ele => simple_children.includes(ele._zod.def.type));
+    let complex_children = ['object'];
+    let complex_entries = options.slice().filter(ele => complex_children.includes(ele._zod.def.type));
+    let complex_filters = merge_type_filters_by_path(complex_entries.flatMap(ele => parse_any(ele, prefix, loop_detector, mode)));
     if (filter_queue.length === 0) {
-        return [];
+        return complex_filters;
     }
     let root = filter_queue.shift();
     for (let filter of filter_queue) {
@@ -96,9 +120,10 @@ function parse_union(def, prefix, mode) {
     return [
         {
             path: prefix,
-            filter: root,
+            filter: root.optional(),
             sortable: true,
-        }
+        },
+        ...complex_filters
     ];
 }
 function parse_string(prefix, mode) {

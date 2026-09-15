@@ -550,7 +550,109 @@ describe('query validator from zod', function () {
         );
     });
 
+    it('should be able to process a discriminated union of many object variants chained with .or()', async function () {
+        // .or() nests unions rather than flattening them (a.or(b).or(c) === union([union([a, b]), c])),
+        // so this collection's 5-variant chain requires unwrapping several levels of nesting to reach
+        // every variant's fields.
+        let query_validator = query_validator_from_zod(
+            z.object({
+                channel_data: z.object({
+                    chat_type: z.enum(['client']),
+                    client_ids: z.array(z_mongodb_id),
+                }).or(z.object({
+                    chat_type: z.enum(['campaign']),
+                    client_ids: z.array(z_mongodb_id),
+                    market_id: z_mongodb_id,
+                    campaign_id: z_mongodb_id,
+                })).or(z.object({
+                    chat_type: z.enum(['campaign_product']),
+                    client_ids: z.array(z_mongodb_id),
+                    market_id: z_mongodb_id,
+                    campaign_id: z_mongodb_id,
+                    campaign_product_id: z_mongodb_id,
+                })).or(z.object({
+                    chat_type: z.enum(['flight']),
+                    client_ids: z.array(z_mongodb_id),
+                    market_id: z_mongodb_id,
+                    campaign_id: z_mongodb_id,
+                    campaign_product_id: z_mongodb_id,
+                    flight_id: z_mongodb_id,
+                })).or(z.object({
+                    chat_type: z.enum(['task']),
+                    task_id: z_mongodb_id,
+                })),
+            })
+        );
 
+        // every variant's fields must be independently queryable, not just the last one in the chain
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.client_ids': '6894cba684185cb03275d511' }),
+            { 'channel_data.client_ids': '6894cba684185cb03275d511' }
+        );
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.market_id': '6894cba684185cb03275d511' }),
+            { 'channel_data.market_id': '6894cba684185cb03275d511' }
+        );
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.campaign_id': '6894cba684185cb03275d511' }),
+            { 'channel_data.campaign_id': '6894cba684185cb03275d511' }
+        );
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.campaign_product_id': '6894cba684185cb03275d511' }),
+            { 'channel_data.campaign_product_id': '6894cba684185cb03275d511' }
+        );
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.flight_id': '6894cba684185cb03275d511' }),
+            { 'channel_data.flight_id': '6894cba684185cb03275d511' }
+        );
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.task_id': '6894cba684185cb03275d511' }),
+            { 'channel_data.task_id': '6894cba684185cb03275d511' }
+        );
 
+        // chat_type is contributed by every variant with a different single-value enum; all of them
+        // should be accepted rather than only whichever variant happened to be parsed last
+        for(let chat_type of ['client', 'campaign', 'campaign_product', 'flight', 'task']){
+            assert.deepEqual(
+                query_validator.parse({ 'channel_data.chat_type': chat_type }),
+                { 'channel_data.chat_type': chat_type }
+            );
+        }
+
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.chat_type_in': 'client,task' }),
+            { 'channel_data.chat_type_in': ['client', 'task'] }
+        );
+
+        assert.throws(() => {
+            query_validator.parse({ 'channel_data.chat_type': 'not_a_real_chat_type' })
+        });
+    });
+
+    it('should not error when a union mixes object variants with a simple type', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                channel_data: z.object({
+                    chat_type: z.enum(['client']),
+                    client_ids: z.array(z_mongodb_id),
+                }).or(z.string()),
+            })
+        );
+
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data': 'some raw string value' }),
+            { 'channel_data': 'some raw string value' }
+        );
+
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.chat_type': 'client' }),
+            { 'channel_data.chat_type': 'client' }
+        );
+
+        assert.deepEqual(
+            query_validator.parse({ 'channel_data.client_ids': '6894cba684185cb03275d511' }),
+            { 'channel_data.client_ids': '6894cba684185cb03275d511' }
+        );
+    });
 
 });

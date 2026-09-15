@@ -3,11 +3,12 @@ import { $ZodLooseShape } from "zod/v4/core";
 import { z_mongodb_id } from "./mongoose_from_zod.js";
 import { find_loops, validator_group } from './zod_loop_seperator.js'
 
-type type_filters = {
+type type_filter = {
     path: string,
     filter: z.ZodType,
     sortable: boolean,
-}[]
+}
+type type_filters = type_filter[]
 type Mode = 'client' | 'server'
 
 export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode = 'server'){
@@ -48,7 +49,7 @@ function parse_any(zod_definition: z.ZodTypeAny, prefix: string, loop_detector: 
         case "array":
             return parse_array(zod_definition._zod.def as z.core.$ZodArrayDef, prefix, loop_detector, mode)
         case "union":
-            return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, prefix, mode)
+            return parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, prefix, loop_detector, mode)
         case "custom":
             if(!zod_definition.meta()) {
                 throw new Error(`could not find custom parser in the magic value dictionary`)
@@ -109,22 +110,66 @@ function parse_object(def: z.core.$ZodObjectDef, prefix: string, loop_detector: 
     return retval;
 }
 
-function parse_union(def: z.core.$ZodUnionDef, prefix: string, mode: Mode): type_filters {
+// `.or()` builds nested unions (`a.or(b).or(c)` === `union([union([a, b]), c])`)
+// so a chain of 3+ options hides everything but the outermost couple of
+// branches unless we recursively unwrap nested union options first.
+function flatten_union_options(options: readonly z.core.$ZodType[]): z.core.$ZodType[] {
+    return options.flatMap(option => option._zod.def.type === 'union' ? flatten_union_options((option._zod.def as z.core.$ZodUnionDef).options) : [option]);
+}
+
+// sibling object variants of a union can each contribute a filter at the same path. For example, the following filter
+// z.object({
+//      type: z.enum('oil'),
+//      category: z.string()}
+//  ).or(z.object({
+//      type: z.enum('oil'),
+//      category: z.number()
+//  })));
+// could product a string filter or a number filter for "category". By merging them,
+// we prevent later variants from clobbering earlier ones.
+function merge_type_filters_by_path(filters: type_filters): type_filters {
+    let by_path = new Map<string, type_filter>();
+    for(let filter of filters){
+        let existing = by_path.get(filter.path);
+        if(!existing){
+            by_path.set(filter.path, filter);
+        } else {
+            by_path.set(filter.path, {
+                path: filter.path,
+                filter: existing.filter.or(filter.filter),
+                sortable: existing.sortable && filter.sortable,
+            });
+        }
+    }
+    return Array.from(by_path.values());
+}
+
+function parse_union(def: z.core.$ZodUnionDef, prefix: string, loop_detector: Map<any, validator_group>, mode: Mode): type_filters {
+    let options = flatten_union_options(def.options);
+
     let simple_children = ['enum', 'string', 'number', 'int', 'boolean']
-    let filter_queue = def.options.slice().filter(ele => simple_children.includes(ele._zod.def.type));
-    if(filter_queue.length === 0){ return []; }
-    let root = filter_queue.shift();
+    let filter_queue = options.slice().filter(ele => simple_children.includes(ele._zod.def.type));
+
+    let complex_children = ['object'];
+    let complex_entries = options.slice().filter(ele => complex_children.includes(ele._zod.def.type))
+    //@ts-expect-error
+    let complex_filters: type_filters = merge_type_filters_by_path(complex_entries.flatMap(ele => parse_any(ele, prefix, loop_detector, mode)));
+
+    if(filter_queue.length === 0){ return complex_filters; }
+    let simple_children_validator = filter_queue.shift();
     for(let filter of  filter_queue){
         //@ts-expect-error
-        root = root.or(filter);
+        simple_children_validator = simple_children_validator.or(filter);
     }
+
     return [
         {
             path: prefix,
             //@ts-expect-error
-            filter: root,
+            filter: simple_children_validator.optional(),
             sortable: true,
-        }
+        },
+        ...complex_filters
     ];
 }
 
