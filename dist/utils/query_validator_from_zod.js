@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { Types } from "mongoose";
 import { z_mongodb_id } from "./mongoose_from_zod.js";
 import { find_loops } from './zod_loop_seperator.js';
 export function query_validator_from_zod(zod_definition, mode = 'server') {
@@ -101,7 +102,7 @@ function merge_type_filters_by_path(filters) {
             });
         }
     }
-    return [...by_path.values()];
+    return Array.from(by_path.values());
 }
 function parse_union(def, prefix, loop_detector, mode) {
     let options = flatten_union_options(def.options);
@@ -113,14 +114,14 @@ function parse_union(def, prefix, loop_detector, mode) {
     if (filter_queue.length === 0) {
         return complex_filters;
     }
-    let root = filter_queue.shift();
+    let simple_children_validator = filter_queue.shift();
     for (let filter of filter_queue) {
-        root = root.or(filter);
+        simple_children_validator = simple_children_validator.or(filter);
     }
     return [
         {
             path: prefix,
-            filter: root.optional(),
+            filter: simple_children_validator.optional(),
             sortable: true,
         },
         ...complex_filters
@@ -228,21 +229,28 @@ function parse_date(prefix, mode) {
         }];
 }
 function parse_mongodb_id(prefix, mode) {
-    let array_parser = mode === 'client' ? z.array(z_mongodb_id) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
+    let cast_to_object_id = mode === 'server';
+    let array_parser = mode === 'client'
+        ? z.array(z_mongodb_id)
+        : z.string().transform((val) => {
+            let ids = val.split(',').filter(ele => ele.length > 0);
+            return cast_to_object_id ? ids.map(ele => new Types.ObjectId(ele)) : ids;
+        });
+    let object_id_filter = cast_to_object_id ? z_mongodb_id.transform(val => new Types.ObjectId(val)).optional() : z_mongodb_id.optional();
     return [
         {
             path: prefix,
-            filter: z_mongodb_id.optional(),
+            filter: object_id_filter,
             sortable: true,
         },
         {
             path: prefix + '_gt',
-            filter: z_mongodb_id.optional(),
+            filter: object_id_filter,
             sortable: false,
         },
         {
             path: prefix + '_lt',
-            filter: z_mongodb_id.optional(),
+            filter: object_id_filter,
             sortable: false,
         },
         {

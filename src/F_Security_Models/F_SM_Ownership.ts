@@ -26,8 +26,10 @@ export class F_SM_Ownership<Collection_ID extends string, ZodSchema extends z.Zo
             }
 
             // if we're fetching a document and filtering by the user's ID already,
-            // then this security model is satisfied
-            if (find[this.user_id_field] === user_id) {
+            // then this security model is satisfied. The filter value may be a real
+            // ObjectId rather than a string (query_validator_from_zod casts mongodb_id
+            // filters to ObjectId), so compare as strings.
+            if (find[this.user_id_field] !== undefined && '' + find[this.user_id_field] === user_id) {
                 return true;
             }
         }

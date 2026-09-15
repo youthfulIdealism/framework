@@ -1,5 +1,6 @@
 import assert from "assert";
 import { z} from 'zod'
+import { Types } from 'mongoose'
 
 import { z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { query_validator_from_zod } from '../dist/utils/query_validator_from_zod.js';
@@ -80,7 +81,7 @@ describe('query validator to mongodb query', function () {
                 'nest.nested': 'panko',
                 boolean: true,
                 date: date,
-                object_id: '6894cba684185cb03275d511',
+                object_id: new Types.ObjectId('6894cba684185cb03275d511'),
                 array: 'chupacabra'
             }
         )

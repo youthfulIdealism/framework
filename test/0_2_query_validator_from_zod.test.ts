@@ -3,7 +3,7 @@ import { boolean, z, ZodBoolean, ZodDate, ZodNumber, ZodString } from 'zod'
 
 import { z_mongodb_id } from '../dist/utils/mongoose_from_zod.js';
 import { query_validator_from_zod } from '../dist/utils/query_validator_from_zod.js';
-import { Schema } from 'mongoose'
+import { Schema, Types } from 'mongoose'
 
 import { Cache } from '../dist/utils/cache.js'
 
@@ -52,7 +52,7 @@ describe('query validator from zod', function () {
                 parameter: '6894cba684185cb03275d511',
             }),
             {
-                parameter: '6894cba684185cb03275d511',
+                parameter: new Types.ObjectId('6894cba684185cb03275d511'),
             }
         );
 
@@ -78,7 +78,7 @@ describe('query validator from zod', function () {
                 parameter: '6894cba684185cb03275d511',
             }),
             {
-                parameter: '6894cba684185cb03275d511',
+                parameter: new Types.ObjectId('6894cba684185cb03275d511'),
             }
         );
 
@@ -102,9 +102,9 @@ describe('query validator from zod', function () {
                 parameter_lt: '6894cba684185cb03275d511',
             }),
             {
-                parameter: '6894cba684185cb03275d511',
-                parameter_gt: '6894cba684185cb03275d511',
-                parameter_lt: '6894cba684185cb03275d511',
+                parameter: new Types.ObjectId('6894cba684185cb03275d511'),
+                parameter_gt: new Types.ObjectId('6894cba684185cb03275d511'),
+                parameter_lt: new Types.ObjectId('6894cba684185cb03275d511'),
             }
         );
     });
@@ -121,7 +121,11 @@ describe('query validator from zod', function () {
                 parameter_in: '6894cba684185cb03275d511,689510e2c345ab6dd1075266,689510e2c345ab6dd1075268',
             }),
             {
-                parameter_in: ['6894cba684185cb03275d511', '689510e2c345ab6dd1075266', '689510e2c345ab6dd1075268'],
+                parameter_in: [
+                    new Types.ObjectId('6894cba684185cb03275d511'),
+                    new Types.ObjectId('689510e2c345ab6dd1075266'),
+                    new Types.ObjectId('689510e2c345ab6dd1075268'),
+                ],
             }
         );
     });
@@ -365,7 +369,7 @@ describe('query validator from zod', function () {
                 parameter: '6894cba684185cb03275d511',
             }),
             {
-                parameter: '6894cba684185cb03275d511',
+                parameter: new Types.ObjectId('6894cba684185cb03275d511'),
             }
         );
     });
@@ -584,30 +588,34 @@ describe('query validator from zod', function () {
             })
         );
 
-        // every variant's fields must be independently queryable, not just the last one in the chain
+        // every variant's fields must be independently queryable, not just the last one in the chain.
+        // Fields nested inside a union are stored as Mongoose `Mixed` (since a generic union of shapes
+        // can't become a typed subdocument), which doesn't auto-cast a query string to ObjectId, so
+        // these mongodb_id filters cast to a real ObjectId themselves.
+        let sample_id = '6894cba684185cb03275d511';
         assert.deepEqual(
-            query_validator.parse({ 'channel_data.client_ids': '6894cba684185cb03275d511' }),
-            { 'channel_data.client_ids': '6894cba684185cb03275d511' }
+            query_validator.parse({ 'channel_data.client_ids': sample_id }),
+            { 'channel_data.client_ids': new Types.ObjectId(sample_id) }
         );
         assert.deepEqual(
-            query_validator.parse({ 'channel_data.market_id': '6894cba684185cb03275d511' }),
-            { 'channel_data.market_id': '6894cba684185cb03275d511' }
+            query_validator.parse({ 'channel_data.market_id': sample_id }),
+            { 'channel_data.market_id': new Types.ObjectId(sample_id) }
         );
         assert.deepEqual(
-            query_validator.parse({ 'channel_data.campaign_id': '6894cba684185cb03275d511' }),
-            { 'channel_data.campaign_id': '6894cba684185cb03275d511' }
+            query_validator.parse({ 'channel_data.campaign_id': sample_id }),
+            { 'channel_data.campaign_id': new Types.ObjectId(sample_id) }
         );
         assert.deepEqual(
-            query_validator.parse({ 'channel_data.campaign_product_id': '6894cba684185cb03275d511' }),
-            { 'channel_data.campaign_product_id': '6894cba684185cb03275d511' }
+            query_validator.parse({ 'channel_data.campaign_product_id': sample_id }),
+            { 'channel_data.campaign_product_id': new Types.ObjectId(sample_id) }
         );
         assert.deepEqual(
-            query_validator.parse({ 'channel_data.flight_id': '6894cba684185cb03275d511' }),
-            { 'channel_data.flight_id': '6894cba684185cb03275d511' }
+            query_validator.parse({ 'channel_data.flight_id': sample_id }),
+            { 'channel_data.flight_id': new Types.ObjectId(sample_id) }
         );
         assert.deepEqual(
-            query_validator.parse({ 'channel_data.task_id': '6894cba684185cb03275d511' }),
-            { 'channel_data.task_id': '6894cba684185cb03275d511' }
+            query_validator.parse({ 'channel_data.task_id': sample_id }),
+            { 'channel_data.task_id': new Types.ObjectId(sample_id) }
         );
 
         // chat_type is contributed by every variant with a different single-value enum; all of them
@@ -651,7 +659,32 @@ describe('query validator from zod', function () {
 
         assert.deepEqual(
             query_validator.parse({ 'channel_data.client_ids': '6894cba684185cb03275d511' }),
-            { 'channel_data.client_ids': '6894cba684185cb03275d511' }
+            { 'channel_data.client_ids': new Types.ObjectId('6894cba684185cb03275d511') }
+        );
+    });
+
+    it('should cast a mongodb_id filter to an ObjectId whether or not it is nested inside a union', async function () {
+        // a mongodb_id field nested inside a union is stored as Mongoose Mixed, which doesn't
+        // auto-cast a query value to ObjectId the way a normally-typed field does. Rather than only
+        // casting for that case, every server-mode mongodb_id filter casts to an ObjectId, so the two
+        // behave identically.
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z_mongodb_id,
+                nested: z.object({
+                    parameter: z_mongodb_id,
+                }),
+            })
+        );
+
+        assert.deepEqual(
+            query_validator.parse({ parameter: '6894cba684185cb03275d511' }),
+            { parameter: new Types.ObjectId('6894cba684185cb03275d511') }
+        );
+
+        assert.deepEqual(
+            query_validator.parse({ 'nested.parameter': '6894cba684185cb03275d511' }),
+            { 'nested.parameter': new Types.ObjectId('6894cba684185cb03275d511') }
         );
     });
 

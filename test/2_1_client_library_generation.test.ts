@@ -63,10 +63,44 @@ describe('Client Library Generation: Library Generation', function () {
         client_id: z_mongodb_id,
     });
 
+    // a discriminated-union-of-objects field, chained together with 5 `.or()` calls, to exercise
+    // query_validator_from_zod's handling of nested unions end to end through generated client code.
+    const validate_channel = z.object({
+        _id: z_mongodb_id,
+        name: z.string(),
+        institution_id: z_mongodb_id,
+        channel_data: z.object({
+            chat_type: z.enum(['client']),
+            client_ids: z.array(z_mongodb_id),
+        }).or(z.object({
+            chat_type: z.enum(['campaign']),
+            client_ids: z.array(z_mongodb_id),
+            market_id: z_mongodb_id,
+            campaign_id: z_mongodb_id,
+        })).or(z.object({
+            chat_type: z.enum(['campaign_product']),
+            client_ids: z.array(z_mongodb_id),
+            market_id: z_mongodb_id,
+            campaign_id: z_mongodb_id,
+            campaign_product_id: z_mongodb_id,
+        })).or(z.object({
+            chat_type: z.enum(['flight']),
+            client_ids: z.array(z_mongodb_id),
+            market_id: z_mongodb_id,
+            campaign_id: z_mongodb_id,
+            campaign_product_id: z_mongodb_id,
+            flight_id: z_mongodb_id,
+        })).or(z.object({
+            chat_type: z.enum(['task']),
+            task_id: z_mongodb_id,
+        })),
+    });
+
     let collection_institution: F_Collection<'institution', typeof validate_institution>;
     let collection_client: F_Collection<'client', typeof validate_client>;
     let collection_project: F_Collection<'project', typeof validate_project>;
     let collection_brief_news_category: F_Collection<'brief_news_category', typeof validate_brief_news_category>;
+    let collection_channel: F_Collection<'channel', typeof validate_channel>;
 
     let registry: F_Collection_Registry;
 
@@ -93,12 +127,16 @@ describe('Client Library Generation: Library Generation', function () {
         collection_brief_news_category = new F_Collection('brief_news_category', 'brief_news_categories', validate_brief_news_category);
         collection_brief_news_category.add_layers(['institution', 'client'], [new F_SM_Open_Access(collection_brief_news_category)])
 
+        collection_channel = new F_Collection('channel', 'channels', validate_channel);
+        collection_channel.add_layers(['institution'], [new F_SM_Open_Access(collection_channel)])
+
         let proto_registry = new F_Collection_Registry();
         registry = proto_registry
             .register(collection_institution)
             .register(collection_client)
             .register(collection_project)
             .register(collection_brief_news_category)
+            .register(collection_channel)
         registry.compile(express_app, '/api');
 
         server = express_app.listen(port);
@@ -170,6 +208,32 @@ describe('Client Library Generation: Library Generation', function () {
         }
 
         return { institution,  client, test_projects}
+    }
+
+    async function generate_channel_test_setup(){
+        let institution = await collection_institution.mongoose_model.create({
+            name: 'test institution'
+        });
+
+        let client_channel = await collection_channel.mongoose_model.create({
+            name: 'client channel',
+            institution_id: institution._id,
+            channel_data: {
+                chat_type: 'client',
+                client_ids: [new mongoose.Types.ObjectId()],
+            },
+        });
+
+        let task_channel = await collection_channel.mongoose_model.create({
+            name: 'task channel',
+            institution_id: institution._id,
+            channel_data: {
+                chat_type: 'task',
+                task_id: new mongoose.Types.ObjectId(),
+            },
+        });
+
+        return { institution, client_channel, task_channel };
     }
 
     it(`should be able to service a basic GET request`, async function () {
@@ -375,5 +439,54 @@ describe('Client Library Generation: Library Generation', function () {
             result.steps.length
         )
     });
-    
+
+    it(`should be able to query on a field shared by every variant of a discriminated union`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution, client_channel, task_channel } = await generate_channel_test_setup();
+
+        let result = await api(`http://localhost:${port}/api`, async () => "todd")
+            .collection('institution')
+            .document(institution._id)
+            .collection('channel')
+            .query({ 'channel_data.chat_type': 'task' });
+
+        assert.deepEqual(
+            [JSON.parse(JSON.stringify(task_channel))],
+            result
+        )
+    });
+
+    it(`should be able to query on a field unique to a single variant of a discriminated union`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution, client_channel, task_channel } = await generate_channel_test_setup();
+
+        let result = await api(`http://localhost:${port}/api`, async () => "todd")
+            .collection('institution')
+            .document(institution._id)
+            .collection('channel')
+            //@ts-ignore
+            .query({ 'channel_data.task_id': task_channel.channel_data.task_id.toString() });
+
+        assert.deepEqual(
+            [JSON.parse(JSON.stringify(task_channel))],
+            result
+        )
+    });
+
+    it(`should be able to query for either of the union's values via chat_type_in`, async function () {
+        let { api } = await import("./tmp/dist/index.js");
+        let { institution, client_channel, task_channel } = await generate_channel_test_setup();
+
+        let result = await api(`http://localhost:${port}/api`, async () => "todd")
+            .collection('institution')
+            .document(institution._id)
+            .collection('channel')
+            .query({ 'channel_data.chat_type_in': ['client', 'task'] });
+
+        assert.deepEqual(
+            [client_channel, task_channel].map(ele => JSON.parse(JSON.stringify(ele))).sort((a, b) => a._id.localeCompare(b._id)),
+            result.sort((a, b) => a._id.localeCompare(b._id))
+        )
+    });
+
 });

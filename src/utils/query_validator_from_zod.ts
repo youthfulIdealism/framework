@@ -1,5 +1,6 @@
 import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
+import { Types } from "mongoose";
 import { z_mongodb_id } from "./mongoose_from_zod.js";
 import { find_loops, validator_group } from './zod_loop_seperator.js'
 
@@ -92,7 +93,7 @@ function parse_array(def: z.core.$ZodArrayDef, prefix: string, loop_detector: Ma
             return parse_mongodb_id(prefix, mode).filter(ele => ele.path == prefix);
         }
     }
-    
+
     return [];
 }
 
@@ -100,7 +101,7 @@ function parse_object(def: z.core.$ZodObjectDef, prefix: string, loop_detector: 
     if(loop_detector.has(def)) {
         return [];
     }
-    
+
     let retval = [] as type_filters;
     for(let [key, value] of Object.entries(def.shape)){
         //@ts-ignore
@@ -282,21 +283,33 @@ function parse_date(prefix: string, mode: Mode): type_filters {
 
 
 function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
-    let array_parser = mode === 'client' ? z.array(z_mongodb_id) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
+    // server-mode filters always cast to a real ObjectId (rather than leaving a validated hex string)
+    // so that equality/gt/lt/in filters work correctly even for a field nested inside a union, which
+    // Mongoose stores as `Mixed` and therefore can't auto-cast a query value to ObjectId (see
+    // mongoose_from_zod.ts's parse_union). Client-mode filters stay string, since that's what a browser
+    // actually sends over a query string.
+    let cast_to_object_id = mode === 'server';
+    let array_parser = mode === 'client'
+        ? z.array(z_mongodb_id)
+        : z.string().transform((val): (string | Types.ObjectId)[] => {
+            let ids = val.split(',').filter(ele => ele.length > 0);
+            return cast_to_object_id ? ids.map(ele => new Types.ObjectId(ele)) : ids;
+        });
+    let object_id_filter = cast_to_object_id ? z_mongodb_id.transform(val => new Types.ObjectId(val)).optional() : z_mongodb_id.optional();
     return [
         {
             path: prefix,
-            filter: z_mongodb_id.optional(),
+            filter: object_id_filter,
             sortable: true,
         },
         {
             path: prefix + '_gt',
-            filter: z_mongodb_id.optional(),
+            filter: object_id_filter,
             sortable: false,
         },
         {
             path: prefix + '_lt',
-            filter: z_mongodb_id.optional(),
+            filter: object_id_filter,
             sortable: false,
         },
         {
