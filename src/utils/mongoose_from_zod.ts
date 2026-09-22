@@ -95,7 +95,7 @@ export function schema_entry_from_zod(zod_definition: z.ZodType, loop_detector: 
             result.required = !zod_definition.safeParse(undefined).success
             return result;
         case "union":
-            result = parse_union(zod_definition._zod.def as z.core.$ZodUnionDef)
+            result = parse_union(zod_definition._zod.def as z.core.$ZodUnionDef, loop_detector)
             result.required = !zod_definition.safeParse(undefined).success
             return result;
         case "readonly":
@@ -123,6 +123,12 @@ function parse_object(def: z.core.$ZodObjectDef, loop_detector: Map<any, validat
         return { mongoose_type: Schema.Types.Mixed, required: true }
     }
 
+    let retval = build_object_fields(def, loop_detector);
+    apply_auto_id_handling(retval);
+    return {mongoose_type: retval, required: true};
+}
+
+function build_object_fields(def: z.core.$ZodObjectDef, loop_detector: Map<any, validator_group> ): any {
     let retval = {} as any;
     for(let [key, value] of Object.entries(def.shape)){
         for(let forbidden_key of forbidden_keys){
@@ -145,11 +151,13 @@ function parse_object(def: z.core.$ZodObjectDef, loop_detector: Map<any, validat
         //@ts-ignore
         retval[key] = schema_entry_from_zod(value, loop_detector);
     }
+    return retval;
+}
 
-    // handle the edge cases arouund mongoose's auto-IDs
+// handle the edge cases around mongoose's auto-IDs
+function apply_auto_id_handling(retval: any): void {
     if(!retval._id){ retval._id = false; }
     else { delete retval._id; }
-    return {mongoose_type: retval, required: true};
 }
 
 function parse_array(def: z.core.$ZodArrayDef, loop_detector: Map<any, validator_group> ): any {
@@ -165,10 +173,82 @@ function parse_enum(def: z.core.$ZodEnumDef): any {
     return retval;
 }
 
-function parse_union(def: z.core.$ZodUnionDef): any {
-    let retval = { mongoose_type: Schema.Types.Mixed } as any;
-    retval.required = true;
-    return retval;
+// `.or()` builds nested unions (`a.or(b).or(c)` === `union([union([a, b]), c])`)
+// so a chain of 3+ options hides everything but the outermost couple of
+// branches unless we recursively unwrap nested union options first.
+function flatten_union_options(options: readonly z.core.$ZodType[]): z.core.$ZodType[] {
+    return options.flatMap(option => option._zod.def.type === 'union' ? flatten_union_options((option._zod.def as z.core.$ZodUnionDef).options) : [option]);
+}
+
+function parse_union(def: z.core.$ZodUnionDef, loop_detector: Map<any, validator_group>): any {
+    let options = flatten_union_options(def.options);
+    let object_options = options.filter(option => option._zod.def.type === 'object');
+
+    if(options.length === 0) {
+        throw new Error('Union type contained no options')
+    }
+
+    // when every branch of the union is an object (e.g. z.object({...}).or(z.object({...}))),
+    // merge their fields into a single subdocument schema instead of collapsing to Mixed. Mongoose
+    // has no concept of "either of these object shapes," but by merging we make sure fields like
+    // mongoDB IDs still get cast correctly no matter which branch a given document matches, since
+    // Mixed fields are stored as-is with no casting at all.
+    if(object_options.length === options.length){
+        // when every .or() is an object
+        // (for example:
+        //   z.object({
+        //       decor_type: z.enum(['sprinkle'])
+        //       sprinkle_field: z_mongodb_id,
+        //   }).or(z.object({
+        //       decor_type: z.enum(['frosting'])
+        //       frosting_field: z.string()
+        //   }))
+        // ), flatten the resulting mongoose schema
+        // into one shape so that mongoDB IDs still
+        // get cast correctly, for example:
+        // {
+        //      mongoose_type: {
+        //          decor_type: { type: string },
+        //          sprinkle_field: { type: Schema.Types.ObjectI d},
+        //          frosting_field: { type: string }
+        //      }
+        // }
+
+        let options_as_mongodb_schemas = options.map(option => build_object_fields(option._zod.def as z.core.$ZodObjectDef, loop_detector));
+        let all_keys = new Set<string>(options_as_mongodb_schemas.flatMap(ele => Object.keys(ele)));
+
+        let merged = {} as any;
+        for(let key of all_keys){
+            let variants = options_as_mongodb_schemas.map(option => option[key]).filter(entry => entry !== undefined);
+
+            let [first, ...rest] = variants;
+            let are_all_variants_same_type = rest.every(entry => {
+                // .of is used for the record type in parse_record
+                return values_deep_equal(first.mongoose_type, entry.mongoose_type) && values_deep_equal(first.of, entry.of);
+            });
+            let are_variants_present_in_every_branch = variants.length === options_as_mongodb_schemas.length;
+
+            if(are_all_variants_same_type){
+                merged[key] = {
+                    ...first,
+                    required: are_variants_present_in_every_branch && variants.every(entry => entry.required)
+                }
+            } else {
+                merged[key] = { mongoose_type: Schema.Types.Mixed, required: false };
+            }
+        }
+
+        apply_auto_id_handling(merged);
+        return { mongoose_type: merged, required: true };
+    } else if(object_options.length > 0) {
+        console.warn(`Mixing objects and primitives in a z.or() is not well-supported. At minimum, you'll need to perform any ObjectID casting yourself.`)
+        return {
+            mongoose_type: Schema.Types.Mixed,
+            required: true,
+        };
+    }
+
+    return { mongoose_type: Schema.Types.Mixed, required: true };
 }
 
 function parse_record(def: z.core.$ZodRecordDef, loop_detector: Map<any, validator_group> ): any {
@@ -219,4 +299,17 @@ function parse_optional(def: z.core.$ZodOptionalDef, loop_detector: Map<any, val
 
 function parse_mongodb_id(def: z.core.$ZodCustomDef, meta: { framework_override_type: 'mongodb_id', optional?: boolean, nullable?: boolean}): any {
     return { mongoose_type: Schema.Types.ObjectId, required: !(meta.optional || meta.nullable) };
+}
+
+function values_deep_equal(a: any, b: any): boolean {
+    if(a === b){ return true; }
+    if(typeof a !== 'object' || typeof b !== 'object' || a === null || b === null){ return false; }
+    if(Array.isArray(a) !== Array.isArray(b)){ return false; }
+    if(Array.isArray(a)){
+        return a.length === b.length && a.every((entry, index) => values_deep_equal(entry, b[index]));
+    }
+
+    let a_keys = Object.keys(a);
+    let b_keys = Object.keys(b);
+    return a_keys.length === b_keys.length && a_keys.every(key => values_deep_equal(a[key], b[key]));
 }

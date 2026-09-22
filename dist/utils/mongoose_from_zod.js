@@ -87,7 +87,7 @@ export function schema_entry_from_zod(zod_definition, loop_detector) {
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "union":
-            result = parse_union(zod_definition._zod.def);
+            result = parse_union(zod_definition._zod.def, loop_detector);
             result.required = !zod_definition.safeParse(undefined).success;
             return result;
         case "readonly":
@@ -112,6 +112,11 @@ function parse_object(def, loop_detector) {
     if (loop_detector.has(def)) {
         return { mongoose_type: Schema.Types.Mixed, required: true };
     }
+    let retval = build_object_fields(def, loop_detector);
+    apply_auto_id_handling(retval);
+    return { mongoose_type: retval, required: true };
+}
+function build_object_fields(def, loop_detector) {
     let retval = {};
     for (let [key, value] of Object.entries(def.shape)) {
         for (let forbidden_key of forbidden_keys) {
@@ -131,13 +136,15 @@ function parse_object(def, loop_detector) {
         }
         retval[key] = schema_entry_from_zod(value, loop_detector);
     }
+    return retval;
+}
+function apply_auto_id_handling(retval) {
     if (!retval._id) {
         retval._id = false;
     }
     else {
         delete retval._id;
     }
-    return { mongoose_type: retval, required: true };
 }
 function parse_array(def, loop_detector) {
     let retval = { mongoose_type: [schema_entry_from_zod(def.element, loop_detector)] };
@@ -149,10 +156,47 @@ function parse_enum(def) {
     retval.required = true;
     return retval;
 }
-function parse_union(def) {
-    let retval = { mongoose_type: Schema.Types.Mixed };
-    retval.required = true;
-    return retval;
+function flatten_union_options(options) {
+    return options.flatMap(option => option._zod.def.type === 'union' ? flatten_union_options(option._zod.def.options) : [option]);
+}
+function parse_union(def, loop_detector) {
+    let options = flatten_union_options(def.options);
+    let object_options = options.filter(option => option._zod.def.type === 'object');
+    if (options.length === 0) {
+        throw new Error('Union type contained no options');
+    }
+    if (object_options.length === options.length) {
+        let options_as_mongodb_schemas = options.map(option => build_object_fields(option._zod.def, loop_detector));
+        let all_keys = new Set(options_as_mongodb_schemas.flatMap(ele => Object.keys(ele)));
+        let merged = {};
+        for (let key of all_keys) {
+            let variants = options_as_mongodb_schemas.map(option => option[key]).filter(entry => entry !== undefined);
+            let [first, ...rest] = variants;
+            let are_all_variants_same_type = rest.every(entry => {
+                return values_deep_equal(first.mongoose_type, entry.mongoose_type) && values_deep_equal(first.of, entry.of);
+            });
+            let are_variants_present_in_every_branch = variants.length === options_as_mongodb_schemas.length;
+            if (are_all_variants_same_type) {
+                merged[key] = {
+                    ...first,
+                    required: are_variants_present_in_every_branch && variants.every(entry => entry.required)
+                };
+            }
+            else {
+                merged[key] = { mongoose_type: Schema.Types.Mixed, required: false };
+            }
+        }
+        apply_auto_id_handling(merged);
+        return { mongoose_type: merged, required: true };
+    }
+    else if (object_options.length > 0) {
+        console.warn(`Mixing objects and primitives in a z.or() is not well-supported. At minimum, you'll need to perform any ObjectID casting yourself.`);
+        return {
+            mongoose_type: Schema.Types.Mixed,
+            required: true,
+        };
+    }
+    return { mongoose_type: Schema.Types.Mixed, required: true };
 }
 function parse_record(def, loop_detector) {
     if (!['string', 'enum'].includes(def.keyType._zod.def.type)) {
@@ -190,5 +234,22 @@ function parse_optional(def, loop_detector) {
 }
 function parse_mongodb_id(def, meta) {
     return { mongoose_type: Schema.Types.ObjectId, required: !(meta.optional || meta.nullable) };
+}
+function values_deep_equal(a, b) {
+    if (a === b) {
+        return true;
+    }
+    if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+        return false;
+    }
+    if (Array.isArray(a) !== Array.isArray(b)) {
+        return false;
+    }
+    if (Array.isArray(a)) {
+        return a.length === b.length && a.every((entry, index) => values_deep_equal(entry, b[index]));
+    }
+    let a_keys = Object.keys(a);
+    let b_keys = Object.keys(b);
+    return a_keys.length === b_keys.length && a_keys.every(key => values_deep_equal(a[key], b[key]));
 }
 //# sourceMappingURL=mongoose_from_zod.js.map
