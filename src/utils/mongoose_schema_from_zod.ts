@@ -23,7 +23,7 @@ export const z_mongodb_id = z.custom<string>((val) => {
     "format": "string",
 }).meta({framework_override_type: 'mongodb_id'});
 
-export function mongoose_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType, database: typeof mongoose = mongoose) {
+export function mongoose_schema_from_zod<T>(schema_name: string, zod_definition: z.core.$ZodType, database: typeof mongoose = mongoose) {
     let mongoose_schema = schema_from_zod(zod_definition);
     return database.model<T>(schema_name, new Schema(mongoose_schema, {typeKey: 'mongoose_type', minimize: false}));
 }

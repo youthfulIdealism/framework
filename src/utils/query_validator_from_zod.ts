@@ -1,7 +1,7 @@
 import { z } from "zod/v4"
 import { $ZodLooseShape } from "zod/v4/core";
 import { Types } from "mongoose";
-import { z_mongodb_id } from "./mongoose_from_zod.js";
+import { z_mongodb_id } from "./mongoose_schema_from_zod.js";
 import { find_loops, validator_group } from './zod_loop_seperator.js'
 
 type type_filter = {

@@ -1,4 +1,4 @@
-import { mongoose_from_zod, schema_from_zod } from "./utils/mongoose_from_zod.js";
+import { mongoose_schema_from_zod, schema_from_zod } from "./utils/mongoose_schema_from_zod.js";
 import mongoose from "mongoose";
 import { query_validator_from_zod } from "./utils/query_validator_from_zod.js";
 import { array_children_from_zod } from "./utils/array_children_from_zod.js";
@@ -30,7 +30,7 @@ export class F_Collection {
         this.collection_name_plural = collection_name_plural;
         this.validator = validator;
         this.mongoose_schema = schema_from_zod(validator);
-        this.mongoose_model = mongoose_from_zod(collection_name, validator, database);
+        this.mongoose_model = mongoose_schema_from_zod(collection_name, validator, database);
         this.query_validator_server = query_validator_from_zod(validator, 'server');
         this.query_validator_client = query_validator_from_zod(validator, 'client');
         this.advanced_query_validator_server = complex_query_validator_from_zod(validator, 'server').optional();
