@@ -193,6 +193,10 @@ function parse_union(def: z.core.$ZodUnionDef, loop_detector: Map<any, validator
     // has no concept of "either of these object shapes," but by merging we make sure fields like
     // mongoDB IDs still get cast correctly no matter which branch a given document matches, since
     // Mixed fields are stored as-is with no casting at all.
+    // in the event that any branch of the union is a loop, just use mixed. 
+    if(object_options.some(option => loop_detector.has(option._zod.def))){
+        return { mongoose_type: Schema.Types.Mixed, required: true };
+    }
     if(object_options.length === options.length){
         // when every .or() is an object
         // (for example:

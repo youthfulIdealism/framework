@@ -165,6 +165,9 @@ function parse_union(def, loop_detector) {
     if (options.length === 0) {
         throw new Error('Union type contained no options');
     }
+    if (object_options.some(option => loop_detector.has(option._zod.def))) {
+        return { mongoose_type: Schema.Types.Mixed, required: true };
+    }
     if (object_options.length === options.length) {
         let options_as_mongodb_schemas = options.map(option => build_object_fields(option._zod.def, loop_detector));
         let all_keys = new Set(options_as_mongodb_schemas.flatMap(ele => Object.keys(ele)));

@@ -2,6 +2,7 @@ import assert from "assert";
 import { z } from 'zod'
 
 import { find_loops } from '../dist/utils/zod_loop_seperator.js';
+import { schema_from_zod } from '../dist/utils/mongoose_schema_from_zod.js';
 
 process.env.DEBUG = 'express:*'
 
@@ -123,5 +124,18 @@ describe('Mongoose from Zod', function () {
         })
         let loops = find_loops(zodSchema);
         assert.equal(loops.size, 1)
+    });
+
+    it('should build a mongoose schema from a loop through a union of only objects', function () {
+        let looped = z.object({
+            val: z.string(),
+            get looped() {
+                return looped.or(z.object({ other: z.string() }))
+            }
+        })
+        let zodSchema = z.object({
+            entry: looped.or(z.object({ other: z.string() }))
+        })
+        assert.doesNotThrow(() => schema_from_zod(zodSchema))
     });
 });
