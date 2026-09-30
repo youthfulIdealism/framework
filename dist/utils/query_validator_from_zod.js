@@ -136,6 +136,11 @@ function parse_string(prefix, mode) {
             sortable: true,
         },
         {
+            path: prefix + '_ne',
+            filter: z.string().optional(),
+            sortable: false,
+        },
+        {
             path: prefix + '_gt',
             filter: z.string().optional(),
             sortable: false,
@@ -166,6 +171,11 @@ function parse_enum(definition, prefix, mode) {
             sortable: true,
         },
         {
+            path: prefix + '_ne',
+            filter: z.enum(definition.entries).optional(),
+            sortable: false,
+        },
+        {
             path: prefix + '_in',
             filter: array_parser.optional(),
             sortable: false,
@@ -174,11 +184,18 @@ function parse_enum(definition, prefix, mode) {
 }
 function parse_boolean(prefix, mode) {
     let boolean_parser = mode === 'client' ? z.boolean() : z.stringbool();
-    return [{
+    return [
+        {
             path: prefix,
             filter: boolean_parser.optional(),
             sortable: true,
-        }];
+        },
+        {
+            path: prefix + '_ne',
+            filter: boolean_parser.optional(),
+            sortable: false,
+        },
+    ];
 }
 function parse_number(prefix, mode) {
     let number_parser = mode === 'client' ? z.number() : z.coerce.number();
@@ -187,6 +204,11 @@ function parse_number(prefix, mode) {
             path: prefix,
             filter: number_parser.optional(),
             sortable: true,
+        },
+        {
+            path: prefix + '_ne',
+            filter: number_parser.optional(),
+            sortable: false,
         },
         {
             path: prefix + '_gt',
@@ -218,6 +240,11 @@ function parse_date(prefix, mode) {
             sortable: true,
         },
         {
+            path: prefix + '_ne',
+            filter: date_parser.optional(),
+            sortable: false,
+        },
+        {
             path: prefix + '_gt',
             filter: date_parser.optional(),
             sortable: false,
@@ -244,6 +271,11 @@ function parse_mongodb_id(prefix, mode) {
             sortable: true,
         },
         {
+            path: prefix + '_ne',
+            filter: object_id_filter,
+            sortable: false,
+        },
+        {
             path: prefix + '_gt',
             filter: object_id_filter,
             sortable: false,
@@ -263,7 +295,7 @@ function parse_mongodb_id(prefix, mode) {
 function parse_nullable(inner_type, prefix, loop_detector, mode = 'server') {
     let inner = parse_any(inner_type, prefix, loop_detector, mode);
     for (let ele of inner) {
-        if ([`${prefix}`, `${prefix}_in`].includes(ele.path)) {
+        if ([`${prefix}`, `${prefix}_ne`, `${prefix}_in`].includes(ele.path)) {
             ele.filter = ele.filter.nullable();
         }
     }

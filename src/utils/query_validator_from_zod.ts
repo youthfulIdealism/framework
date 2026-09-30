@@ -183,6 +183,11 @@ function parse_string(prefix: string, mode: Mode): type_filters {
                 sortable: true,
             },
             {
+                path: prefix + '_ne',
+                filter: z.string().optional(),
+                sortable: false,
+            },
+            {
                 path: prefix + '_gt',
                 filter: z.string().optional(),
                 sortable: false,
@@ -215,6 +220,11 @@ function parse_enum(definition: z.core.$ZodEnumDef, prefix: string, mode: Mode):
                 sortable: true,
             },
             {
+                path: prefix + '_ne',
+                filter: z.enum(definition.entries).optional(),
+                sortable: false,
+            },
+            {
                 path: prefix + '_in',
                 filter: array_parser.optional(),
                 sortable: false,
@@ -224,11 +234,18 @@ function parse_enum(definition: z.core.$ZodEnumDef, prefix: string, mode: Mode):
 
 function parse_boolean(prefix: string, mode: Mode): type_filters {
     let boolean_parser = mode === 'client' ? z.boolean() : z.stringbool();
-    return [{
-        path: prefix,
-        filter: boolean_parser.optional(),
-        sortable: true,
-    }];
+    return [
+        {
+            path: prefix,
+            filter: boolean_parser.optional(),
+            sortable: true,
+        },
+        {
+            path: prefix + '_ne',
+            filter: boolean_parser.optional(),
+            sortable: false,
+        },
+    ];
 }
 
 function parse_number(prefix: string, mode: Mode): type_filters {
@@ -238,6 +255,11 @@ function parse_number(prefix: string, mode: Mode): type_filters {
             path: prefix,
             filter: number_parser.optional(),
             sortable: true,
+        },
+        {
+            path: prefix + '_ne',
+            filter: number_parser.optional(),
+            sortable: false,
         },
         {
             path: prefix + '_gt',
@@ -268,6 +290,11 @@ function parse_date(prefix: string, mode: Mode): type_filters {
         path: prefix,
         filter: date_parser.optional(),
         sortable: true,
+    },
+    {
+        path: prefix + '_ne',
+        filter: date_parser.optional(),
+        sortable: false,
     },
     {
         path: prefix + '_gt',
@@ -303,6 +330,11 @@ function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
             sortable: true,
         },
         {
+            path: prefix + '_ne',
+            filter: object_id_filter,
+            sortable: false,
+        },
+        {
             path: prefix + '_gt',
             filter: object_id_filter,
             sortable: false,
@@ -323,7 +355,7 @@ function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
 function parse_nullable(inner_type: z.ZodTypeAny, prefix: string, loop_detector: Map<any, validator_group>, mode: Mode = 'server'): type_filters {
     let inner = parse_any(inner_type, prefix, loop_detector, mode)
     for(let ele of inner){
-        if([`${prefix}`, `${prefix}_in`].includes(ele.path)){
+        if([`${prefix}`, `${prefix}_ne`, `${prefix}_in`].includes(ele.path)){
             ele.filter = ele.filter.nullable();
         }
     }

@@ -155,6 +155,95 @@ describe('query validator to mongodb query', function () {
         )
     });
 
+    it('should be able to transform ne', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            param: z.number(),
+        }))
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse({
+                param_ne: '5'
+            })),
+            {
+                param: {
+                    $ne: 5
+                }
+            }
+        )
+    });
+
+    it('should be able to transform ne for every primitive type', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            string: z.string(),
+            boolean: z.boolean(),
+            date: z.date(),
+            enum: z.enum(['one', 'two']),
+            object_id: z_mongodb_id,
+            nest: z.object({
+                nested: z.string()
+            }),
+        }))
+
+        let date = new Date();
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse({
+                string_ne: 'string',
+                boolean_ne: 'true',
+                date_ne: date.toISOString(),
+                enum_ne: 'one',
+                object_id_ne: '6894cba684185cb03275d511',
+                'nest.nested_ne': 'panko',
+            })),
+            {
+                string: { $ne: 'string' },
+                boolean: { $ne: true },
+                date: { $ne: date },
+                enum: { $ne: 'one' },
+                object_id: { $ne: new Types.ObjectId('6894cba684185cb03275d511') },
+                'nest.nested': { $ne: 'panko' },
+            }
+        )
+    });
+
+    it('should be able to transform a null ne on a nullable field', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            param: z.string().nullable(),
+        }))
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse(convert_null({
+                param_ne: 'null'
+            }))),
+            {
+                param: {
+                    $ne: null
+                }
+            }
+        )
+    });
+
+    it('should be able to combine ne with other complex operations', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            param: z.number(),
+        }))
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse({
+                param_gt: '5',
+                param_ne: '7',
+                param_lt: '10',
+            })),
+            {
+                param: {
+                    $gt: 5,
+                    $ne: 7,
+                    $lt: 10,
+                }
+            }
+        )
+    });
+
     it('should be able to transform in', async function () {
         let query_validator = query_validator_from_zod(z.object({
             param: z.string(),

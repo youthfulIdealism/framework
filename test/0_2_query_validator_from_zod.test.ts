@@ -289,6 +289,110 @@ describe('query validator from zod', function () {
         );
     });
 
+    it('should be able to process not equal for every primitive type', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                string_parameter: z.string(),
+                number_parameter: z.number(),
+                boolean_parameter: z.boolean(),
+                date_parameter: z.date(),
+                enum_parameter: z.enum(['red', 'blue']),
+                mongodb_parameter: z_mongodb_id,
+            })
+        );
+
+        let date = new Date().toISOString();
+
+        assert.deepEqual(
+            query_validator.parse({
+                string_parameter_ne: 'fungus',
+                number_parameter_ne: '42',
+                boolean_parameter_ne: 'false',
+                date_parameter_ne: date,
+                enum_parameter_ne: 'red',
+                mongodb_parameter_ne: '6894cba684185cb03275d511',
+            }),
+            {
+                string_parameter_ne: 'fungus',
+                number_parameter_ne: 42,
+                boolean_parameter_ne: false,
+                date_parameter_ne: new Date(date),
+                enum_parameter_ne: 'red',
+                mongodb_parameter_ne: new Types.ObjectId('6894cba684185cb03275d511'),
+            }
+        );
+    });
+
+    it('should validate the value of a not equal filter the same way as an equality filter', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                number_parameter: z.number(),
+                enum_parameter: z.enum(['red', 'blue']),
+                mongodb_parameter: z_mongodb_id,
+            })
+        );
+
+        assert.throws(() => query_validator.parse({ number_parameter_ne: 'not a number' }));
+        assert.throws(() => query_validator.parse({ enum_parameter_ne: 'green' }));
+        assert.throws(() => query_validator.parse({ mongodb_parameter_ne: 'bad id' }));
+    });
+
+    it('should be able to process a nested not equal filter', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                nest: z.object({
+                    parameter: z.string()
+                })
+            })
+        );
+
+        assert.deepEqual(
+            query_validator.parse({
+                'nest.parameter_ne': 'fungus'
+            }),
+            {
+                'nest.parameter_ne': 'fungus'
+            }
+        );
+    });
+
+    it('should allow a null not equal filter on a nullable field', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z.string().nullable()
+            })
+        );
+
+        assert.deepEqual(
+            query_validator.parse({
+                parameter_ne: null,
+            }),
+            {
+                parameter_ne: null,
+            }
+        );
+    });
+
+    it('should not allow a null not equal filter on a non-nullable field', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z.string()
+            })
+        );
+
+        assert.throws(() => query_validator.parse({ parameter_ne: null }));
+    });
+
+    it('should not allow sorting on a not equal filter', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z.string()
+            })
+        );
+
+        assert.throws(() => query_validator.parse({ sort: 'parameter_ne' }));
+    });
+
     it('should be able to process a number in an array', async function () {
         let query_validator = query_validator_from_zod(
             z.object({

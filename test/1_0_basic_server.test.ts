@@ -520,6 +520,95 @@ describe('Basic Server', function () {
         assert.deepEqual(JSON.parse(JSON.stringify(test_institutions.filter(ele => ele.name.match(/li/i)))), results.data);
     });
 
+    it(`should be able to perform a basic GET multiple with a not equal filter`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?name_ne=${encodeURIComponent('geriatric co')}`).json();
+
+        //@ts-ignore
+        assert.equal(results.data.length, 4)
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions.filter(ele => ele.name !== 'geriatric co'))), results.data);
+    });
+
+    it(`should be able to perform a basic GET multiple with a not equal filter on an _id`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 3; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co', 'the ordinary institute', 'geriatric co'][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?_id_ne=${test_institutions[1]._id}`).json();
+
+        //@ts-ignore
+        assert.equal(results.data.length, 2)
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify([test_institutions[0], test_institutions[2]])), results.data);
+    });
+
+    it(`should be able to combine a not equal filter with another filter on the same field`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 5; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co',
+                    'the ordinary institute',
+                    'saliva branding collective',
+                    'united league of billionare communitsts',
+                    'geriatric co',
+                ][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution?name_search=co&name_ne=${encodeURIComponent('spandex co')}`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions.filter(ele => ele.name.match(/co/i) && ele.name !== 'spandex co'))), results.data);
+        //@ts-ignore
+        assert.equal(results.data.length, 3)
+    });
+
+    it(`should be able to perform a GET multiple with a not equal filter on a layer below the root`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_clients = [];
+        for(let name of [`Bob's spandex house`, `Tom's leather pants`, `Alice's crochet club`]){
+            test_clients.push(await client.mongoose_model.create({
+                institution_id: test_institution._id,
+                name: name
+            }));
+        }
+
+        let results = await got.get(`http://localhost:${port}/api/institution/${test_institution._id}/client?name_ne=${encodeURIComponent(`Tom's leather pants`)}`).json();
+
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify([test_clients[0], test_clients[2]])), results.data);
+    });
+
+    it(`should reject a not equal filter with an invalid value`, async function () {
+        await assert.rejects(async () => {
+            await got.get(`http://localhost:${port}/api/institution?_id_ne=bad_id`);
+        })
+    });
+
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
      /////////////////////////////////////////////////////////////    PUT        ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

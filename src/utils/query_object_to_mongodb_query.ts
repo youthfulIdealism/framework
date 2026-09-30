@@ -6,8 +6,8 @@ export let complex_query_map = {
     '_lt': '$lt',
     '_gte': '$gte',
     '_lte': '$lte',
-    /*'_ne': '$ne',
-    '_starts_with': (key, value) => {
+    '_ne': '$ne',
+    /*'_starts_with': (key, value) => {
         return new RegExp('^' + escapeRegExp(value))
     },
     '_ends_with': (key, value) => {

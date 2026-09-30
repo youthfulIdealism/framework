@@ -4,6 +4,7 @@ export let complex_query_map = {
     '_lt': '$lt',
     '_gte': '$gte',
     '_lte': '$lte',
+    '_ne': '$ne',
     '_in': '$in',
     '_search': (val) => {
         return { $regex: new RegExp(escapeStringRegexp(val)), $options: 'i' };

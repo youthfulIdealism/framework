@@ -64,6 +64,7 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
@@ -93,10 +94,12 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: string
+                    "test_ne"?: string
                     "test_gt"?: string
                     "test_lt"?: string
                     "test_search"?: string
@@ -127,10 +130,12 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: number
+                    "test_ne"?: number
                     "test_gt"?: number
                     "test_gte"?: number
                     "test_lt"?: number
@@ -161,10 +166,12 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: boolean
+                    "test_ne"?: boolean
                     "sort"?: ("_id" | "test")
                 }`)
         )
@@ -191,10 +198,12 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: Date
+                    "test_ne"?: Date
                     "test_gt"?: Date
                     "test_lt"?: Date
                     "sort"?: ("_id" | "test")
@@ -223,10 +232,12 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: ("red" | "green" | "blue")
+                    "test_ne"?: ("red" | "green" | "blue")
                     "test_in"?: (("red" | "green" | "blue"))[]
                     "sort"?: ("_id" | "test")
                 }`)
@@ -257,6 +268,7 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
@@ -295,29 +307,35 @@ describe('Client Library Generation: Query Types', function () {
                     "advanced_query"?: string
 
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
 
                     "test.field_string"?: string
+                    "test.field_string_ne"?: string
                     "test.field_string_gt"?: string
                     "test.field_string_lt"?: string
                     "test.field_string_search"?: string
                     "test.field_string_in"?: (string)[]
 
                     "test.field_number"?: number
+                    "test.field_number_ne"?: number
                     "test.field_number_gt"?: number
                     "test.field_number_gte"?: number
                     "test.field_number_lt"?: number
                     "test.field_number_lte"?: number
 
                     "test.field_boolean"?: boolean
+                    "test.field_boolean_ne"?: boolean
 
                     "test.field_date"?: Date
+                    "test.field_date_ne"?: Date
                     "test.field_date_gt"?: Date
                     "test.field_date_lt"?: Date
 
                     "test.test_2.field_doublenested"?: boolean
+                    "test.test_2.field_doublenested_ne"?: boolean
                     "sort"?: ("_id" | "test.field_string" | "test.field_number" | "test.field_boolean" | "test.field_date" | "test.test_2.field_doublenested")
                 }`)
         )
@@ -348,6 +366,7 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
@@ -379,6 +398,7 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
@@ -411,10 +431,12 @@ describe('Client Library Generation: Query Types', function () {
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
                     "_id"?: string
+                    "_id_ne"?: string
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: boolean
+                    "test_ne"?: boolean
                     "sort"?: ("_id" | "test")
                 }`)
         )

@@ -4,6 +4,7 @@ export declare let complex_query_map: {
     _lt: string;
     _gte: string;
     _lte: string;
+    _ne: string;
     _in: string;
     _search: (val: string) => {
         $regex: RegExp;

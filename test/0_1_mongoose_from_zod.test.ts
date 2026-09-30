@@ -314,7 +314,7 @@ describe('Mongoose from Zod', function () {
         });
     }
 
-    for(let key of ['_gt', '_lt', '_gte', '_lte', '_in']){
+    for(let key of ['_gt', '_lt', '_gte', '_lte', '_ne', '_in']){
         it(`should error if a key ends with ${key}`, function () {
             let zodSchema = z.object({
                 [`id${key}`]: z.string()
