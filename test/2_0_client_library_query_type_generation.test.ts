@@ -63,6 +63,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -93,6 +94,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -129,6 +131,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -165,6 +168,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -197,6 +201,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -231,6 +236,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -267,6 +273,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -305,6 +312,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
 
                     "_id"?: string
                     "_id_ne"?: string
@@ -365,6 +373,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -397,6 +406,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string
@@ -430,6 +440,7 @@ describe('Client Library Generation: Query Types', function () {
                     "cursor"?: string
                     "sort_order"?: ("ascending" | "descending")
                     "advanced_query"?: string
+                    "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
                     "_id_gt"?: string

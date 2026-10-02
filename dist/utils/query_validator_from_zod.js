@@ -9,6 +9,7 @@ export function query_validator_from_zod(zod_definition, mode = 'server') {
         cursor: z_mongodb_id.optional(),
         sort_order: z.enum(['ascending', 'descending']).optional(),
         advanced_query: z.string().optional(),
+        text_search: z.string().optional(),
     };
     let object_filters = parse_object(zod_definition._zod.def, '', loops, mode);
     for (let filter of object_filters) {

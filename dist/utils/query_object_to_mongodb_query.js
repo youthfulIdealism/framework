@@ -16,6 +16,7 @@ export let query_meta_map = {
     'sort': true,
     'sort_order': true,
     'advanced_query': true,
+    'text_search': true,
 };
 export function convert_null(query_object) {
     for (let [key, value] of Object.entries(query_object)) {
@@ -28,6 +29,12 @@ export function convert_null(query_object) {
 export function query_object_to_mongodb_query(query_object) {
     let retval = {};
     for (let [key, value] of Object.entries(query_object)) {
+        if (key === 'text_search') {
+            if (value !== undefined && value !== null) {
+                retval.$text = { $search: value };
+            }
+            continue;
+        }
         if (Object.keys(query_meta_map).includes(key)) {
             continue;
         }

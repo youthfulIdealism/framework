@@ -26,6 +26,7 @@ export let query_meta_map = {
     'sort_order': true,
     //'projection': true,
     'advanced_query': true,
+    'text_search': true,
 }
 
 export function convert_null(query_object: any){
@@ -41,6 +42,11 @@ export function query_object_to_mongodb_query(query_object: { [key: string]: str
     let retval = {} as any;
 
     for(let [key, value] of Object.entries(query_object)){
+        // full-text search across the collection's text index (see mongoose_schema_from_zod)
+        if(key === 'text_search'){
+            if(value !== undefined && value !== null){ retval.$text = { $search: value }; }
+            continue;
+        }
         if(Object.keys(query_meta_map).includes(key)){ continue; }
         let complex_suffix = Object.keys(complex_query_map).find(ele => key.endsWith(ele)) as keyof typeof complex_query_map;
         if (complex_suffix) {

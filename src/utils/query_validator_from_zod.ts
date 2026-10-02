@@ -20,6 +20,7 @@ export function query_validator_from_zod(zod_definition: z.ZodObject, mode: Mode
         cursor: z_mongodb_id.optional(),
         sort_order: z.enum([/*'asc', 'desc', */'ascending', 'descending']).optional(),
         advanced_query: z.string().optional(),
+        text_search: z.string().optional(),
     } as $ZodLooseShape;
 
     let object_filters = parse_object(zod_definition._zod.def, '', loops, mode);
