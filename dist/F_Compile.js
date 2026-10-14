@@ -4,6 +4,8 @@ import { F_Security_Model } from "./F_Security_Models/F_Security_Model.js";
 import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
 import { detect_malicious_keys } from "./utils/malicious_keys.js";
 import { penetrate_nullable_optional } from "./utils/array_children_from_zod.js";
+import { Cache } from "./utils/cache.js";
+const layer_reference_cache = new Cache(60 * 1000);
 export function compile(app, collection, api_prefix, collection_registry) {
     let me_path = [api_prefix, 'me'].join('/');
     app.get(me_path, async (req, res) => {
@@ -39,14 +41,63 @@ export function compile(app, collection, api_prefix, collection_registry) {
             }
         }
     }
+    async function fetch_layer_reference(layer, document_id) {
+        let cache_key = `${layer}:${document_id}`;
+        return await layer_reference_cache.first_get_then_fetch(cache_key, async () => {
+            return await collection_registry.collections[layer].mongoose_model.findById(document_id).lean();
+        });
+    }
     for (let access_layers of collection.access_layers) {
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
+        let verify_layer_ancestry = async (req, res, next) => {
+            try {
+                for (let q = 0; q < access_layers.layers.length - 1; q++) {
+                    let parent_collection_id = access_layers.layers[q];
+                    let child_collection_id = access_layers.layers[q + 1];
+                    let target_parent_id = req.params[parent_collection_id];
+                    let target_child_id = req.params[child_collection_id];
+                    if (!isValidObjectId(target_parent_id)) {
+                        res.status(400);
+                        res.json({ error: `${target_parent_id} is not a valid MongoDB object ID.` });
+                        return;
+                    }
+                    if (!isValidObjectId(target_child_id)) {
+                        res.status(400);
+                        res.json({ error: `${target_child_id} is not a valid MongoDB object ID.` });
+                        return;
+                    }
+                    let child = await fetch_layer_reference(child_collection_id, target_child_id);
+                    let child_collection_shape = collection_registry.collections[child_collection_id].validator._zod.def.shape;
+                    if (child_collection_shape.hasOwnProperty(`${parent_collection_id}_id`)) {
+                        if (child[`${parent_collection_id}_id`] + '' !== target_parent_id) {
+                            res.status(403);
+                            res.json({ error: `You do not have permission to access ${child_collection_id} ${target_child_id} through this path.` });
+                            return;
+                        }
+                    }
+                    if (child_collection_shape.hasOwnProperty(`${parent_collection_id}_ids`)) {
+                        if (!child[`${parent_collection_id}_ids`].map(ele => '' + ele).includes(target_parent_id)) {
+                            res.status(403);
+                            res.json({ error: `You do not have permission to access ${child_collection_id} ${target_child_id} through this path.` });
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (err) {
+                console.error(err);
+                res.status(500);
+                res.json({ error: `there was a novel error` });
+                return;
+            }
+            next();
+        };
         let get_one_path = [
             api_prefix,
             ...base_layers_path_components,
             `${collection.collection_id}/:document_id`
         ].join('/');
-        app.get(get_one_path, async (req, res, next) => {
+        app.get(get_one_path, verify_layer_ancestry, async (req, res, next) => {
             try {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
@@ -99,7 +150,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
             ...base_layers_path_components,
             collection.collection_id
         ].join('/');
-        app.get(get_multiple_path, async (req, res) => {
+        app.get(get_multiple_path, verify_layer_ancestry, async (req, res) => {
             let validated_query_args;
             try {
                 validated_query_args = collection.query_validator_server.parse(convert_null(req.query));
@@ -190,7 +241,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
             ...base_layers_path_components,
             `${collection.collection_id}/:document_id`
         ].join('/');
-        app.put(put_path, async (req, res) => {
+        app.put(put_path, verify_layer_ancestry, async (req, res) => {
             if (!isValidObjectId(req.params.document_id)) {
                 res.status(400);
                 res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -279,6 +330,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 console.error(err);
                 return;
             }
+            layer_reference_cache.delete(`${collection.collection_id}:${req.params.document_id}`);
             if (!results) {
                 let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
                 res.json(sendable);
@@ -292,7 +344,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
             ...base_layers_path_components,
             `${collection.collection_id}`
         ].join('/');
-        app.post(post_path, async (req, res) => {
+        app.post(post_path, verify_layer_ancestry, async (req, res) => {
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'create');
             if (!permissive_security_model) {
                 res.status(403);
@@ -399,7 +451,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
             ...base_layers_path_components,
             `${collection.collection_id}/:document_id`
         ].join('/');
-        app.delete(delete_path, async (req, res) => {
+        app.delete(delete_path, verify_layer_ancestry, async (req, res) => {
             if (!isValidObjectId(req.params.document_id)) {
                 res.status(400);
                 res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -433,6 +485,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 console.error(err);
                 return;
             }
+            layer_reference_cache.delete(`${collection.collection_id}:${req.params.document_id}`);
             if (!results) {
                 let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'delete');
                 res.json(sendable);
@@ -449,7 +502,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 `${collection.collection_id}/:document_id`,
                 array_child_path
             ].join('/');
-            app.post(array_child_post_path, async (req, res) => {
+            app.post(array_child_post_path, verify_layer_ancestry, async (req, res) => {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
                     res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -540,7 +593,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 array_child_path,
                 ':array_item_id'
             ].join('/');
-            app.put(array_child_put_path, async (req, res) => {
+            app.put(array_child_put_path, verify_layer_ancestry, async (req, res) => {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
                     res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -642,7 +695,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 array_child_path,
                 ':array_item_id'
             ].join('/');
-            app.delete(array_child_delete_path, async (req, res) => {
+            app.delete(array_child_delete_path, verify_layer_ancestry, async (req, res) => {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
                     res.json({ error: `${req.params.document_id} is not a valid document ID.` });

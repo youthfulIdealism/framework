@@ -1,6 +1,6 @@
 import * as z from "zod/v4";
 import { Router, Request, Response, NextFunction } from "express";
-import { isValidObjectId } from "mongoose";
+import { isValidObjectId, ObjectId } from "mongoose";
 
 import { F_Collection } from "./F_Collection.js";
 import { F_Security_Model, Authenticated_Request } from "./F_Security_Models/F_Security_Model.js";
@@ -9,6 +9,12 @@ import { z_mongodb_id } from "./utils/mongoose_schema_from_zod.js";
 import { F_Collection_Registry } from "./F_Collection_Registry.js";
 import { detect_malicious_keys } from "./utils/malicious_keys.js";
 import { penetrate_nullable_optional } from "./utils/array_children_from_zod.js";
+import { Cache } from "./utils/cache.js";
+
+// documents that appear as layers in a URL (eg the :market in /institution/:institution/market/:market/campaign) have to be
+// checked against the layers before them on every request. This caches the layer reference fields (institution_id, client_ids, etc)
+// of those documents, keyed by `${layer}:${document_id}`. Layer references almost never change, so a short cache is safe.
+const layer_reference_cache = new Cache<{ [field: string]: string[] } | null>(60 * 1000);
 
 /*process.on('unhandledRejection', (reason, promise) => {
     console.log(`CAUGHT UNHANDLED REJECTION`)
@@ -65,10 +71,68 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         }
     }
     
+    async function fetch_layer_reference(layer: string, document_id: string) {
+        let cache_key = `${layer}:${document_id}`;
+        return await layer_reference_cache.first_get_then_fetch(cache_key, async () => {
+            return await collection_registry.collections[layer].mongoose_model.findById(document_id).lean();
+        });
+    }
+
     // set up the Express endpoints
     for(let access_layers of collection.access_layers){
         let base_layers_path_components = access_layers.layers.flatMap(ele => [ele, ':' + ele]);
-        
+
+        let verify_layer_ancestry = async (req: Request, res: Response, next: NextFunction) => {
+            try {
+                // go up the list of access layers, checking that each layer
+                // is the parent of the subsequent layer
+                for(let q = 0; q < access_layers.layers.length - 1; q++) {
+                    let parent_collection_id = access_layers.layers[q];
+                    let child_collection_id = access_layers.layers[q + 1];
+
+                    let target_parent_id = req.params[parent_collection_id];
+                    let target_child_id = req.params[child_collection_id];
+
+                    if(!isValidObjectId(target_parent_id)) {
+                        res.status(400);
+                        res.json({ error: `${target_parent_id} is not a valid MongoDB object ID.` });
+                        return;
+                    }
+
+                    if(!isValidObjectId(target_child_id)) {
+                        res.status(400);
+                        res.json({ error: `${target_child_id} is not a valid MongoDB object ID.` });
+                        return;
+                    }
+
+                    let child = await fetch_layer_reference(child_collection_id, target_child_id as string);
+
+                    let child_collection_shape = collection_registry.collections[child_collection_id].validator._zod.def.shape;
+                    if(child_collection_shape.hasOwnProperty(`${parent_collection_id}_id`)) {
+                        if(child[`${parent_collection_id}_id`] + '' !== target_parent_id){
+                            res.status(403);
+                            res.json({ error: `You do not have permission to access ${child_collection_id} ${target_child_id} through this path.` });
+                            return;
+                        }
+                    }
+                    
+                    if(child_collection_shape.hasOwnProperty(`${parent_collection_id}_ids`)) {
+                        if(!(child[`${parent_collection_id}_ids`] as string[]).map(ele => '' + ele).includes(target_parent_id as string)){
+                            res.status(403);
+                            res.json({ error: `You do not have permission to access ${child_collection_id} ${target_child_id} through this path.` });
+                            return;
+                        }
+                    }
+                }
+            } catch(err){
+                console.error(err);
+                res.status(500);
+                res.json({ error: `there was a novel error` });
+                return;
+            }
+            next();
+        }
+
         let get_one_path = [
             api_prefix,
             ...base_layers_path_components,
@@ -76,7 +140,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         ].join('/')
 
         // get individual document
-        app.get(get_one_path, async (req: Request, res: Response, next: NextFunction) => {
+        app.get(get_one_path, verify_layer_ancestry, async (req: Request, res: Response, next: NextFunction) => {
             try {
                 // ensure the the document ID passed in is valid so that mongodb doesn't have a cow
                 if (!isValidObjectId(req.params.document_id)) {
@@ -132,7 +196,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             collection.collection_id
         ].join('/')
 
-        app.get(get_multiple_path, async (req: Request, res: Response) => {
+        app.get(get_multiple_path, verify_layer_ancestry, async (req: Request, res: Response) => {
             let validated_query_args: { [key: string]: any } ;
             try {
                 validated_query_args = collection.query_validator_server.parse(convert_null(req.query));
@@ -221,7 +285,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             `${collection.collection_id}/:document_id`
         ].join('/')
 
-        app.put(put_path, async (req, res) => {
+        app.put(put_path, verify_layer_ancestry, async (req, res) => {
             if (!isValidObjectId(req.params.document_id)) {
                 res.status(400);
                 res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -315,6 +379,8 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 console.error(err);
                 return;
             }
+            // the update may have changed the document's layer references
+            layer_reference_cache.delete(`${collection.collection_id}:${req.params.document_id}`);
 
             if (!results) {
                 let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'update');
@@ -331,7 +397,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             `${collection.collection_id}`
         ].join('/')
 
-        app.post(post_path, async (req, res) => {
+        app.post(post_path, verify_layer_ancestry, async (req, res) => {
             // I'd like to have a validator here. I think it might need to be a map or record validator?
             let permissive_security_model = await F_Security_Model.model_with_permission(access_layers.security_models, req, res, undefined, 'create');
             if (!permissive_security_model) {
@@ -454,7 +520,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
             `${collection.collection_id}/:document_id`
         ].join('/')
 
-        app.delete(delete_path, async (req, res) => {
+        app.delete(delete_path, verify_layer_ancestry, async (req, res) => {
             if (!isValidObjectId(req.params.document_id)) {
                 res.status(400);
                 res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -486,6 +552,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 console.error(err);
                 return;
             }
+            layer_reference_cache.delete(`${collection.collection_id}:${req.params.document_id}`);
 
             if (!results) {
                 let sendable = await permissive_security_model.handle_empty_query_results(req, res, 'delete');
@@ -511,7 +578,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 array_child_path
             ].join('/');
 
-            app.post(array_child_post_path, async (req, res) => {
+            app.post(array_child_post_path, verify_layer_ancestry, async (req, res) => {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
                     res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -608,7 +675,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 ':array_item_id'
             ].join('/')
 
-            app.put(array_child_put_path, async (req, res) => {
+            app.put(array_child_put_path, verify_layer_ancestry, async (req, res) => {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
                     res.json({ error: `${req.params.document_id} is not a valid document ID.` });
@@ -716,7 +783,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                 ':array_item_id'
             ].join('/')
 
-            app.delete(array_child_delete_path, async (req, res) => {
+            app.delete(array_child_delete_path, verify_layer_ancestry, async (req, res) => {
                 if (!isValidObjectId(req.params.document_id)) {
                     res.status(400);
                     res.json({ error: `${req.params.document_id} is not a valid document ID.` });

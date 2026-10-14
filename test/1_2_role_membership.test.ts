@@ -703,6 +703,58 @@ describe('Security Model Role Membership', function () {
         })
     });
 
+    it(`should reject a POST operation through a path pairing a client the user has a T2 role membership on with an institution the client doesn't belong to`, async function () {
+        let { nathan_client } = await generate_test_setup();
+        let other_institution = await collection_institution.mongoose_model.create({ name: 'other institution' });
+
+        await assert.rejects(async () => {
+            await got.post(`http://localhost:${port}/api/institution/${other_institution._id}/client/${nathan_client._id}/project`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    name: 'Flammable Project',
+                    institution_id: other_institution._id,
+                    client_id: nathan_client._id,
+                }
+            }).json();
+        }, (err: any) => err.response?.statusCode === 403);
+
+        assert.equal(await collection_project.mongoose_model.countDocuments({ institution_id: other_institution._id }), 0);
+    });
+
+    it(`should reject a POST operation through a path pairing an institution the user has a T1 role membership on with a client from another institution`, async function () {
+        let { steve_institution, nathan_client } = await generate_test_setup();
+
+        await assert.rejects(async () => {
+            await got.post(`http://localhost:${port}/api/institution/${steve_institution._id}/client/${nathan_client._id}/project`, {
+                headers: {
+                    authorization: 'steve'
+                },
+                json: {
+                    name: 'Flammable Project',
+                    institution_id: steve_institution._id,
+                    client_id: nathan_client._id,
+                }
+            }).json();
+        }, (err: any) => err.response?.statusCode === 403);
+
+        assert.equal(await collection_project.mongoose_model.countDocuments({ client_id: nathan_client._id, institution_id: steve_institution._id }), 0);
+    });
+
+    it(`should reject a GET multiple operation through a path pairing a client with an institution it doesn't belong to`, async function () {
+        let { nathan_client } = await generate_test_setup();
+        let other_institution = await collection_institution.mongoose_model.create({ name: 'other institution' });
+
+        await assert.rejects(async () => {
+            await got.get(`http://localhost:${port}/api/institution/${other_institution._id}/client/${nathan_client._id}/project`, {
+                headers: {
+                    authorization: 'steve'
+                }
+            }).json();
+        }, (err: any) => err.response?.statusCode === 403);
+    });
+
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
      /////////////////////////////////////////////////////////////    DELETE        /////////////////////////////////////////////////////////////////////////////////
