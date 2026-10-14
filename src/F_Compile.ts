@@ -5,7 +5,6 @@ import { isValidObjectId, ObjectId } from "mongoose";
 import { F_Collection } from "./F_Collection.js";
 import { F_Security_Model, Authenticated_Request } from "./F_Security_Models/F_Security_Model.js";
 import { convert_null, query_object_to_mongodb_limits, query_object_to_mongodb_query } from "./utils/query_object_to_mongodb_query.js";
-import { z_mongodb_id } from "./utils/mongoose_schema_from_zod.js";
 import { F_Collection_Registry } from "./F_Collection_Registry.js";
 import { detect_malicious_keys } from "./utils/malicious_keys.js";
 import { penetrate_nullable_optional } from "./utils/array_children_from_zod.js";
@@ -37,6 +36,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
         res.json(auth_data)
     });
 
+    let all_possible_access_paths = (Object.values(collection_registry.collections) as F_Collection<any, any>[])
+        .map(ele => ele.collection_id)
+        .flatMap(ele => [`${ele}_id`, `${ele}_ids`]);
+    let all_possible_access_path_selection: {[key: string]: number} = {};
+    all_possible_access_paths.forEach(ele => all_possible_access_path_selection[ele] = 1);
     
     for(let access_layers of collection.access_layers){
         for(let layer of access_layers.layers){
@@ -74,7 +78,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
     async function fetch_layer_reference(layer: string, document_id: string) {
         let cache_key = `${layer}:${document_id}`;
         return await layer_reference_cache.first_get_then_fetch(cache_key, async () => {
-            return await collection_registry.collections[layer].mongoose_model.findById(document_id).lean();
+            return await collection_registry.collections[layer].mongoose_model.findById(document_id, all_possible_access_path_selection).lean();
         });
     }
 
@@ -106,6 +110,11 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
                     }
 
                     let child = await fetch_layer_reference(child_collection_id, target_child_id as string);
+                    if(!child) {
+                        res.status(400);
+                        res.json({ error: `${target_child_id} is not a valid MongoDB object ID.` });
+                        return;
+                    }
 
                     let child_collection_shape = collection_registry.collections[child_collection_id].validator._zod.def.shape;
                     if(child_collection_shape.hasOwnProperty(`${parent_collection_id}_id`)) {

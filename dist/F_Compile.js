@@ -12,6 +12,11 @@ export function compile(app, collection, api_prefix, collection_registry) {
         let auth_data = await F_Security_Model.auth_fetcher(req);
         res.json(auth_data);
     });
+    let all_possible_access_paths = Object.values(collection_registry.collections)
+        .map(ele => ele.collection_id)
+        .flatMap(ele => [`${ele}_id`, `${ele}_ids`]);
+    let all_possible_access_path_selection = {};
+    all_possible_access_paths.forEach(ele => all_possible_access_path_selection[ele] = 1);
     for (let access_layers of collection.access_layers) {
         for (let layer of access_layers.layers) {
             if (layer === collection.collection_id && !Object.hasOwn(collection.validator._zod.def.shape, `${layer}_ids`)) {
@@ -44,7 +49,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
     async function fetch_layer_reference(layer, document_id) {
         let cache_key = `${layer}:${document_id}`;
         return await layer_reference_cache.first_get_then_fetch(cache_key, async () => {
-            return await collection_registry.collections[layer].mongoose_model.findById(document_id).lean();
+            return await collection_registry.collections[layer].mongoose_model.findById(document_id, all_possible_access_path_selection).lean();
         });
     }
     for (let access_layers of collection.access_layers) {
@@ -67,6 +72,11 @@ export function compile(app, collection, api_prefix, collection_registry) {
                         return;
                     }
                     let child = await fetch_layer_reference(child_collection_id, target_child_id);
+                    if (!child) {
+                        res.status(400);
+                        res.json({ error: `${target_child_id} is not a valid MongoDB object ID.` });
+                        return;
+                    }
                     let child_collection_shape = collection_registry.collections[child_collection_id].validator._zod.def.shape;
                     if (child_collection_shape.hasOwnProperty(`${parent_collection_id}_id`)) {
                         if (child[`${parent_collection_id}_id`] + '' !== target_parent_id) {
