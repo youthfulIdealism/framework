@@ -177,6 +177,7 @@ function parse_union(def: z.core.$ZodUnionDef, prefix: string, loop_detector: Ma
 
 function parse_string(prefix: string, mode: Mode): type_filters {
     let array_parser = mode === 'client' ? z.array(z.string()) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
+    let exists_parser = mode === 'client' ? z.boolean() : z.stringbool();
     return [
             {
                 path: prefix,
@@ -186,6 +187,11 @@ function parse_string(prefix: string, mode: Mode): type_filters {
             {
                 path: prefix + '_ne',
                 filter: z.string().optional(),
+                sortable: false,
+            },
+            {
+                path: prefix + '_exists',
+                filter: exists_parser.optional(),
                 sortable: false,
             },
             {
@@ -214,6 +220,7 @@ function parse_string(prefix: string, mode: Mode): type_filters {
 function parse_enum(definition: z.core.$ZodEnumDef, prefix: string, mode: Mode): type_filters {
     // TODO: figure out how to validate on the server such that it's a member of the enu,
     let array_parser = mode === 'client' ? z.array(z.enum(definition.entries)) : z.string().transform(val => val.split(',').filter(ele => ele.length > 0));
+    let exists_parser = mode === 'client' ? z.boolean() : z.stringbool();
     return [
             {
                 path: prefix,
@@ -223,6 +230,11 @@ function parse_enum(definition: z.core.$ZodEnumDef, prefix: string, mode: Mode):
             {
                 path: prefix + '_ne',
                 filter: z.enum(definition.entries).optional(),
+                sortable: false,
+            },
+            {
+                path: prefix + '_exists',
+                filter: exists_parser.optional(),
                 sortable: false,
             },
             {
@@ -246,11 +258,17 @@ function parse_boolean(prefix: string, mode: Mode): type_filters {
             filter: boolean_parser.optional(),
             sortable: false,
         },
+        {
+            path: prefix + '_exists',
+            filter: boolean_parser.optional(),
+            sortable: false,
+        },
     ];
 }
 
 function parse_number(prefix: string, mode: Mode): type_filters {
     let number_parser = mode === 'client' ? z.number() : z.coerce.number();
+    let exists_parser = mode === 'client' ? z.boolean() : z.stringbool();
     return [
         {
             path: prefix,
@@ -260,6 +278,11 @@ function parse_number(prefix: string, mode: Mode): type_filters {
         {
             path: prefix + '_ne',
             filter: number_parser.optional(),
+            sortable: false,
+        },
+        {
+            path: prefix + '_exists',
+            filter: exists_parser.optional(),
             sortable: false,
         },
         {
@@ -287,6 +310,7 @@ function parse_number(prefix: string, mode: Mode): type_filters {
 
 function parse_date(prefix: string, mode: Mode): type_filters {
     let date_parser = mode === 'client' ? z.date() : z.coerce.date();
+    let exists_parser = mode === 'client' ? z.boolean() : z.stringbool();
     return [{
         path: prefix,
         filter: date_parser.optional(),
@@ -295,6 +319,11 @@ function parse_date(prefix: string, mode: Mode): type_filters {
     {
         path: prefix + '_ne',
         filter: date_parser.optional(),
+        sortable: false,
+    },
+    {
+        path: prefix + '_exists',
+        filter: exists_parser.optional(),
         sortable: false,
     },
     {
@@ -324,6 +353,7 @@ function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
             return cast_to_object_id ? ids.map(ele => new Types.ObjectId(ele)) : ids;
         });
     let object_id_filter = cast_to_object_id ? z_mongodb_id.transform(val => new Types.ObjectId(val)).optional() : z_mongodb_id.optional();
+    let exists_parser = mode === 'client' ? z.boolean() : z.stringbool();
     return [
         {
             path: prefix,
@@ -333,6 +363,11 @@ function parse_mongodb_id(prefix: string, mode: Mode): type_filters {
         {
             path: prefix + '_ne',
             filter: object_id_filter,
+            sortable: false,
+        },
+        {
+            path: prefix + '_exists',
+            filter: exists_parser.optional(),
             sortable: false,
         },
         {

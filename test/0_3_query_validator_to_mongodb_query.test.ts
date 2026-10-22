@@ -244,6 +244,79 @@ describe('query validator to mongodb query', function () {
         )
     });
 
+    it('should be able to transform exists', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            param: z.string(),
+            other_param: z.number(),
+        }))
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse({
+                param_exists: 'true',
+                other_param_exists: 'false',
+            })),
+            {
+                param: {
+                    $exists: true
+                },
+                other_param: {
+                    $exists: false
+                },
+            }
+        )
+    });
+
+    it('should be able to transform exists for every primitive type', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            string: z.string(),
+            boolean: z.boolean(),
+            date: z.date(),
+            enum: z.enum(['one', 'two']),
+            object_id: z_mongodb_id,
+            nest: z.object({
+                nested: z.string()
+            }),
+        }))
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse({
+                string_exists: 'true',
+                boolean_exists: 'true',
+                date_exists: 'false',
+                enum_exists: 'true',
+                object_id_exists: 'false',
+                'nest.nested_exists': 'true',
+            })),
+            {
+                string: { $exists: true },
+                boolean: { $exists: true },
+                date: { $exists: false },
+                enum: { $exists: true },
+                object_id: { $exists: false },
+                'nest.nested': { $exists: true },
+            }
+        )
+    });
+
+    it('should be able to combine exists with other complex operations', async function () {
+        let query_validator = query_validator_from_zod(z.object({
+            param: z.number().nullable(),
+        }))
+
+        assert.deepEqual(
+            query_object_to_mongodb_query(query_validator.parse(convert_null({
+                param_exists: 'true',
+                param_ne: 'null',
+            }))),
+            {
+                param: {
+                    $exists: true,
+                    $ne: null,
+                }
+            }
+        )
+    });
+
     it('should be able to transform in', async function () {
         let query_validator = query_validator_from_zod(z.object({
             param: z.string(),

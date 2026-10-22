@@ -66,6 +66,7 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
@@ -97,11 +98,13 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: string
                     "test_ne"?: string
+                    "test_exists"?: boolean
                     "test_gt"?: string
                     "test_lt"?: string
                     "test_search"?: string
@@ -134,11 +137,13 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: number
                     "test_ne"?: number
+                    "test_exists"?: boolean
                     "test_gt"?: number
                     "test_gte"?: number
                     "test_lt"?: number
@@ -171,11 +176,13 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: boolean
                     "test_ne"?: boolean
+                    "test_exists"?: boolean
                     "sort"?: ("_id" | "test")
                 }`)
         )
@@ -204,11 +211,13 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: Date
                     "test_ne"?: Date
+                    "test_exists"?: boolean
                     "test_gt"?: Date
                     "test_lt"?: Date
                     "sort"?: ("_id" | "test")
@@ -239,11 +248,13 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: ("red" | "green" | "blue")
                     "test_ne"?: ("red" | "green" | "blue")
+                    "test_exists"?: boolean
                     "test_in"?: (("red" | "green" | "blue"))[]
                     "sort"?: ("_id" | "test")
                 }`)
@@ -276,6 +287,7 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
@@ -316,12 +328,14 @@ describe('Client Library Generation: Query Types', function () {
 
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
 
                     "test.field_string"?: string
                     "test.field_string_ne"?: string
+                    "test.field_string_exists"?: boolean
                     "test.field_string_gt"?: string
                     "test.field_string_lt"?: string
                     "test.field_string_search"?: string
@@ -329,6 +343,7 @@ describe('Client Library Generation: Query Types', function () {
 
                     "test.field_number"?: number
                     "test.field_number_ne"?: number
+                    "test.field_number_exists"?: boolean
                     "test.field_number_gt"?: number
                     "test.field_number_gte"?: number
                     "test.field_number_lt"?: number
@@ -336,14 +351,17 @@ describe('Client Library Generation: Query Types', function () {
 
                     "test.field_boolean"?: boolean
                     "test.field_boolean_ne"?: boolean
+                    "test.field_boolean_exists"?: boolean
 
                     "test.field_date"?: Date
                     "test.field_date_ne"?: Date
+                    "test.field_date_exists"?: boolean
                     "test.field_date_gt"?: Date
                     "test.field_date_lt"?: Date
 
                     "test.test_2.field_doublenested"?: boolean
                     "test.test_2.field_doublenested_ne"?: boolean
+                    "test.test_2.field_doublenested_exists"?: boolean
                     "sort"?: ("_id" | "test.field_string" | "test.field_number" | "test.field_boolean" | "test.field_date" | "test.test_2.field_doublenested")
                 }`)
         )
@@ -376,6 +394,7 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
@@ -409,6 +428,7 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
@@ -443,11 +463,13 @@ describe('Client Library Generation: Query Types', function () {
                     "text_search"?: string
                     "_id"?: string
                     "_id_ne"?: string
+                    "_id_exists"?: boolean
                     "_id_gt"?: string
                     "_id_lt"?: string
                     "_id_in"?: (string)[]
                     "test"?: boolean
                     "test_ne"?: boolean
+                    "test_exists"?: boolean
                     "sort"?: ("_id" | "test")
                 }`)
         )

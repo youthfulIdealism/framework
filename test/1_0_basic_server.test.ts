@@ -609,6 +609,68 @@ describe('Basic Server', function () {
         })
     });
 
+    it(`should be able to perform a basic GET multiple with an exists filter`, async function () {
+        let test_institutions = []
+        for(let q = 0; q < 3; q++){
+            let test_institution = await institution.mongoose_model.create({
+                name: ['spandex co', 'the ordinary institute', 'geriatric co'][q]
+            });
+            //@ts-ignore
+            test_institutions.push(test_institution);
+        }
+
+        let results_exist = await got.get(`http://localhost:${port}/api/institution?name_exists=true`).json();
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify(test_institutions)), results_exist.data);
+
+        let results_not_exist = await got.get(`http://localhost:${port}/api/institution?name_exists=false`).json();
+        //@ts-ignore
+        assert.equal(results_not_exist.data.length, 0)
+    });
+
+    it(`should be able to filter on whether an optional field exists`, async function () {
+        let test_institution = await institution.mongoose_model.create({
+            name: 'Spandex Co'
+        });
+
+        let test_client = await client.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Bob's spandex house`
+        });
+
+        let test_market = await market.mongoose_model.create({
+            institution_id: test_institution._id,
+            name: `Spandex Market`
+        });
+
+        let project_with_market = await project.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_id: test_client._id,
+            market_id: test_market._id,
+            name: `Spandex Reincarnation`
+        });
+
+        let project_without_market = await project.mongoose_model.create({
+            institution_id: test_institution._id,
+            client_id: test_client._id,
+            name: `Spandex Reconsideration`
+        });
+
+        let results_exist = await got.get(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project?market_id_exists=true`).json();
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify([project_with_market])), results_exist.data);
+
+        let results_not_exist = await got.get(`http://localhost:${port}/api/institution/${test_institution._id}/client/${test_client._id}/project?market_id_exists=false`).json();
+        //@ts-ignore
+        assert.deepEqual(JSON.parse(JSON.stringify([project_without_market])), results_not_exist.data);
+    });
+
+    it(`should reject an exists filter with an invalid value`, async function () {
+        await assert.rejects(async () => {
+            await got.get(`http://localhost:${port}/api/institution?name_exists=fungus`);
+        })
+    });
+
       ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
      /////////////////////////////////////////////////////////////    PUT        ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -7,6 +7,7 @@ export let complex_query_map = {
     '_gte': '$gte',
     '_lte': '$lte',
     '_ne': '$ne',
+    '_exists': '$exists',
     /*'_starts_with': (key, value) => {
         return new RegExp('^' + escapeRegExp(value))
     },

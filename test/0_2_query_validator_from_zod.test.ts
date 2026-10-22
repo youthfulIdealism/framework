@@ -393,6 +393,74 @@ describe('query validator from zod', function () {
         assert.throws(() => query_validator.parse({ sort: 'parameter_ne' }));
     });
 
+    it('should be able to process exists for every primitive type', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                string_parameter: z.string(),
+                number_parameter: z.number(),
+                boolean_parameter: z.boolean(),
+                date_parameter: z.date(),
+                enum_parameter: z.enum(['red', 'blue']),
+                mongodb_parameter: z_mongodb_id,
+                nest: z.object({
+                    parameter: z.string()
+                }),
+            })
+        );
+
+        assert.deepEqual(
+            query_validator.parse({
+                string_parameter_exists: 'true',
+                number_parameter_exists: 'false',
+                boolean_parameter_exists: 'true',
+                date_parameter_exists: 'false',
+                enum_parameter_exists: 'true',
+                mongodb_parameter_exists: 'false',
+                'nest.parameter_exists': 'true',
+            }),
+            {
+                string_parameter_exists: true,
+                number_parameter_exists: false,
+                boolean_parameter_exists: true,
+                date_parameter_exists: false,
+                enum_parameter_exists: true,
+                mongodb_parameter_exists: false,
+                'nest.parameter_exists': true,
+            }
+        );
+    });
+
+    it('should reject a non-boolean exists filter', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z.number()
+            })
+        );
+
+        assert.throws(() => query_validator.parse({ parameter_exists: 'fungus' }));
+        assert.throws(() => query_validator.parse({ parameter_exists: '5' }));
+    });
+
+    it('should not allow a null exists filter on a nullable field', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z.string().nullable()
+            })
+        );
+
+        assert.throws(() => query_validator.parse({ parameter_exists: null }));
+    });
+
+    it('should not allow sorting on an exists filter', async function () {
+        let query_validator = query_validator_from_zod(
+            z.object({
+                parameter: z.string()
+            })
+        );
+
+        assert.throws(() => query_validator.parse({ sort: 'parameter_exists' }));
+    });
+
     it('should be able to process a number in an array', async function () {
         let query_validator = query_validator_from_zod(
             z.object({
