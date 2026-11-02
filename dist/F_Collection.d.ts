@@ -42,6 +42,7 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     after_delete(hook: (deleted_document: z.output<ZodSchema>) => Promise<void>): void;
     perform_create_and_side_effects(data: z.output<this['post_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>>;
     perform_update_and_side_effects(find: any, data: z.output<this['put_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>>;
+    perform_upsert_and_side_effects(find: any, data: z.output<this['put_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>>;
     perform_delete_and_side_effects(find: any, session?: ClientSession): Promise<z.output<ZodSchema>>;
 }
 export {};

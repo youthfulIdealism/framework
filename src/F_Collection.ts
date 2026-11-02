@@ -254,6 +254,55 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
 
     /**
      * //TODO: Write tests for this
+     * Runs a findOneAndUpdate with upsert: true. If the upsert created a document, runs the side-effects added by
+     * on_create and after_create; if it updated an existing document, runs the side-effects added by on_update
+     * and after_update.
+     *
+     * If there are no side-effects specified by the on_create or on_update methods, runs a normal non-transaction
+     * upsert to avoid the performance impacts of a transaction.
+     */
+    async perform_upsert_and_side_effects(find: any, data: z.output<this['put_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>> {
+        let upserted_document_data;
+        let was_created = false;
+
+        // we don't know whether this will be a create or an update until it runs, so use a transaction if either has hooks
+        if(this.create_hooks.length > 0 || this.update_hooks.length > 0 || session){
+            await create_or_use_session(async (session) => {
+                // upsert the document
+                let result = await this.mongoose_model.findOneAndUpdate(find, data, {returnDocument: 'after', upsert: true, includeResultMetadata: true, runValidators: true, session: session, lean: true});
+                if(!result.value){ return; }
+                upserted_document_data = result.value;
+                was_created = !result.lastErrorObject?.updatedExisting;
+
+                // run each hook one-by-one because running them in parallell is verboten
+                // https://mongoosejs.com/docs/transactions.html
+                for(let hook of (was_created ? this.create_hooks : this.update_hooks)){
+                    await hook(session, upserted_document_data);
+                }
+            }, session);
+        } else {// if we don't have any create or update hooks, run the upsert operation normally
+            let result = await this.mongoose_model.findOneAndUpdate(find, data, {returnDocument: 'after', upsert: true, includeResultMetadata: true, runValidators: true, lean: true});
+            upserted_document_data = result.value;
+            was_created = !result.lastErrorObject?.updatedExisting;
+        }
+
+        if(upserted_document_data){
+            // run the post-create or post-update hooks, which should not make DB changes.
+            for(let hook of (was_created ? this.post_create_hooks : this.post_update_hooks)) {
+                try {
+                    await hook(upserted_document_data);
+                } catch(err) {
+                    console.error(`Error in ${this.collection_id} ${was_created ? 'after_create' : 'after_update'}:`)
+                    console.error(err);
+                }
+            }
+        }
+
+        return upserted_document_data;
+    }
+
+    /**
+     * //TODO: Write tests for this
      * Runs both a delete operation and any side-effects added by the on_delete method within a mongodb transaction.
      * Then, performs any side-effects added by the after_delete method.
      * 

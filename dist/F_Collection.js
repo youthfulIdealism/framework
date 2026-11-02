@@ -142,6 +142,40 @@ export class F_Collection {
         }
         return update_document_data;
     }
+    async perform_upsert_and_side_effects(find, data, session) {
+        let upserted_document_data;
+        let was_created = false;
+        if (this.create_hooks.length > 0 || this.update_hooks.length > 0 || session) {
+            await create_or_use_session(async (session) => {
+                let result = await this.mongoose_model.findOneAndUpdate(find, data, { returnDocument: 'after', upsert: true, includeResultMetadata: true, runValidators: true, session: session, lean: true });
+                if (!result.value) {
+                    return;
+                }
+                upserted_document_data = result.value;
+                was_created = !result.lastErrorObject?.updatedExisting;
+                for (let hook of (was_created ? this.create_hooks : this.update_hooks)) {
+                    await hook(session, upserted_document_data);
+                }
+            }, session);
+        }
+        else {
+            let result = await this.mongoose_model.findOneAndUpdate(find, data, { returnDocument: 'after', upsert: true, includeResultMetadata: true, runValidators: true, lean: true });
+            upserted_document_data = result.value;
+            was_created = !result.lastErrorObject?.updatedExisting;
+        }
+        if (upserted_document_data) {
+            for (let hook of (was_created ? this.post_create_hooks : this.post_update_hooks)) {
+                try {
+                    await hook(upserted_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} ${was_created ? 'after_create' : 'after_update'}:`);
+                    console.error(err);
+                }
+            }
+        }
+        return upserted_document_data;
+    }
     async perform_delete_and_side_effects(find, session) {
         let deleted_document_data;
         if (this.delete_hooks.length > 0 || session) {
