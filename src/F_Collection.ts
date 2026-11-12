@@ -13,12 +13,42 @@ export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodObject>
     security_models: F_Security_Model<Collection_ID, ZodSchema>[]
 }
 
+// Depth counter for Array_Child_Paths, so recursive schemas don't make the compiler recurse forever.
+type Prev_Depth = [never, 0, 1, 2, 3, 4, 5];
+
+/**
+ * Every dotted path to an array child of T: an array of objects that have an _id, reachable only through nested
+ * objects. This mirrors the runtime rules of array_children_from_zod.
+ */
+export type Array_Child_Paths<T, Depth extends number = 5> = [Depth] extends [never] ? never : {
+    [K in keyof T & string]-?:
+        NonNullable<T[K]> extends readonly (infer E)[]
+            ? (NonNullable<E> extends { _id: any } ? K : never)
+        : NonNullable<T[K]> extends Date ? never
+        : NonNullable<T[K]> extends object
+            ? `${K}.${Array_Child_Paths<NonNullable<T[K]>, Prev_Depth[Depth]>}`
+        : never
+}[keyof T & string];
+
+/**
+ * The type of a single element of the array at dotted path P within T.
+ */
+export type Array_Child_At<T, P extends string> =
+    P extends `${infer Head}.${infer Rest}`
+        ? Head extends keyof T ? Array_Child_At<NonNullable<T[Head]>, Rest> : never
+        : P extends keyof T
+            ? (NonNullable<T[P]> extends readonly (infer E)[] ? NonNullable<E> : never)
+            : never;
+
 /**
  * array_item is the array element that was created/updated/deleted. parent_document is the full document that
- * contains the array (the post-operation state).
+ * contains the array (the post-operation state). P is the array child's dotted path; when it is a concrete path,
+ * array_item is typed as that array's element. When P is just string (as in the internal hook maps, which hold
+ * hooks for many different paths), array_item is any.
  */
-export type Array_Item_Hook<ZodSchema extends z.ZodObject> = (session: mongoose.mongo.ClientSession, array_item: any, parent_document: z.output<ZodSchema>) => Promise<void>;
-export type Array_Item_Post_Hook<ZodSchema extends z.ZodObject> = (array_item: any, parent_document: z.output<ZodSchema>) => Promise<void>;
+type Array_Item_Type<ZodSchema extends z.ZodObject, P extends string> = string extends P ? any : Array_Child_At<z.output<ZodSchema>, P>;
+export type Array_Item_Hook<ZodSchema extends z.ZodObject, P extends string = string> = (session: mongoose.mongo.ClientSession, array_item: Array_Item_Type<ZodSchema, P>, parent_document: z.output<ZodSchema>) => Promise<void>;
+export type Array_Item_Post_Hook<ZodSchema extends z.ZodObject, P extends string = string> = (array_item: Array_Item_Type<ZodSchema, P>, parent_document: z.output<ZodSchema>) => Promise<void>;
 
 type Partial_Mask = {_id: true};
 type ZodPartial_Return_Type<T extends (arg: Partial_Mask) => any> = T extends (arg: Partial_Mask) => infer R ? R : any;
@@ -179,7 +209,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * 
      * This IS NOT CALLED during document creation or document updating. IT IS ONLY CALLED VIA THE ARRAY UPDATE ENDPOINTS.
      */
-    array_on_create(key: string, hook: Array_Item_Hook<ZodSchema>): void {
+    array_on_create<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Hook<ZodSchema, ArrayKey>): void {
         if(!this.array_item_create_hooks.has(key)){this.array_item_create_hooks.set(key, []);}
         this.array_item_create_hooks.get(key).push(hook);
     }
@@ -190,7 +220,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * 
      * This IS NOT CALLED during document creation or document updating. IT IS ONLY CALLED VIA THE ARRAY UPDATE ENDPOINTS.
      */
-    array_on_update(key: string, hook: Array_Item_Hook<ZodSchema>): void {
+    array_on_update<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Hook<ZodSchema, ArrayKey>): void {
         if(!this.array_item_update_hooks.has(key)){this.array_item_update_hooks.set(key, []);}
         this.array_item_update_hooks.get(key).push(hook);
     }
@@ -201,7 +231,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * 
      * This IS NOT CALLED during document creation or document updating. IT IS ONLY CALLED VIA THE ARRAY UPDATE ENDPOINTS.
      */
-    array_on_delete(key: string, hook: Array_Item_Hook<ZodSchema>): void {
+    array_on_delete<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Hook<ZodSchema, ArrayKey>): void {
         if(!this.array_item_delete_hooks.has(key)){this.array_item_delete_hooks.set(key, []);}
         this.array_item_delete_hooks.get(key).push(hook);
     }
@@ -212,7 +242,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * 
      * This IS NOT CALLED during document creation or document updating. IT IS ONLY CALLED VIA THE ARRAY UPDATE ENDPOINTS.
      */
-    array_post_create(key: string, hook: Array_Item_Post_Hook<ZodSchema>): void {
+    array_post_create<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Post_Hook<ZodSchema, ArrayKey>): void {
         if(!this.array_item_post_create_hooks.has(key)){this.array_item_post_create_hooks.set(key, []);}
         this.array_item_post_create_hooks.get(key).push(hook);
     }
@@ -223,7 +253,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * 
      * This IS NOT CALLED during document creation or document updating. IT IS ONLY CALLED VIA THE ARRAY UPDATE ENDPOINTS.
      */
-    array_post_update(key: string, hook: Array_Item_Post_Hook<ZodSchema>): void {
+    array_post_update<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Post_Hook<ZodSchema, ArrayKey>): void {
         if(!this.array_item_post_update_hooks.has(key)){this.array_item_post_update_hooks.set(key, []);}
         this.array_item_post_update_hooks.get(key).push(hook);
     }
@@ -234,7 +264,7 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      * 
      * This IS NOT CALLED during document creation or document updating. IT IS ONLY CALLED VIA THE ARRAY UPDATE ENDPOINTS.
      */
-    array_post_delete(key: string, hook: Array_Item_Post_Hook<ZodSchema>): void {
+    array_post_delete<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Post_Hook<ZodSchema, ArrayKey>): void {
         if(!this.array_item_post_delete_hooks.has(key)){this.array_item_post_delete_hooks.set(key, []);}
         this.array_item_post_delete_hooks.get(key).push(hook);
     }
