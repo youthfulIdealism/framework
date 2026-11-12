@@ -25,6 +25,12 @@ export class F_Collection {
     post_create_hooks;
     post_update_hooks;
     post_delete_hooks;
+    array_item_create_hooks;
+    array_item_update_hooks;
+    array_item_delete_hooks;
+    array_item_post_create_hooks;
+    array_item_post_update_hooks;
+    array_item_post_delete_hooks;
     constructor(collection_name, collection_name_plural, validator, database = mongoose) {
         this.collection_id = collection_name;
         this.collection_name_plural = collection_name_plural;
@@ -57,6 +63,12 @@ export class F_Collection {
         this.post_create_hooks = [];
         this.post_update_hooks = [];
         this.post_delete_hooks = [];
+        this.array_item_create_hooks = new Map();
+        this.array_item_update_hooks = new Map();
+        this.array_item_delete_hooks = new Map();
+        this.array_item_post_create_hooks = new Map();
+        this.array_item_post_update_hooks = new Map();
+        this.array_item_post_delete_hooks = new Map();
     }
     add_layers(layers, security_models) {
         if (this.is_compiled) {
@@ -84,6 +96,42 @@ export class F_Collection {
     }
     after_delete(hook) {
         this.post_delete_hooks.push(hook);
+    }
+    array_on_create(key, hook) {
+        if (!this.array_item_create_hooks.has(key)) {
+            this.array_item_create_hooks.set(key, []);
+        }
+        this.array_item_create_hooks.get(key).push(hook);
+    }
+    array_on_update(key, hook) {
+        if (!this.array_item_update_hooks.has(key)) {
+            this.array_item_update_hooks.set(key, []);
+        }
+        this.array_item_update_hooks.get(key).push(hook);
+    }
+    array_on_delete(key, hook) {
+        if (!this.array_item_delete_hooks.has(key)) {
+            this.array_item_delete_hooks.set(key, []);
+        }
+        this.array_item_delete_hooks.get(key).push(hook);
+    }
+    array_post_create(key, hook) {
+        if (!this.array_item_post_create_hooks.has(key)) {
+            this.array_item_post_create_hooks.set(key, []);
+        }
+        this.array_item_post_create_hooks.get(key).push(hook);
+    }
+    array_post_update(key, hook) {
+        if (!this.array_item_post_update_hooks.has(key)) {
+            this.array_item_post_update_hooks.set(key, []);
+        }
+        this.array_item_post_update_hooks.get(key).push(hook);
+    }
+    array_post_delete(key, hook) {
+        if (!this.array_item_post_delete_hooks.has(key)) {
+            this.array_item_post_delete_hooks.set(key, []);
+        }
+        this.array_item_post_delete_hooks.get(key).push(hook);
     }
     async perform_create_and_side_effects(data, session) {
         let created_document_data;
@@ -205,6 +253,67 @@ export class F_Collection {
         }
         return deleted_document_data;
     }
+    async array_perform_create(array_key, find, data, additional_updates = {}, session) {
+        let updated_document_data;
+        let created_item;
+        let create_hooks = this.array_item_create_hooks.get(array_key) ?? [];
+        let post_create_hooks = this.array_item_post_create_hooks.get(array_key) ?? [];
+        let update = {
+            ...additional_updates,
+            $push: {
+                [array_key]: data,
+            },
+        };
+        if (this.update_hooks.length > 0 || create_hooks.length > 0 || session) {
+            await create_or_use_session(async (session) => {
+                updated_document_data = undefined;
+                created_item = undefined;
+                let updated_document = await this.mongoose_model.findOneAndUpdate(find, update, { returnDocument: 'after', session: session, lean: true });
+                if (!updated_document) {
+                    return;
+                }
+                updated_document_data = updated_document;
+                created_item = last_array_element(updated_document, array_key);
+                for (let hook of this.update_hooks) {
+                    await hook(session, updated_document);
+                }
+                for (let hook of create_hooks) {
+                    await hook(session, created_item, updated_document);
+                }
+            }, session);
+        }
+        else {
+            updated_document_data = await this.mongoose_model.findOneAndUpdate(find, update, { returnDocument: 'after', lean: true });
+            if (updated_document_data) {
+                created_item = last_array_element(updated_document_data, array_key);
+            }
+        }
+        if (updated_document_data) {
+            for (let hook of this.post_update_hooks) {
+                try {
+                    await hook(updated_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} after_update:`);
+                    console.error(err);
+                }
+            }
+            for (let hook of post_create_hooks) {
+                try {
+                    await hook(created_item, updated_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} array_post_create (${array_key}):`);
+                    console.error(err);
+                }
+            }
+        }
+        return updated_document_data;
+    }
+}
+function last_array_element(document, array_key) {
+    let array = array_key.split('.').reduce((current, key) => current?.[key], document);
+    return Array.isArray(array) ? array[array.length - 1] : undefined;
 }
 async function create_or_use_session(callback, session) {
     if (session) {

@@ -6,6 +6,8 @@ export type F_Layer<Collection_ID extends string, ZodSchema extends z.ZodObject>
     layers: string[];
     security_models: F_Security_Model<Collection_ID, ZodSchema>[];
 };
+export type Array_Item_Hook<ZodSchema extends z.ZodObject> = (session: mongoose.mongo.ClientSession, array_item: any, parent_document: z.output<ZodSchema>) => Promise<void>;
+export type Array_Item_Post_Hook<ZodSchema extends z.ZodObject> = (array_item: any, parent_document: z.output<ZodSchema>) => Promise<void>;
 type Partial_Mask = {
     _id: true;
 };
@@ -32,6 +34,12 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     post_create_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
     post_update_hooks: ((created_document: z.output<ZodSchema>) => Promise<void>)[];
     post_delete_hooks: ((deleted_document: z.output<ZodSchema>) => Promise<void>)[];
+    array_item_create_hooks: Map<string, Array_Item_Hook<ZodSchema>[]>;
+    array_item_update_hooks: Map<string, Array_Item_Hook<ZodSchema>[]>;
+    array_item_delete_hooks: Map<string, Array_Item_Hook<ZodSchema>[]>;
+    array_item_post_create_hooks: Map<string, Array_Item_Post_Hook<ZodSchema>[]>;
+    array_item_post_update_hooks: Map<string, Array_Item_Post_Hook<ZodSchema>[]>;
+    array_item_post_delete_hooks: Map<string, Array_Item_Post_Hook<ZodSchema>[]>;
     constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema, database?: typeof mongoose);
     add_layers(layers: string[], security_models: F_Security_Model<Collection_ID, ZodSchema>[]): void;
     on_create(hook: (session: mongoose.mongo.ClientSession, created_document: z.output<ZodSchema>) => Promise<void>): void;
@@ -40,9 +48,18 @@ export declare class F_Collection<Collection_ID extends string, ZodSchema extend
     after_create(hook: (created_document: z.output<ZodSchema>) => Promise<void>): void;
     after_update(hook: (updated_document: z.output<ZodSchema>) => Promise<void>): void;
     after_delete(hook: (deleted_document: z.output<ZodSchema>) => Promise<void>): void;
+    array_on_create(key: string, hook: Array_Item_Hook<ZodSchema>): void;
+    array_on_update(key: string, hook: Array_Item_Hook<ZodSchema>): void;
+    array_on_delete(key: string, hook: Array_Item_Hook<ZodSchema>): void;
+    array_post_create(key: string, hook: Array_Item_Post_Hook<ZodSchema>): void;
+    array_post_update(key: string, hook: Array_Item_Post_Hook<ZodSchema>): void;
+    array_post_delete(key: string, hook: Array_Item_Post_Hook<ZodSchema>): void;
     perform_create_and_side_effects(data: z.output<this['post_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>>;
     perform_update_and_side_effects(find: any, data: z.output<this['put_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>>;
     perform_upsert_and_side_effects(find: any, data: z.output<this['put_validator']>, session?: ClientSession): Promise<z.output<ZodSchema>>;
     perform_delete_and_side_effects(find: any, session?: ClientSession): Promise<z.output<ZodSchema>>;
+    array_perform_create(array_key: string, find: any, data: any, additional_updates?: {
+        [key: string]: any;
+    }, session?: ClientSession): Promise<z.output<ZodSchema>>;
 }
 export {};

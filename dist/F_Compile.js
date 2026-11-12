@@ -575,12 +575,7 @@ export function compile(app, collection, api_prefix, collection_registry) {
                 }
                 let results;
                 try {
-                    results = await collection.perform_update_and_side_effects(find, {
-                        $push: {
-                            [array_child_path]: validated_request_body,
-                        },
-                        ...metadata_updater
-                    });
+                    results = await collection.array_perform_create(array_child_path, find, validated_request_body, metadata_updater);
                 }
                 catch (err) {
                     res.status(500);

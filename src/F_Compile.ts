@@ -651,13 +651,7 @@ export function compile<Collection_ID extends string, ZodSchema extends z.ZodObj
 
                 let results;
                 try {
-                    //array_child_path
-                    results = await collection.perform_update_and_side_effects(find, {
-                        $push: {
-                            [array_child_path]: validated_request_body,
-                        },
-                        ...metadata_updater
-                    });
+                    results = await collection.array_perform_create(array_child_path, find, validated_request_body, metadata_updater);
                 } catch(err){
                     res.status(500);
                     res.json({ error: `there was a novel error` });
