@@ -27,6 +27,11 @@ const validate_post = z.object({
             label: z.string(),
         })).optional(),
     }),
+    // array_children_from_zod only requires that an _id field exists, so an optional _id still counts
+    comments: z.array(z.object({
+        _id: z_mongodb_id.optional(),
+        body: z.string(),
+    })).optional(),
     plain_list: z.array(z.string()),
     no_id_list: z.array(z.object({ x: z.number() })),
 });
@@ -46,15 +51,16 @@ const validate_tree = z.object({
 
 describe('Array child hook types', function () {
     it('should derive exactly the array child paths that array_children_from_zod finds at runtime', function () {
-        assert_type<Assert_Equal<Array_Child_Paths<Post>, 'notes' | 'meta.tags'>>();
+        assert_type<Assert_Equal<Array_Child_Paths<Post>, 'notes' | 'meta.tags' | 'comments'>>();
 
         let collection = new F_Collection('array_hook_type_post', 'array_hook_type_posts', validate_post);
-        assert.deepEqual(Array.from(collection.array_children_map.keys()).sort(), ['meta.tags', 'notes']);
+        assert.deepEqual(Array.from(collection.array_children_map.keys()).sort(), ['comments', 'meta.tags', 'notes']);
     });
 
     it('should resolve the element type at a path', function () {
         assert_type<Assert_Equal<Array_Child_At<Post, 'notes'>, { _id: string, text: string }>>();
         assert_type<Assert_Equal<Array_Child_At<Post, 'meta.tags'>, { _id: string, label: string }>>();
+        assert_type<Assert_Equal<Array_Child_At<Post, 'comments'>, { _id?: string, body: string }>>();
     });
 
     it('should type array_item in the array hooks and reject unknown keys', function () {
@@ -70,6 +76,13 @@ describe('Array child hook types', function () {
         collection.array_on_update('notes', async (session, note) => {
             // @ts-expect-error notes items have no label field
             note.label;
+        });
+        collection.array_on_delete('notes', async (session, deleted_id, parent) => {
+            assert_type<Assert_Equal<typeof deleted_id, string>>();
+            assert_type<Assert_Equal<typeof parent, Post>>();
+        });
+        collection.array_post_delete('meta.tags', async (deleted_id) => {
+            assert_type<Assert_Equal<typeof deleted_id, string>>();
         });
 
         // @ts-expect-error misspelled key

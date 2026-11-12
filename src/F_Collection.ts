@@ -23,7 +23,7 @@ type Prev_Depth = [never, 0, 1, 2, 3, 4, 5];
 export type Array_Child_Paths<T, Depth extends number = 5> = [Depth] extends [never] ? never : {
     [K in keyof T & string]-?:
         NonNullable<T[K]> extends readonly (infer E)[]
-            ? (NonNullable<E> extends { _id: any } ? K : never)
+            ? ('_id' extends keyof NonNullable<E> ? K : never) // _id may be optional, as in array_children_from_zod
         : NonNullable<T[K]> extends Date ? never
         : NonNullable<T[K]> extends object
             ? `${K}.${Array_Child_Paths<NonNullable<T[K]>, Prev_Depth[Depth]>}`
@@ -49,6 +49,9 @@ export type Array_Child_At<T, P extends string> =
 type Array_Item_Type<ZodSchema extends z.ZodObject, P extends string> = string extends P ? any : Array_Child_At<z.output<ZodSchema>, P>;
 export type Array_Item_Hook<ZodSchema extends z.ZodObject, P extends string = string> = (session: mongoose.mongo.ClientSession, array_item: Array_Item_Type<ZodSchema, P>, parent_document: z.output<ZodSchema>) => Promise<void>;
 export type Array_Item_Post_Hook<ZodSchema extends z.ZodObject, P extends string = string> = (array_item: Array_Item_Type<ZodSchema, P>, parent_document: z.output<ZodSchema>) => Promise<void>;
+
+export type Array_Item_Delete_Hook<ZodSchema extends z.ZodObject> = (session: mongoose.mongo.ClientSession, deleted_item_id: string, parent_document: z.output<ZodSchema>) => Promise<void>;
+export type Array_Item_Post_Delete_Hook<ZodSchema extends z.ZodObject> = (deleted_item_id: string, parent_document: z.output<ZodSchema>) => Promise<void>;
 
 type Partial_Mask = {_id: true};
 type ZodPartial_Return_Type<T extends (arg: Partial_Mask) => any> = T extends (arg: Partial_Mask) => infer R ? R : any;
@@ -83,10 +86,10 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
 
     array_item_create_hooks: Map<string, Array_Item_Hook<ZodSchema>[]>;
     array_item_update_hooks: Map<string, Array_Item_Hook<ZodSchema>[]>;
-    array_item_delete_hooks: Map<string, Array_Item_Hook<ZodSchema>[]>;
+    array_item_delete_hooks: Map<string, Array_Item_Delete_Hook<ZodSchema>[]>;
     array_item_post_create_hooks: Map<string, Array_Item_Post_Hook<ZodSchema>[]>;
     array_item_post_update_hooks: Map<string, Array_Item_Post_Hook<ZodSchema>[]>;
-    array_item_post_delete_hooks: Map<string, Array_Item_Post_Hook<ZodSchema>[]>;
+    array_item_post_delete_hooks: Map<string, Array_Item_Post_Delete_Hook<ZodSchema>[]>;
 
     constructor(collection_name: Collection_ID, collection_name_plural: string, validator: ZodSchema, database: typeof mongoose = mongoose){
         this.collection_id = collection_name;
@@ -228,10 +231,12 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
     /**
      * Adds code that runs in a transaction when an array child is being deleted. If you want side-effect code
      * that doesn't DIRECTLY pertain to the database update operation, use the post-update hook instead.
-     * 
+     *
+     * The hook receives the _id of the deleted item, not the item itself.
+     *
      * This IS NOT CALLED during document creation or document updating. IT IS ONLY CALLED VIA THE ARRAY UPDATE ENDPOINTS.
      */
-    array_on_delete<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Hook<ZodSchema, ArrayKey>): void {
+    array_on_delete<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Delete_Hook<ZodSchema>): void {
         if(!this.array_item_delete_hooks.has(key)){this.array_item_delete_hooks.set(key, []);}
         this.array_item_delete_hooks.get(key).push(hook);
     }
@@ -261,10 +266,12 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
     /**
      * Adds code that runs after an array child is created. If this code fails, no error is thrown--a message is merely
      * printed to the console. This means that the code needs to contain any error-handlers within itself.
-     * 
+     *
+     * The hook receives the _id of the deleted item, not the item itself.
+     *
      * This IS NOT CALLED during document creation or document updating. IT IS ONLY CALLED VIA THE ARRAY UPDATE ENDPOINTS.
      */
-    array_post_delete<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Post_Hook<ZodSchema, ArrayKey>): void {
+    array_post_delete<ArrayKey extends Array_Child_Paths<z.output<ZodSchema>>>(key: ArrayKey, hook: Array_Item_Post_Delete_Hook<ZodSchema>): void {
         if(!this.array_item_post_delete_hooks.has(key)){this.array_item_post_delete_hooks.set(key, []);}
         this.array_item_post_delete_hooks.get(key).push(hook);
     }
@@ -480,62 +487,62 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
      *
      * Returns the full parent document after the push, or null if no document matched find.
      */
-    async array_perform_create(array_key: string, find: any, data: any, additional_updates: { [key: string]: any } = {}, session?: ClientSession): Promise<z.output<ZodSchema>> {
-        let updated_document_data;
-        let created_item;
-        let create_hooks = this.array_item_create_hooks.get(array_key) ?? [];
-        let post_create_hooks = this.array_item_post_create_hooks.get(array_key) ?? [];
-
-        // typed as any because mongoose can't verify a dynamically-keyed $push against the schema
+    async array_perform_create_and_side_effects(array_key: string, find: any, data: any, additional_updates: { [key: string]: any } = {}, session?: ClientSession): Promise<z.output<ZodSchema>> {
         let update: any = {
             ...additional_updates,
-            $push: {
-                [array_key]: data,
-            },
+            $push: { [array_key]: data },
         };
+        let hooks = this.array_item_create_hooks.get(array_key) ?? [];
+        let post_hooks = this.array_item_post_create_hooks.get(array_key) ?? [];
+
+        // performs the push, returning the post-push parent document and the pushed array item
+        let run_operation = async (session?: ClientSession): Promise<{ updated_document: any, array_item: any }> => {
+            let updated_document = await this.mongoose_model.findOneAndUpdate(find, update, {returnDocument: 'after', session: session, lean: true});
+            if(!updated_document){ return { updated_document: updated_document, array_item: undefined }; }
+            // findOneAndUpdate atomically returns the state immediately after its own $push, so the last
+            // element is the pushed item.
+            let array = array_at_path(updated_document, array_key);
+            return { updated_document: updated_document, array_item: array?.[array.length - 1] };
+        };
+
+        let updated_document_data;
+        let array_item;
 
         // NOTE: this deliberately inlines the logic of perform_update_and_side_effects rather than calling it with
         // our session, because that would run the after_update hooks inside our transaction, before it commits.
-
-        // if we have any update or array create hooks, run the push operation in a transaction
-        if(this.update_hooks.length > 0 || create_hooks.length > 0 || session){
+        if(this.update_hooks.length > 0 || hooks.length > 0 || session){
             await create_or_use_session(async (session) => {
                 // reset in case mongoose retries this callback after a transient transaction error
                 updated_document_data = undefined;
-                created_item = undefined;
+                array_item = undefined;
 
-                // push the array item
-                let updated_document = await this.mongoose_model.findOneAndUpdate(find, update, {returnDocument: 'after', session: session, lean: true});
-                if(!updated_document){ return; }
-                updated_document_data = updated_document;
-                created_item = last_array_element(updated_document, array_key);
+                let result = await run_operation(session);
+                if(!result.updated_document){ return; }
+                updated_document_data = result.updated_document;
+                array_item = result.array_item;
 
                 // run each hook one-by-one because running them in parallell is verboten
                 // https://mongoosejs.com/docs/transactions.html
                 for(let hook of this.update_hooks){
-                    //@ts-expect-error
-                    await hook(session, updated_document);
+                    await hook(session, updated_document_data);
                 }
-                for(let hook of create_hooks){
-                    //@ts-expect-error
-                    await hook(session, created_item, updated_document);
+                for(let hook of hooks){
+                    await hook(session, array_item, updated_document_data);
                 }
             }, session);
-        } else {// if we don't have any update or array create hooks, run the push operation normally
-            updated_document_data = await this.mongoose_model.findOneAndUpdate(find, update, {returnDocument: 'after', lean: true});
-            if(updated_document_data){
-                created_item = last_array_element(updated_document_data, array_key);
-            }
+        } else {// if no hooks need a transaction, run the operation normally
+            let result = await run_operation();
+            updated_document_data = result.updated_document;
+            array_item = result.array_item;
         }
 
-        // it's possible for the push to fail due to security adding a parameter
+        // it's possible for the operation to fail due to security adding a parameter
         // that prevents any update from occurring. Only perform the hooks if the
-        // push went through.
+        // operation went through.
         if(updated_document_data){
             // run the post-update hooks, which should not make DB changes.
             for(let hook of this.post_update_hooks) {
                 try {
-                    //@ts-expect-error
                     await hook(updated_document_data);
                 } catch(err) {
                     console.error(`Error in ${this.collection_id} after_update:`)
@@ -543,11 +550,10 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
                 }
             }
 
-            // run the post-create hooks, which should not make DB changes.
-            for(let hook of post_create_hooks) {
+            // run the array post hooks, which should not make DB changes.
+            for(let hook of post_hooks) {
                 try {
-                    //@ts-expect-error
-                    await hook(created_item, updated_document_data);
+                    await hook(array_item, updated_document_data);
                 } catch(err) {
                     console.error(`Error in ${this.collection_id} array_post_create (${array_key}):`)
                     console.error(err);
@@ -555,19 +561,194 @@ export class F_Collection<Collection_ID extends string, ZodSchema extends z.ZodO
             }
         }
 
-        //@ts-expect-error
+        return updated_document_data;
+    }
+
+    /**
+     * //TODO: Write tests for this
+     * Replaces the array item with _id item_id in the array at array_key of the document matching find. Since this
+     * is an update to the parent document, within a single mongodb transaction it runs the side-effects added by
+     * on_update, then the side-effects added by array_on_update for that key. Then, performs the side-effects added
+     * by after_update, then those added by array_post_update for that key.
+     *
+     * Array hooks receive both the updated array item and the full parent document.
+     *
+     * The item's _id is always kept as item_id, regardless of what data contains. additional_updates is merged into
+     * the update alongside the $set (e.g. updated_by / updated_at metadata).
+     *
+     * If there are no side-effects specified by on_update or array_on_update, runs a normal non-transaction
+     * update to avoid the performance impacts of a transaction.
+     *
+     * Returns the full parent document after the update, or null if no document matched find or the document
+     * has no array item with _id item_id.
+     */
+    async array_perform_update_and_side_effects(array_key: string, find: any, item_id: string, data: any, additional_updates: { [key: string]: any } = {}, session?: ClientSession): Promise<z.output<ZodSchema>> {
+        let update: any = {
+            ...additional_updates,
+            $set: { [`${array_key}.$`]: { ...data, _id: item_id } },
+        };
+        let hooks = this.array_item_update_hooks.get(array_key) ?? [];
+        let post_hooks = this.array_item_post_update_hooks.get(array_key) ?? [];
+
+        // requiring the item in find makes the operation a no-op (returning null) if the item doesn't exist, and is
+        // what the positional $ operator matches against.
+        find = { ...find, [`${array_key}._id`]: item_id };
+
+        // performs the update, returning the post-update parent document and the updated array item
+        let run_operation = async (session?: ClientSession): Promise<{ updated_document: any, array_item: any }> => {
+            let updated_document = await this.mongoose_model.findOneAndUpdate(find, update, {returnDocument: 'after', session: session, lean: true});
+            if(!updated_document){ return { updated_document: updated_document, array_item: undefined }; }
+            let array_item = array_at_path(updated_document, array_key)?.find((element: any) => String(element?._id) === String(item_id));
+            return { updated_document: updated_document, array_item: array_item };
+        };
+
+        let updated_document_data;
+        let array_item;
+
+        // NOTE: this deliberately inlines the logic of perform_update_and_side_effects rather than calling it with
+        // our session, because that would run the after_update hooks inside our transaction, before it commits.
+        if(this.update_hooks.length > 0 || hooks.length > 0 || session){
+            await create_or_use_session(async (session) => {
+                // reset in case mongoose retries this callback after a transient transaction error
+                updated_document_data = undefined;
+                array_item = undefined;
+
+                let result = await run_operation(session);
+                if(!result.updated_document){ return; }
+                updated_document_data = result.updated_document;
+                array_item = result.array_item;
+
+                // run each hook one-by-one because running them in parallell is verboten
+                // https://mongoosejs.com/docs/transactions.html
+                for(let hook of this.update_hooks){
+                    await hook(session, updated_document_data);
+                }
+                for(let hook of hooks){
+                    await hook(session, array_item, updated_document_data);
+                }
+            }, session);
+        } else {// if no hooks need a transaction, run the operation normally
+            let result = await run_operation();
+            updated_document_data = result.updated_document;
+            array_item = result.array_item;
+        }
+
+        // it's possible for the operation to fail due to security adding a parameter
+        // that prevents any update from occurring. Only perform the hooks if the
+        // operation went through.
+        if(updated_document_data){
+            // run the post-update hooks, which should not make DB changes.
+            for(let hook of this.post_update_hooks) {
+                try {
+                    await hook(updated_document_data);
+                } catch(err) {
+                    console.error(`Error in ${this.collection_id} after_update:`)
+                    console.error(err);
+                }
+            }
+
+            // run the array post hooks, which should not make DB changes.
+            for(let hook of post_hooks) {
+                try {
+                    await hook(array_item, updated_document_data);
+                } catch(err) {
+                    console.error(`Error in ${this.collection_id} array_post_update (${array_key}):`)
+                    console.error(err);
+                }
+            }
+        }
+
+        return updated_document_data;
+    }
+
+    /**
+     * //TODO: Write tests for this
+     * Removes the array item with _id item_id from the array at array_key of the document matching find. Since
+     * this is an update to the parent document, within a single mongodb transaction it runs the side-effects added
+     * by on_update, then the side-effects added by array_on_delete for that key. Then, performs the side-effects
+     * added by after_update, then those added by array_post_delete for that key.
+     *
+     * Array hooks receive the _id of the deleted array item and the full parent document (after deletion).
+     *
+     * additional_updates is merged into the update alongside the $pull (e.g. updated_by / updated_at metadata).
+     *
+     * If there are no side-effects specified by on_update or array_on_delete, runs a normal non-transaction
+     * update to avoid the performance impacts of a transaction.
+     *
+     * Returns the full parent document after the deletion, or null if no document matched find or the document
+     * has no array item with _id item_id.
+     */
+    async array_perform_delete_and_side_effects(array_key: string, find: any, item_id: string, additional_updates: { [key: string]: any } = {}, session?: ClientSession): Promise<z.output<ZodSchema>> {
+        let update: any = {
+            ...additional_updates,
+            $pull: { [array_key]: { _id: item_id } },
+        };
+        let hooks = this.array_item_delete_hooks.get(array_key) ?? [];
+        let post_hooks = this.array_item_post_delete_hooks.get(array_key) ?? [];
+
+        // requiring the item in find makes the operation a no-op (returning null) if the item doesn't exist.
+        find = { ...find, [`${array_key}._id`]: item_id };
+
+        let updated_document_data: any;
+
+        if(this.update_hooks.length > 0 || hooks.length > 0 || session){
+            await create_or_use_session(async (session) => {
+                // reset in case mongoose retries this callback after a transient transaction error
+                updated_document_data = undefined;
+
+                let updated_document: any = await this.mongoose_model.findOneAndUpdate(find, update, {returnDocument: 'after', session: session, lean: true});
+                if(!updated_document){ return; }
+                updated_document_data = updated_document;
+
+                // run each hook one-by-one because running them in parallell is verboten
+                // https://mongoosejs.com/docs/transactions.html
+                for(let hook of this.update_hooks){
+                    await hook(session, updated_document);
+                }
+                for(let hook of hooks){
+                    await hook(session, item_id, updated_document);
+                }
+            }, session);
+        } else {// if no hooks need a transaction, run the operation normally
+            updated_document_data = await this.mongoose_model.findOneAndUpdate(find, update, {returnDocument: 'after', lean: true});
+        }
+
+        // it's possible for the operation to fail due to security adding a parameter
+        // that prevents any update from occurring. Only perform the hooks if the
+        // operation went through.
+        if(updated_document_data){
+            // run the post-update hooks, which should not make DB changes.
+            for(let hook of this.post_update_hooks) {
+                try {
+                    await hook(updated_document_data);
+                } catch(err) {
+                    console.error(`Error in ${this.collection_id} after_update:`)
+                    console.error(err);
+                }
+            }
+
+            // run the array post hooks, which should not make DB changes.
+            for(let hook of post_hooks) {
+                try {
+                    await hook(item_id, updated_document_data);
+                } catch(err) {
+                    console.error(`Error in ${this.collection_id} array_post_delete (${array_key}):`)
+                    console.error(err);
+                }
+            }
+        }
+
         return updated_document_data;
     }
 }
 
 /**
- * Returns the last element of the array at the dotted path array_key within document. Array child paths only
- * traverse nested objects (never other arrays), so a plain property walk is sufficient. Because findOneAndUpdate
- * atomically returns the document state immediately after its own $push, the last element is the pushed item.
+ * Returns the array at the dotted path array_key within document, or undefined if there isn't one. Array child
+ * paths only traverse nested objects (never other arrays), so a plain property walk is sufficient.
  */
-function last_array_element(document: any, array_key: string): any {
+function array_at_path(document: any, array_key: string): any[] | undefined {
     let array = array_key.split('.').reduce((current, key) => current?.[key], document);
-    return Array.isArray(array) ? array[array.length - 1] : undefined;
+    return Array.isArray(array) ? array : undefined;
 }
 
 async function create_or_use_session(callback: (session: ClientSession) => Promise<void>, session?: ClientSession, ) {

@@ -253,40 +253,45 @@ export class F_Collection {
         }
         return deleted_document_data;
     }
-    async array_perform_create(array_key, find, data, additional_updates = {}, session) {
-        let updated_document_data;
-        let created_item;
-        let create_hooks = this.array_item_create_hooks.get(array_key) ?? [];
-        let post_create_hooks = this.array_item_post_create_hooks.get(array_key) ?? [];
+    async array_perform_create_and_side_effects(array_key, find, data, additional_updates = {}, session) {
         let update = {
             ...additional_updates,
-            $push: {
-                [array_key]: data,
-            },
+            $push: { [array_key]: data },
         };
-        if (this.update_hooks.length > 0 || create_hooks.length > 0 || session) {
+        let hooks = this.array_item_create_hooks.get(array_key) ?? [];
+        let post_hooks = this.array_item_post_create_hooks.get(array_key) ?? [];
+        let run_operation = async (session) => {
+            let updated_document = await this.mongoose_model.findOneAndUpdate(find, update, { returnDocument: 'after', session: session, lean: true });
+            if (!updated_document) {
+                return { updated_document: updated_document, array_item: undefined };
+            }
+            let array = array_at_path(updated_document, array_key);
+            return { updated_document: updated_document, array_item: array?.[array.length - 1] };
+        };
+        let updated_document_data;
+        let array_item;
+        if (this.update_hooks.length > 0 || hooks.length > 0 || session) {
             await create_or_use_session(async (session) => {
                 updated_document_data = undefined;
-                created_item = undefined;
-                let updated_document = await this.mongoose_model.findOneAndUpdate(find, update, { returnDocument: 'after', session: session, lean: true });
-                if (!updated_document) {
+                array_item = undefined;
+                let result = await run_operation(session);
+                if (!result.updated_document) {
                     return;
                 }
-                updated_document_data = updated_document;
-                created_item = last_array_element(updated_document, array_key);
+                updated_document_data = result.updated_document;
+                array_item = result.array_item;
                 for (let hook of this.update_hooks) {
-                    await hook(session, updated_document);
+                    await hook(session, updated_document_data);
                 }
-                for (let hook of create_hooks) {
-                    await hook(session, created_item, updated_document);
+                for (let hook of hooks) {
+                    await hook(session, array_item, updated_document_data);
                 }
             }, session);
         }
         else {
-            updated_document_data = await this.mongoose_model.findOneAndUpdate(find, update, { returnDocument: 'after', lean: true });
-            if (updated_document_data) {
-                created_item = last_array_element(updated_document_data, array_key);
-            }
+            let result = await run_operation();
+            updated_document_data = result.updated_document;
+            array_item = result.array_item;
         }
         if (updated_document_data) {
             for (let hook of this.post_update_hooks) {
@@ -298,9 +303,9 @@ export class F_Collection {
                     console.error(err);
                 }
             }
-            for (let hook of post_create_hooks) {
+            for (let hook of post_hooks) {
                 try {
-                    await hook(created_item, updated_document_data);
+                    await hook(array_item, updated_document_data);
                 }
                 catch (err) {
                     console.error(`Error in ${this.collection_id} array_post_create (${array_key}):`);
@@ -310,10 +315,123 @@ export class F_Collection {
         }
         return updated_document_data;
     }
+    async array_perform_update_and_side_effects(array_key, find, item_id, data, additional_updates = {}, session) {
+        let update = {
+            ...additional_updates,
+            $set: { [`${array_key}.$`]: { ...data, _id: item_id } },
+        };
+        let hooks = this.array_item_update_hooks.get(array_key) ?? [];
+        let post_hooks = this.array_item_post_update_hooks.get(array_key) ?? [];
+        find = { ...find, [`${array_key}._id`]: item_id };
+        let run_operation = async (session) => {
+            let updated_document = await this.mongoose_model.findOneAndUpdate(find, update, { returnDocument: 'after', session: session, lean: true });
+            if (!updated_document) {
+                return { updated_document: updated_document, array_item: undefined };
+            }
+            let array_item = array_at_path(updated_document, array_key)?.find((element) => String(element?._id) === String(item_id));
+            return { updated_document: updated_document, array_item: array_item };
+        };
+        let updated_document_data;
+        let array_item;
+        if (this.update_hooks.length > 0 || hooks.length > 0 || session) {
+            await create_or_use_session(async (session) => {
+                updated_document_data = undefined;
+                array_item = undefined;
+                let result = await run_operation(session);
+                if (!result.updated_document) {
+                    return;
+                }
+                updated_document_data = result.updated_document;
+                array_item = result.array_item;
+                for (let hook of this.update_hooks) {
+                    await hook(session, updated_document_data);
+                }
+                for (let hook of hooks) {
+                    await hook(session, array_item, updated_document_data);
+                }
+            }, session);
+        }
+        else {
+            let result = await run_operation();
+            updated_document_data = result.updated_document;
+            array_item = result.array_item;
+        }
+        if (updated_document_data) {
+            for (let hook of this.post_update_hooks) {
+                try {
+                    await hook(updated_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} after_update:`);
+                    console.error(err);
+                }
+            }
+            for (let hook of post_hooks) {
+                try {
+                    await hook(array_item, updated_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} array_post_update (${array_key}):`);
+                    console.error(err);
+                }
+            }
+        }
+        return updated_document_data;
+    }
+    async array_perform_delete_and_side_effects(array_key, find, item_id, additional_updates = {}, session) {
+        let update = {
+            ...additional_updates,
+            $pull: { [array_key]: { _id: item_id } },
+        };
+        let hooks = this.array_item_delete_hooks.get(array_key) ?? [];
+        let post_hooks = this.array_item_post_delete_hooks.get(array_key) ?? [];
+        find = { ...find, [`${array_key}._id`]: item_id };
+        let updated_document_data;
+        if (this.update_hooks.length > 0 || hooks.length > 0 || session) {
+            await create_or_use_session(async (session) => {
+                updated_document_data = undefined;
+                let updated_document = await this.mongoose_model.findOneAndUpdate(find, update, { returnDocument: 'after', session: session, lean: true });
+                if (!updated_document) {
+                    return;
+                }
+                updated_document_data = updated_document;
+                for (let hook of this.update_hooks) {
+                    await hook(session, updated_document);
+                }
+                for (let hook of hooks) {
+                    await hook(session, item_id, updated_document);
+                }
+            }, session);
+        }
+        else {
+            updated_document_data = await this.mongoose_model.findOneAndUpdate(find, update, { returnDocument: 'after', lean: true });
+        }
+        if (updated_document_data) {
+            for (let hook of this.post_update_hooks) {
+                try {
+                    await hook(updated_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} after_update:`);
+                    console.error(err);
+                }
+            }
+            for (let hook of post_hooks) {
+                try {
+                    await hook(item_id, updated_document_data);
+                }
+                catch (err) {
+                    console.error(`Error in ${this.collection_id} array_post_delete (${array_key}):`);
+                    console.error(err);
+                }
+            }
+        }
+        return updated_document_data;
+    }
 }
-function last_array_element(document, array_key) {
+function array_at_path(document, array_key) {
     let array = array_key.split('.').reduce((current, key) => current?.[key], document);
-    return Array.isArray(array) ? array[array.length - 1] : undefined;
+    return Array.isArray(array) ? array : undefined;
 }
 async function create_or_use_session(callback, session) {
     if (session) {
